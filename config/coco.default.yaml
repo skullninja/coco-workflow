@@ -1,0 +1,71 @@
+# coco-workflow default configuration
+# Copy to .coco/config.yaml in your project and customize.
+
+project:
+  name: "My Project"
+  specs_dir: "specs"                   # Where spec directories live (relative to repo root)
+
+issue_tracker:
+  provider: "none"                     # linear | github | none
+
+  # Linear configuration (when provider: linear)
+  linear:
+    team: ""                           # Linear team name
+    initiative: ""                     # Optional initiative to link projects to
+    labels:                            # Labels applied to created issues
+      - "Spec-Driven"
+
+  # GitHub Issues configuration (when provider: github)
+  github:
+    repo: ""                           # owner/repo format
+    labels:
+      - "spec-driven"
+
+  # Status mapping: internal tracker status -> issue tracker status
+  status_map:
+    pending: "Backlog"
+    in_progress: "In Progress"
+    completed: "In Review"
+    merged: "Done"
+
+commit:
+  # Commit message format for issue-linked commits
+  # Available placeholders: {description}, {issue_key}
+  title_format: "{description}. Completes {issue_key}"
+
+  # Patterns that exempt commits from requiring an issue key
+  exempt_patterns:
+    - "^docs?:"
+    - "^typo:"
+    - "^(workflow|config|gitignore|hooks|scripts)"
+    - "^merge "
+    - "^revert "
+
+pre_commit:
+  # File patterns that trigger pre-commit validation agent
+  # Project should fill these in (e.g., "**/Views/**", "**/*View.swift")
+  ui_patterns: []
+
+  # Build command to run as fail-fast check (empty = skip)
+  build_command: ""
+
+  # Environment variable to skip pre-commit checks
+  skip_env_var: "COCO_QUICK_COMMIT"
+
+testing:
+  # Test runner command (empty = no test runner configured)
+  test_command: ""
+
+  # Test timeout in seconds
+  test_timeout: 180
+
+loop:
+  # Maximum iterations before the loop pauses (safety limit)
+  max_iterations: 20
+
+  # Consecutive iterations with no commits before circuit breaker triggers
+  no_progress_threshold: 3
+
+  # Pause the loop on task failure (test/build errors)
+  # If false, skips the failed task and tries the next one
+  pause_on_error: true
