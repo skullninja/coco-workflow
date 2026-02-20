@@ -1,4 +1,4 @@
-# Coco Workflow Guide
+# Coco Guide
 
 Comprehensive guide to the spec-driven development workflow.
 
@@ -14,7 +14,7 @@ This workflow uses a unified pipeline to take features from description to merge
 
 | Layer | Tool | Role |
 |-------|------|------|
-| **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and per-release roadmaps in `docs/` |
+| **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and per-release roadmaps |
 | **Planning** | Coco skills (`coco-spec`, `coco-plan`, `coco-tasks`) | Produces `specs/{feature}/` artifacts: spec.md, plan.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
@@ -262,8 +262,8 @@ Sub-Phase 1: Setup ---------> Sub-Phase 2: Foundational
 
 ### Git Hooks
 
-**`hooks/commit-msg.sh`** -- Validates commit message format per config
-**`hooks/pre-commit.sh`** -- Build check and UI change detection per config
+**`git-hooks/commit-msg.sh`** -- Validates commit message format per config
+**`git-hooks/pre-commit.sh`** -- Build check and UI change detection per config
 
 ### Planning Sessions
 
@@ -310,7 +310,7 @@ git push
 
 ## Quick Reference
 
-### Command Table (11 commands)
+### Command Table (12 commands)
 
 | Command | Purpose |
 |---------|---------|
@@ -321,6 +321,7 @@ git push
 | `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco.constitution` | Create/update project constitution |
 | `/coco.status` | Show execution state and opportunities |
+| `/coco.standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco.sync` | Reconcile tracker and issue tracker state |
 | `/planning-session` | Start a planning session |
 | `/planning-triage` | Score and disposition an item |

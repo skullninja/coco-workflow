@@ -7,7 +7,7 @@ Coco is a Claude Code plugin that provides autonomous spec-driven development. I
 ## Architecture
 
 Five layers:
-- **Discovery**: `/coco.prd` and `/coco.roadmap` produce PRD, analysis, and roadmap artifacts in `docs/`
+- **Discovery**: `/coco.prd` and `/coco.roadmap` produce PRD, analysis, and roadmap artifacts
 - **Planning**: Skills (`coco-spec`, `coco-plan`, `coco-tasks`, `coco-import`) produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
@@ -34,6 +34,7 @@ Five layers:
 | `hooks/session-start.md` | SessionStart hook -- restores session context |
 | `git-hooks/commit-msg.sh` | Commit message validation (reads config) |
 | `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
+| `GUIDE.md` | Comprehensive workflow guide with deep-dives and quick reference |
 | `templates/` | Default templates for PRD, analysis, roadmap, spec, plan, tasks, constitution |
 | `workflows/` | Reference documentation for workflows |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
