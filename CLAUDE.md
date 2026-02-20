@@ -8,7 +8,7 @@ Coco-workflow is a Claude Code plugin that provides a spec-driven development wo
 
 Five layers:
 - **Discovery**: `/coco.prd` and `/coco.roadmap` produce PRD, analysis, and roadmap artifacts in `docs/`
-- **Planning**: `/coco.*` commands produce spec artifacts in `specs/{feature}/`
+- **Planning**: Skills (`coco-spec`, `coco-plan`, `coco-tasks`, `coco-import`) produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
 - **Visibility**: Issue tracker bridge (Linear MCP, GitHub CLI, or none) mirrors status
@@ -20,8 +20,12 @@ Five layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 17 slash commands (coco.prd, coco.roadmap, coco.spec, coco.plan, coco.tasks, coco.import, coco.execute, coco.loop, etc.) |
-| `skills/execute/SKILL.md` | Primary execution skill (15-step TDD + PR loop) |
+| `commands/` | 11 slash commands (coco.prd, coco.roadmap, coco.phase, coco.loop, coco.execute, etc.) |
+| `skills/spec/SKILL.md` | Feature specification with clarification (AI-selected) |
+| `skills/plan/SKILL.md` | Implementation plan generation (AI-selected) |
+| `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
+| `skills/import/SKILL.md` | Tracker + issue tracker import (AI-selected) |
+| `skills/execute/SKILL.md` | Execution skill (delegates to `/coco.execute` command) |
 | `skills/hotfix/SKILL.md` | Single-issue hotfix workflow (with optional PR) |
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
@@ -113,22 +117,22 @@ Set `pr.enabled: false` to disable PRs and use direct merge (backward compatible
 
 ## Issue Tracker Bridge
 
-The bridge is implemented as conditional instructions in command markdown files (not shell abstractions). Commands read `issue_tracker.provider` from config and follow the appropriate branch:
+The bridge is implemented as conditional instructions in command and skill markdown files (not shell abstractions). Commands and skills read `issue_tracker.provider` from config and follow the appropriate branch:
 - **linear**: Uses `mcp__plugin_linear_linear__*` MCP tools
 - **github**: Uses `gh` CLI commands
 - **none**: Skips all issue tracker operations
 
-## Command Pipeline
+## Pipeline
 
-Full pipeline: `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` -> (per feature) `/coco.spec` -> `/coco.plan` -> `/coco.tasks` -> `/coco.import` -> `/coco.loop`
+Full pipeline: `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` -> (per feature) `coco-spec` skill -> `coco-plan` skill -> `coco-tasks` skill -> `coco-import` skill -> `/coco.loop`
 
 - `/coco.prd` creates or audits the Product Requirements Document
 - `/coco.roadmap` synthesizes PRD + analysis docs into a prioritized, phased roadmap
-- `/coco.phase` reads the roadmap and orchestrates multiple features in a phase
+- `/coco.phase` reads the roadmap and orchestrates multiple features in a phase (invoking skills for each step)
 - `/coco.loop` runs autonomously with circuit breaker and PR workflow
 - `/coco.execute` runs one task at a time for manual review
 
-Projects can skip the discovery phase and start at `/coco.spec` for individual features.
+The pipeline steps (spec, plan, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco.phase`, `/planning-session tactical`, or natural language requests.
 
 ## Template System
 

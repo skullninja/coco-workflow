@@ -40,7 +40,7 @@ specs/[feature-name]/
   data-model.md        # Phase 1 output
   quickstart.md        # Phase 1 output
   contracts/           # Phase 1 output
-  tasks.md             # Phase 2 output (created by /coco.tasks)
+  tasks.md             # Phase 2 output (created by the coco-tasks skill)
 ```
 
 ### Source Code (repository root)

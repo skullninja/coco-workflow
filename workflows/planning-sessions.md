@@ -40,11 +40,10 @@ Structured planning processes for different cadences and scopes.
 - Starting a new feature from the roadmap
 
 ### Process
-1. **Specify** -- `/coco.spec` to create spec.md
-2. **Clarify** -- `/coco.clarify` to resolve ambiguities
-3. **Plan** -- `/coco.plan` to create plan.md
-4. **Tasks** -- `/coco.tasks` to create tasks.md (includes auto-analyze)
-5. **Import** -- `/coco.import` to create tracker epic + issues
+1. **Specify** -- `coco-spec` skill to create spec.md (includes optional clarification)
+2. **Plan** -- `coco-plan` skill to create plan.md
+3. **Tasks** -- `coco-tasks` skill to create tasks.md (includes consistency analysis)
+4. **Import** -- `coco-import` skill to create tracker epic + issues
 6. **Document** -- Save session notes
 
 ### Output

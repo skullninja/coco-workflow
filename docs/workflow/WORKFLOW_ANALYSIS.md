@@ -24,18 +24,22 @@ The coco-workflow system unifies planning (spec commands), execution (built-in t
 | `/coco.prd` | Create or audit Product Requirements Document | Yes -- entry point for new products |
 | `/coco.roadmap` | Build prioritized, phased roadmap | Yes -- feeds `/coco.phase` with structured phase tables |
 
-### Planning Commands
+### Planning Skills (AI-selected, invisible in `/` menu)
+
+| Skill | Purpose | Used in Pipeline |
+|-------|---------|-----------------|
+| `coco-spec` | Create spec with optional clarification | Yes -- primary entry point for individual features |
+| `coco-plan` | Generate implementation plan | Yes -- produces design artifacts |
+| `coco-tasks` | Generate task list with consistency analysis | Yes -- core output for tracker import |
+| `coco-import` | Import tasks to tracker + issue tracker | Yes -- creates epic, dependencies, issues |
+
+### Additional Planning Commands
 
 | Command | Purpose | Used in Pipeline |
 |---------|---------|-----------------|
-| `/coco.spec` | Create spec from natural language | Yes -- primary entry point for individual features |
-| `/coco.clarify` | Reduce ambiguity (max 5 questions) | Optional -- available for tactical sessions |
-| `/coco.plan` | Generate implementation plan | Yes -- produces design artifacts |
-| `/coco.tasks` | Generate task list (auto-analyzes) | Yes -- core output for tracker import |
-| `/coco.analyze` | Cross-artifact analysis | Yes -- auto-invoked by `/coco.tasks` |
 | `/coco.constitution` | Project constitution | Setup phase only |
 
-**Key improvement over previous system**: `/coco.analyze` is now auto-invoked by `/coco.tasks`, ensuring cross-artifact consistency is always checked before import.
+**Key improvements**: Consistency analysis is inlined into `coco-tasks` (no separate command). Clarification is absorbed as an optional sub-step of `coco-spec`. Pipeline steps are skills (AI-selected, invisible in `/` autocomplete).
 
 ### Tracker
 
@@ -76,7 +80,7 @@ The coco-workflow system unifies planning (spec commands), execution (built-in t
 
 | Point | Impact | Mitigation |
 |-------|--------|------------|
-| Interview step requires human | Medium | Once per feature; `/coco.spec` auto-fills most fields |
+| Interview step requires human | Medium | Once per feature; `coco-spec` skill auto-fills most fields |
 | Pre-commit tester needs project customization | Low | Generic agent with config-driven patterns |
 
 ### Parallelism
@@ -123,16 +127,16 @@ Spec-Kit (8 commands) -> Beads (bd CLI, SQLite, daemon) -> Linear (hardcoded)
 ### Current (unified plugin)
 
 ```
-Coco commands (17) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
+Coco commands (11) + skills (5) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
 ```
 
 **Improvements:**
 - Zero external dependencies (bash + jq)
 - Config-driven issue tracker (Linear / GitHub / none)
 - Generic and portable (git submodule)
-- Auto-analyze gate in `/coco.tasks`
+- Auto-analyze inlined into `coco-tasks` skill
 - Autonomous execution loop (`/coco.loop`) with circuit breaker
-- Consolidated command surface (17 commands, 2 skills, 2 agents)
+- Rationalized surface: 11 commands (human-facing), 5 skills (AI-selected), 2 agents
 - Discovery Phase: PRD -> analysis -> roadmap pipeline before feature specification
 - Two-tier PR workflow with AI code review (`code-reviewer` agent)
 - Issues resolve at PR merge, not at commit (proper PR-driven lifecycle)

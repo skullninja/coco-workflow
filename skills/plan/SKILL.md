@@ -1,14 +1,19 @@
 ---
-description: Execute the implementation planning workflow to generate design artifacts from the feature specification.
+name: coco-plan
+description: Generate a coco-workflow implementation plan (plan.md) with research, data model, and API contracts from an existing spec.md in specs/{feature}/.
 ---
 
-## User Input
+# Coco Plan Skill
 
-```text
-$ARGUMENTS
-```
+Generate an implementation plan with design artifacts from the feature specification.
 
-You **MUST** consider the user input before proceeding (if not empty).
+## When to Use
+
+- Creating an implementation plan as part of the coco-workflow pipeline
+- Called by `/coco.phase` (Step B) or `/planning-session tactical`
+- When a plan.md is needed in `specs/{feature}/` before task generation
+
+Prerequisites: `spec.md` must exist. If missing, use the `coco-spec` skill first.
 
 ## Setup
 
@@ -16,8 +21,8 @@ You **MUST** consider the user input before proceeding (if not empty).
 2. Determine the current feature by:
    - Checking the current git branch name
    - Looking for the matching directory in `{specs_dir}/{branch-name}/`
-   - Or use `$ARGUMENTS` if it specifies a feature name
-3. Load `{specs_dir}/{feature}/spec.md` (required). If missing, instruct user to run `/coco.spec` first.
+   - Or from conversation context if a feature was recently discussed
+3. Load `{specs_dir}/{feature}/spec.md` (required). If missing, instruct user to use the `coco-spec` skill first.
 4. Load `.coco/memory/constitution.md` if it exists.
 5. Load the plan template from `.coco/templates/plan-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/plan-template.md`.
 6. Copy the template to `{specs_dir}/{feature}/plan.md` if it doesn't exist yet.
@@ -70,10 +75,10 @@ Output:
 - Plan file path
 - List of generated artifacts
 - Constitution compliance status
-- Suggested next step: `/coco.tasks`
+- Suggested next step: use the `coco-tasks` skill to generate the task list
 
 ## Rules
 
 - Use absolute paths throughout
 - ERROR on gate failures or unresolved clarifications
-- Do NOT generate tasks.md -- that is `/coco.tasks`
+- Do NOT generate tasks.md -- that is the `coco-tasks` skill

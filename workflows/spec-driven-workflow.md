@@ -10,7 +10,7 @@ Spec-driven features follow a structured process from specification to merged co
 
 | Layer | Tool | Role |
 |-------|------|------|
-| **Planning** | Coco commands | Produces `specs/{feature}/` with spec, plan, tasks |
+| **Planning** | Coco skills | Produces `specs/{feature}/` with spec, plan, tasks |
 | **Execution** | Coco tracker | Manages dependencies, session memory, task ordering |
 | **Review** | PRs + code-reviewer agent | AI code review on every PR before merge |
 | **Visibility** | Issue tracker | Mirrors task status for human tracking (optional) |
@@ -34,18 +34,18 @@ main
 
 Create spec artifacts in `specs/{feature}/`:
 
-- **spec.md** -- Feature specification with user stories and acceptance criteria (`/coco.spec`)
-- **plan.md** -- Technical implementation plan (`/coco.plan`)
-- **tasks.md** -- Dependency-ordered task list (`/coco.tasks`)
+- **spec.md** -- Feature specification with user stories and acceptance criteria (`coco-spec` skill)
+- **plan.md** -- Technical implementation plan (`coco-plan` skill)
+- **tasks.md** -- Dependency-ordered task list (`coco-tasks` skill)
 - **data-model.md** -- Data structures and relationships (if applicable)
 - **contracts/** -- Service/protocol interfaces (if applicable)
 - **research.md** -- Technical research and decisions (if applicable)
 
-`/coco.spec` creates the feature branch (`feature/{name}`) automatically.
+The `coco-spec` skill creates the feature branch (`feature/{name}`) automatically.
 
 ### 2. Import to Tracker
 
-Use `/coco.import` to:
+Use the `coco-import` skill to:
 - Create tracker epic and tasks (one per sub-phase)
 - Set dependency graph
 - Create issue tracker project and issues (if configured)

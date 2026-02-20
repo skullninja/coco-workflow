@@ -84,17 +84,17 @@ Wait for user confirmation using AskUserQuestion.
 For each spec in the approved order:
 
 **Step A: Interview/Specify (if spec doesn't exist)**
-- Use `/interview` or `/coco.spec` to create the specification
+- Use `/interview` or the `coco-spec` skill to create the specification
 - Wait for completion before proceeding
 
 **Step B: Plan (if plan doesn't exist)**
-- Use `/coco.plan` to generate the implementation plan
+- Use the `coco-plan` skill to generate the implementation plan
 
 **Step C: Generate tasks (if tasks don't exist)**
-- Use `/coco.tasks` to generate the task list
+- Use the `coco-tasks` skill to generate the task list
 
 **Step D: Import to tracker (if epic doesn't exist)**
-- Use `/coco.import` to create tracker epic, tasks, dependencies, and issues
+- Use the `coco-import` skill to create tracker epic, tasks, dependencies, and issues
 - This includes the full import workflow with issue tracker bridge
 
 **Step E: Verify Pre-Execution Gate**

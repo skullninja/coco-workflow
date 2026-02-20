@@ -11,7 +11,7 @@ Use the Discovery Phase when:
 - Needing to align stakeholders on priorities before writing specs
 
 Skip it when:
-- Working on a single known feature (start with `/coco.spec`)
+- Working on a single known feature (start with the `coco-spec` skill)
 - Applying a hotfix (use the coco-hotfix skill)
 - The roadmap already exists and is current
 
@@ -124,14 +124,14 @@ Discovery Phase (NEW)
   /planning-session      Analysis docs via strategic sessions
   /coco.roadmap          Synthesize PRD + analysis into per-release roadmap
 
-Planning Phase (existing)
+Planning Phase (existing -- now uses skills)
   /coco.phase            Reads roadmap, orchestrates features
-  /coco.spec             Per-feature specification
-  /coco.plan             Implementation plan
-  /coco.tasks            Task decomposition
+  coco-spec skill        Per-feature specification
+  coco-plan skill        Implementation plan
+  coco-tasks skill       Task decomposition
 
 Execution Phase (existing)
-  /coco.import           Import to tracker + issue tracker
+  coco-import skill      Import to tracker + issue tracker
   /coco.loop             Autonomous TDD + PR + review
   /coco.execute          Manual step-by-step
 ```

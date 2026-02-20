@@ -1,14 +1,19 @@
 ---
-description: Import tasks.md into the coco tracker and optionally create matching issues in the configured issue tracker.
+name: coco-import
+description: Import a coco-workflow tasks.md into the coco tracker as an epic with dependencies, and create matching issues in the configured issue tracker.
 ---
 
-## User Input
+# Coco Import Skill
 
-```text
-$ARGUMENTS
-```
+Import a tasks.md into the coco tracker and optionally create matching issues in the configured issue tracker.
 
-You **MUST** consider the user input before proceeding (if not empty).
+## When to Use
+
+- Importing tasks as part of the coco-workflow pipeline
+- Called by `/coco.phase` (Step D) or `/planning-session tactical`
+- When tasks.md exists in `specs/{feature}/` and needs to be loaded into the tracker
+
+Prerequisites: `tasks.md` must exist. If missing, use the `coco-tasks` skill first.
 
 ## Prerequisites
 
@@ -22,8 +27,8 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Checking the current git branch name
    - Strip the `feature/` prefix (or whatever `pr.branch.feature_prefix` is) from the branch name
    - Looking for the matching directory in `{specs_dir}/{stripped-name}/`
-   - Or use `$ARGUMENTS` if it specifies a feature name
-3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to run `/coco.tasks` first.
+   - Or from conversation context if a feature was recently discussed
+3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to use the `coco-tasks` skill first.
 4. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh` for tracker operations.
 
 ## Execution
@@ -138,11 +143,11 @@ Output:
 - Dependency graph summary
 - Issue tracker project/issues (if applicable)
 - First available task: `coco_tracker ready --json --epic {epic-id}`
-- Suggested next step: `/coco.execute`
+- Suggested next step: `/coco.execute` or `/coco.loop`
 
 ## Dry Run Mode
 
-If `$ARGUMENTS` contains `--dry-run`:
+If the conversation context indicates a dry run is desired:
 1. Print what would be created (tasks, deps, issues)
 2. Show dependency graph as ASCII
 3. Ask for confirmation before proceeding

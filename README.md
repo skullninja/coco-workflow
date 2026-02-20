@@ -1,17 +1,23 @@
+<p align="center">
+  <img src="assets/coco.png" alt="Coco" width="200">
+</p>
+
 # coco-workflow
+
+Named after **Coco**, a toy poodle who is small, fiercely opinionated, and relentlessly autonomous -- much like this plugin. She chases birds with the same energy coco-workflow chases tasks through a dependency graph: methodically, loudly, and without asking for permission. When she's not barking at strangers or sneaking cheese, she's napping -- recharging for the next burst of chaotic productivity.
 
 Spec-driven development workflow for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Takes features from description to merged code with minimal human interaction.
 
 ## What It Does
 
-Coco-workflow unifies planning, task tracking, PR workflow with AI code review, and issue tracker integration into a single Claude Code plugin. After an initial specification step, the pipeline handles task decomposition, dependency resolution, TDD implementation, PR creation, AI code review, and issue tracker sync autonomously.
+Coco-workflow unifies planning, task tracking, PR workflow with AI code review, and issue tracker integration into a single Claude Code plugin. After an initial specification step, the pipeline handles task decomposition, dependency resolution, TDD implementation, PR creation, AI code review, and issue tracker sync autonomously. Like its namesake, it's small, zero-dependency, and will not stop until the job is done (or the circuit breaker fires).
 
 ### Architecture
 
 | Layer | Tool | Role |
 |-------|------|------|
 | **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and prioritized roadmaps |
-| **Planning** | Slash commands (`/coco.*`) | Produces spec, plan, and task artifacts |
+| **Planning** | Skills (`coco-spec`, `coco-plan`, `coco-tasks`) | Produces spec, plan, and task artifacts |
 | **Execution** | Built-in tracker (`lib/tracker.sh`) | Manages dependencies, session memory, task ordering |
 | **Review** | PRs + code-reviewer agent | AI code review on every PR before merge |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking (Linear, GitHub, or none) |
@@ -49,11 +55,10 @@ No daemon, no database, no additional CLI tools.
 
 ### Single Feature Pipeline
 
+The pipeline steps (spec, plan, tasks, import) are now automated via skills that AI selects automatically. Use `/planning-session tactical` or describe the feature naturally:
+
 ```
-/coco.spec "Add user authentication"    # Create specification
-/coco.plan                               # Generate implementation plan
-/coco.tasks                              # Generate task list (auto-analyzes)
-/coco.import                             # Import to tracker + issue tracker
+/planning-session tactical               # Guided: spec -> plan -> tasks -> import
 /coco.loop                               # Autonomous execution until done
 ```
 
@@ -69,34 +74,33 @@ No daemon, no database, no additional CLI tools.
 # Uses the coco-hotfix skill -- no epic overhead
 ```
 
-## Commands
-
-### Discovery
+## Commands (11)
 
 | Command | Purpose |
 |---------|---------|
 | `/coco.prd` | Create or audit Product Requirements Document |
 | `/coco.roadmap` | Build prioritized, phased roadmap from PRD + analysis |
-
-### Planning & Execution
-
-| Command | Purpose |
-|---------|---------|
-| `/coco.spec` | Create feature specification |
-| `/coco.clarify` | Interactive Q&A to reduce ambiguity |
-| `/coco.plan` | Generate implementation plan + design artifacts |
-| `/coco.tasks` | Generate dependency-ordered task list (auto-analyzes) |
-| `/coco.analyze` | Cross-artifact consistency analysis |
-| `/coco.constitution` | Manage project constitution |
-| `/coco.import` | Import tasks to tracker + issue tracker |
-| `/coco.execute` | TDD execution loop (one task at a time) |
-| `/coco.loop` | Autonomous execution loop with circuit breaker |
-| `/coco.sync` | Reconcile tracker and issue tracker state |
-| `/coco.status` | Show execution status and parallel opportunities |
 | `/coco.phase` | Orchestrate full pipeline for a roadmap phase |
-| `/interview` | In-depth user interview for feature specification |
+| `/coco.loop` | Autonomous execution loop with circuit breaker |
+| `/coco.execute` | TDD execution loop (one task at a time) |
+| `/coco.constitution` | Manage project constitution |
+| `/coco.status` | Show execution status and parallel opportunities |
+| `/coco.sync` | Reconcile tracker and issue tracker state |
 | `/planning-session` | Structured planning sessions (strategic/tactical/operational) |
 | `/planning-triage` | Score and disposition bugs/features/feedback |
+| `/interview` | In-depth user interview for feature specification |
+
+## Skills (5)
+
+Skills are AI-selected workflow steps that run automatically as part of the pipeline. They don't appear in the `/` autocomplete menu.
+
+| Skill | Purpose |
+|-------|---------|
+| `coco-spec` | Generate feature specification with optional clarification |
+| `coco-plan` | Generate implementation plan with design artifacts |
+| `coco-tasks` | Generate dependency-ordered task list with consistency analysis |
+| `coco-import` | Import tasks to tracker + issue tracker |
+| `coco-hotfix` | Single-issue hotfix workflow |
 
 ## Built-In Task Tracker
 
@@ -155,8 +159,8 @@ The `/coco.loop` command (inspired by the [Ralph loop](https://github.com/frankb
 ```
 coco-workflow/                         # This repo (git submodule in your project)
   plugin.json                          # Claude Code plugin manifest
-  commands/                            # 17 slash commands
-  skills/                              # 2 skills (execute, hotfix)
+  commands/                            # 11 slash commands
+  skills/                              # 5 skills (spec, plan, tasks, import, execute, hotfix)
   agents/                              # 2 agents (code-reviewer, pre-commit-tester)
   lib/tracker.sh                       # Built-in task tracker
   hooks/                               # Git hooks (commit-msg, pre-commit)

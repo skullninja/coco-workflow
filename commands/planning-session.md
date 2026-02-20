@@ -32,7 +32,7 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
    - These analysis docs are discoverable by `/coco.roadmap` for roadmap generation
 
 ### Tactical
-1. Run coco workflow commands: `/coco.spec` -> `/coco.clarify` -> `/coco.plan` -> `/coco.tasks` -> `/coco.import`
+1. Run coco workflow skills: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import`
 2. Verify import and pre-execution gate
 3. Save notes to `docs/planning-sessions/YYYY-MM-DD-{feature}.md`
 

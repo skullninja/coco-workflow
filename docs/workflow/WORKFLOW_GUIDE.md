@@ -15,7 +15,7 @@ This workflow uses a unified pipeline to take features from description to merge
 | Layer | Tool | Role |
 |-------|------|------|
 | **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and per-release roadmaps in `docs/` |
-| **Planning** | Coco commands (`/coco.*`) | Produces `specs/{feature}/` artifacts: spec.md, plan.md, tasks.md |
+| **Planning** | Coco skills (`coco-spec`, `coco-plan`, `coco-tasks`) | Produces `specs/{feature}/` artifacts: spec.md, plan.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
 
@@ -28,7 +28,7 @@ This workflow uses a unified pipeline to take features from description to merge
 | `/coco.prd` | Create or audit PRD | Product description or "audit" | `docs/prd.md` |
 | `/coco.roadmap` | Build prioritized roadmap | Release name (e.g., "v1.0") | `docs/roadmap/{release}.md` |
 
-The Discovery Phase is optional -- projects can start directly at `/coco.spec` for individual features. Use it when starting a new product or major release to establish priorities before writing feature specs.
+The Discovery Phase is optional -- projects can start directly with the `coco-spec` skill for individual features. Use it when starting a new product or major release to establish priorities before writing feature specs.
 
 **Workflow**: `/coco.prd` -> analysis docs (via `/planning-session strategic`) -> `/coco.roadmap` -> `/coco.phase`
 
@@ -36,16 +36,22 @@ See `workflows/discovery-workflow.md` for full details.
 
 ---
 
-## Planning Commands
+## Planning Skills
 
-| Command | Purpose | Input | Output |
-|---------|---------|-------|--------|
-| `/coco.spec` | Create feature specification | Feature description | `spec.md` |
-| `/coco.clarify` | Reduce ambiguity (max 5 questions) | Existing `spec.md` | Updated `spec.md` |
-| `/coco.plan` | Generate implementation plan | `spec.md` | `plan.md`, `research.md`, `data-model.md`, `contracts/` |
-| `/coco.tasks` | Generate task list (auto-analyzes) | `spec.md` + `plan.md` | `tasks.md` with sub-phases |
-| `/coco.analyze` | Cross-artifact consistency analysis | All artifacts | Analysis report |
-| `/coco.constitution` | Create/update project constitution | Principle inputs | `.coco/memory/constitution.md` |
+Planning steps are AI-selected skills (invisible in `/` autocomplete). They are invoked automatically by `/coco.phase`, `/planning-session tactical`, or natural language requests.
+
+| Skill | Purpose | Input | Output |
+|-------|---------|-------|--------|
+| `coco-spec` | Create feature specification with optional clarification | Feature description | `spec.md` |
+| `coco-plan` | Generate implementation plan | `spec.md` | `plan.md`, `research.md`, `data-model.md`, `contracts/` |
+| `coco-tasks` | Generate task list with consistency analysis | `spec.md` + `plan.md` | `tasks.md` with sub-phases + analysis report |
+| `coco-import` | Import tasks to tracker + issue tracker | `tasks.md` | Tracker epic + issues |
+
+### Additional Planning Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/coco.constitution` | Create/update project constitution |
 
 **Artifact structure** produced per feature:
 
@@ -67,7 +73,6 @@ specs/{feature}/
 
 | Command | Purpose |
 |---------|---------|
-| `/coco.import` | Import tasks.md -> tracker epic + issue tracker |
 | `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco.loop` | Autonomous execution loop with circuit breaker |
 | `/coco.sync` | Reconcile tracker and issue tracker state |
@@ -131,10 +136,10 @@ Present audit results to the user. This is the **last required human interaction
 
 **Phase 3: Per-Spec Pipeline (Steps A-G)**
 
-- **Step A -- Specify**: If no `spec.md`, run `/interview` or `/coco.spec`
-- **Step B -- Plan**: If no `plan.md`, run `/coco.plan`
-- **Step C -- Generate tasks**: If no `tasks.md`, run `/coco.tasks`
-- **Step D -- Import**: Run `/coco.import` (tracker epic + dependencies + issue tracker)
+- **Step A -- Specify**: If no `spec.md`, run `/interview` or the `coco-spec` skill
+- **Step B -- Plan**: If no `plan.md`, run the `coco-plan` skill
+- **Step C -- Generate tasks**: If no `tasks.md`, run the `coco-tasks` skill
+- **Step D -- Import**: Run the `coco-import` skill (tracker epic + dependencies + issue tracker)
 - **Step E -- Create branch**: `git checkout -b {feature-name}`
 - **Step F -- Execute**: Run `/coco.execute` for TDD loop
 - **Step G -- Merge**: Merge to main, update issue tracker
@@ -305,27 +310,31 @@ git push
 
 ## Quick Reference
 
-### Command Table
+### Command Table (11 commands)
 
 | Command | Purpose |
 |---------|---------|
 | `/coco.prd` | Create or audit Product Requirements Document |
 | `/coco.roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco.phase` | Orchestrate full pipeline for a phase |
-| `/interview` | In-depth interview to create feature spec |
-| `/coco.spec` | Create spec.md from feature description |
-| `/coco.clarify` | Resolve ambiguities (max 5 questions) |
-| `/coco.plan` | Generate plan.md + research + data model |
-| `/coco.tasks` | Generate tasks.md with sub-phases (auto-analyzes) |
-| `/coco.analyze` | Cross-artifact consistency analysis |
-| `/coco.constitution` | Create/update project constitution |
-| `/coco.import` | Import tasks.md -> tracker + issue tracker |
-| `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco.loop` | Autonomous loop with circuit breaker |
-| `/coco.sync` | Reconcile tracker and issue tracker state |
+| `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
+| `/coco.constitution` | Create/update project constitution |
 | `/coco.status` | Show execution state and opportunities |
+| `/coco.sync` | Reconcile tracker and issue tracker state |
 | `/planning-session` | Start a planning session |
 | `/planning-triage` | Score and disposition an item |
+| `/interview` | In-depth interview to create feature spec |
+
+### Skill Table (5 skills, AI-selected)
+
+| Skill | Purpose |
+|-------|---------|
+| `coco-spec` | Create spec.md with optional clarification |
+| `coco-plan` | Generate plan.md + research + data model |
+| `coco-tasks` | Generate tasks.md with sub-phases + consistency analysis |
+| `coco-import` | Import tasks.md -> tracker + issue tracker |
+| `coco-hotfix` | Single-issue hotfix workflow |
 
 ### Common Workflows
 
@@ -342,23 +351,16 @@ git push
 /coco.phase {phase-description}  -->  autonomous pipeline
 ```
 
-**Single feature (autonomous):**
+**Single feature (automated pipeline):**
 ```
-/coco.spec {description}
-/coco.plan
-/coco.tasks
-/coco.import
-/coco.loop          -->  autonomous until epic complete
+/planning-session tactical   -->  runs coco-spec -> coco-plan -> coco-tasks -> coco-import
+/coco.loop                   -->  autonomous until epic complete
 ```
 
-**Single feature (manual):**
+**Single feature (manual step-by-step):**
 ```
-/coco.spec {description}
-/coco.clarify
-/coco.plan
-/coco.tasks
-/coco.import
-/coco.execute       -->  one task at a time
+/planning-session tactical   -->  runs skills for spec, plan, tasks, import
+/coco.execute                -->  one task at a time
 ```
 
 **Hotfix (single-issue):**
