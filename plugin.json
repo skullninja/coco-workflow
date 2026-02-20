@@ -1,7 +1,7 @@
 {
-  "name": "coco-workflow",
+  "name": "Coco",
   "version": "0.1.0",
-  "description": "Spec-driven development workflow combining planning, task tracking, and issue tracker integration for Claude Code.",
+  "description": "Autonomous spec-driven development for Claude Code. Describe a feature, get merged, tested, reviewed code.",
   "commands": "commands",
   "skills": "skills",
   "agents": "agents",

@@ -1,8 +1,8 @@
-# CLAUDE.md -- coco-workflow
+# CLAUDE.md -- Coco
 
 ## Project Overview
 
-Coco-workflow is a Claude Code plugin that provides a spec-driven development workflow. It unifies planning (slash commands), execution (built-in task tracker), PR workflow with AI code review, and visibility (configurable issue tracker) into a single plugin deliverable as a git submodule.
+Coco is a Claude Code plugin that provides autonomous spec-driven development. It unifies planning (slash commands), execution (built-in task tracker), PR workflow with AI code review, and visibility (configurable issue tracker) into a single plugin deliverable as a git submodule.
 
 ## Architecture
 
