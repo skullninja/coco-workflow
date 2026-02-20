@@ -10,13 +10,29 @@ This workflow uses a unified pipeline to take features from description to merge
 2. **Parallel execution** -- Independent user stories run concurrently across up to 3 agents, with file-ownership rules preventing conflicts.
 3. **Comprehensive tracking** -- Every artifact, status change, commit, and test result is recorded in the coco tracker (execution state) and optionally in an issue tracker (visibility).
 
-### Three-Layer Architecture
+### Four-Layer Architecture
 
 | Layer | Tool | Role |
 |-------|------|------|
+| **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and per-release roadmaps in `docs/` |
 | **Planning** | Coco commands (`/coco.*`) | Produces `specs/{feature}/` artifacts: spec.md, plan.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
+
+---
+
+## Discovery Commands
+
+| Command | Purpose | Input | Output |
+|---------|---------|-------|--------|
+| `/coco.prd` | Create or audit PRD | Product description or "audit" | `docs/prd.md` |
+| `/coco.roadmap` | Build prioritized roadmap | Release name (e.g., "v1.0") | `docs/roadmap/{release}.md` |
+
+The Discovery Phase is optional -- projects can start directly at `/coco.spec` for individual features. Use it when starting a new product or major release to establish priorities before writing feature specs.
+
+**Workflow**: `/coco.prd` -> analysis docs (via `/planning-session strategic`) -> `/coco.roadmap` -> `/coco.phase`
+
+See `workflows/discovery-workflow.md` for full details.
 
 ---
 
@@ -293,6 +309,8 @@ git push
 
 | Command | Purpose |
 |---------|---------|
+| `/coco.prd` | Create or audit Product Requirements Document |
+| `/coco.roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco.phase` | Orchestrate full pipeline for a phase |
 | `/interview` | In-depth interview to create feature spec |
 | `/coco.spec` | Create spec.md from feature description |
@@ -310,6 +328,14 @@ git push
 | `/planning-triage` | Score and disposition an item |
 
 ### Common Workflows
+
+**Full product (discovery to delivery):**
+```
+/coco.prd {description}         -->  Product Requirements Document
+/planning-session strategic      -->  analysis docs for open questions
+/coco.roadmap v1.0               -->  prioritized, phased roadmap
+/coco.phase "Phase 1: ..."       -->  autonomous pipeline per phase
+```
 
 **Full feature (multi-session):**
 ```
@@ -349,6 +375,8 @@ git push
 
 | Scenario | Approach |
 |----------|----------|
+| New product or major release | `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` |
+| Existing project onboarding | `/coco.prd audit` -> `/coco.roadmap` |
 | Autonomous feature (hands-off) | `/coco.loop` -- runs until epic complete |
 | Multi-session feature (manual) | `/coco.execute` -- one task per invocation |
 | Single-issue hotfix | coco-hotfix skill |

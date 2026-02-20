@@ -24,6 +24,12 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
 3. Prioritize features by impact
 4. Update roadmap and issue tracker projects
 5. Save notes to `docs/planning-sessions/YYYY-QN.md`
+6. For each analysis topic discussed, offer to save it as a standalone analysis doc:
+   - Read `discovery.analysis_dir` from `.coco/config.yaml` (default: `docs/analysis`)
+   - Load analysis template from `.coco/templates/analysis-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/analysis-template.md`
+   - Fill in findings, implications, and recommendations from the session discussion
+   - Write to `{discovery.analysis_dir}/{topic-slug}.md`
+   - These analysis docs are discoverable by `/coco.roadmap` for roadmap generation
 
 ### Tactical
 1. Run coco workflow commands: `/coco.spec` -> `/coco.clarify` -> `/coco.plan` -> `/coco.tasks` -> `/coco.import`

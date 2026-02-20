@@ -10,6 +10,7 @@ Coco-workflow unifies planning, task tracking, PR workflow with AI code review, 
 
 | Layer | Tool | Role |
 |-------|------|------|
+| **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and prioritized roadmaps |
 | **Planning** | Slash commands (`/coco.*`) | Produces spec, plan, and task artifacts |
 | **Execution** | Built-in tracker (`lib/tracker.sh`) | Manages dependencies, session memory, task ordering |
 | **Review** | PRs + code-reviewer agent | AI code review on every PR before merge |
@@ -37,7 +38,16 @@ No daemon, no database, no additional CLI tools.
 
 ## Quick Start
 
-### Full Feature Pipeline
+### Full Pipeline (Discovery to Delivery)
+
+```
+/coco.prd "My product description"       # Create Product Requirements Document
+/planning-session strategic              # Create analysis docs for open questions
+/coco.roadmap v1.0                       # Build prioritized, phased roadmap
+/coco.phase "Phase 1: Foundation"        # Orchestrate all features in a phase
+```
+
+### Single Feature Pipeline
 
 ```
 /coco.spec "Add user authentication"    # Create specification
@@ -50,7 +60,7 @@ No daemon, no database, no additional CLI tools.
 ### Phase Orchestration (Multiple Features)
 
 ```
-/coco.phase "Q1 Release"                # Audits, plans, and executes all features
+/coco.phase "Phase 1: Foundation"        # Reads roadmap, orchestrates all features
 ```
 
 ### Single-Issue Hotfix
@@ -60,6 +70,15 @@ No daemon, no database, no additional CLI tools.
 ```
 
 ## Commands
+
+### Discovery
+
+| Command | Purpose |
+|---------|---------|
+| `/coco.prd` | Create or audit Product Requirements Document |
+| `/coco.roadmap` | Build prioritized, phased roadmap from PRD + analysis |
+
+### Planning & Execution
 
 | Command | Purpose |
 |---------|---------|
@@ -136,12 +155,12 @@ The `/coco.loop` command (inspired by the [Ralph loop](https://github.com/frankb
 ```
 coco-workflow/                         # This repo (git submodule in your project)
   plugin.json                          # Claude Code plugin manifest
-  commands/                            # 15 slash commands
+  commands/                            # 17 slash commands
   skills/                              # 2 skills (execute, hotfix)
   agents/                              # 2 agents (code-reviewer, pre-commit-tester)
   lib/tracker.sh                       # Built-in task tracker
   hooks/                               # Git hooks (commit-msg, pre-commit)
-  templates/                           # Default spec/plan/tasks/constitution templates
+  templates/                           # Default templates (PRD, analysis, roadmap, spec, plan, tasks, constitution)
   workflows/                           # Reference workflow documentation
   config/coco.default.yaml             # Default configuration
   scripts/                             # setup.sh, uninstall.sh
@@ -152,6 +171,10 @@ coco-workflow/                         # This repo (git submodule in your projec
     memory/constitution.md             # Project constitution
     templates/                         # Optional template overrides
     tasks/                             # Tracker state (tasks.jsonl, sessions.jsonl)
+  docs/
+    prd.md                             # Product Requirements Document
+    analysis/                          # Analysis documents
+    roadmap/                           # Per-release roadmap documents
   specs/{feature}/                     # Spec artifacts per feature
 ```
 
@@ -163,6 +186,11 @@ Copy and customize `config/coco.default.yaml` to `.coco/config.yaml`:
 project:
   name: "My Project"
   specs_dir: "specs"
+
+discovery:
+  prd_path: "docs/prd.md"
+  analysis_dir: "docs/analysis"
+  roadmap_dir: "docs/roadmap"
 
 issue_tracker:
   provider: "none"          # linear | github | none

@@ -28,6 +28,10 @@ mkdir -p "$COCO_DIR/memory"
 mkdir -p "$COCO_DIR/templates"
 mkdir -p "$COCO_DIR/state"
 
+# Create discovery phase directories
+mkdir -p "$PROJECT_ROOT/docs/analysis"
+mkdir -p "$PROJECT_ROOT/docs/roadmap"
+
 # Copy default config if none exists
 if [[ ! -f "$COCO_DIR/config.yaml" ]]; then
     cp "$COCO_WORKFLOW_ROOT/config/coco.default.yaml" "$COCO_DIR/config.yaml"

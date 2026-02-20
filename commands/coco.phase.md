@@ -19,12 +19,22 @@ $ARGUMENTS
 
 ### 1. Identify Specs for the Phase
 
-Look for a roadmap or feature list. Check these locations:
-- Project README or docs for a roadmap section
-- `$ARGUMENTS` for a description of features to implement
-- Existing spec directories in `{specs_dir}/`
+Read `discovery.roadmap_dir` from config (default: `docs/roadmap`).
 
-Extract all features for the phase.
+**Structured roadmap lookup** (preferred):
+1. Glob `{roadmap_dir}/*.md` for roadmap files
+2. If `$ARGUMENTS` matches a phase name or number in a roadmap file (e.g., "Phase 1: Foundation"):
+   - Parse the phase table to get the feature list with slugs, priority order, and scores
+   - Extract cross-feature dependencies from the phase section
+3. If `$ARGUMENTS` is a release name (e.g., "v1.0"):
+   - Open `{roadmap_dir}/{release}.md` and ask the user which phase to execute
+
+**Fallback** (no roadmap files found):
+- Search project README or docs for a roadmap section
+- Use `$ARGUMENTS` as a description of features to implement
+- Check existing spec directories in `{specs_dir}/`
+
+Extract all features for the phase. When sourced from a roadmap, preserve the priority order and scores for reporting.
 
 ### 2. Audit Existing State
 
@@ -143,7 +153,12 @@ After all features are merged:
 1. Update issue tracker projects to "Completed" (if configured)
 2. Verify all tracker epics are closed
 3. Run full test suite to confirm no regressions
-4. Report phase summary:
+4. **Update roadmap** (if phase was sourced from a roadmap file):
+   - Set the phase `**Status**` to `Complete`
+   - Update each feature row's `Status` column to `Complete`
+   - Update each feature row's `Spec` column to `specs/{slug}/`
+   - Append to the roadmap Change Log: `{date} | Phase N complete | All features merged`
+5. Report phase summary:
 
 ```
 Phase Complete
@@ -151,6 +166,7 @@ Phase Complete
 Specs delivered: {count}
 Tests: {total passing}
 Commits: {count}
+Roadmap updated: {roadmap file path} (if applicable)
 ```
 
 ## Notes

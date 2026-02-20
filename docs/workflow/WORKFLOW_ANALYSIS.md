@@ -17,11 +17,18 @@ The coco-workflow system unifies planning (spec commands), execution (built-in t
 
 ## Capability Matrix
 
+### Discovery Commands
+
+| Command | Purpose | Used in Pipeline |
+|---------|---------|-----------------|
+| `/coco.prd` | Create or audit Product Requirements Document | Yes -- entry point for new products |
+| `/coco.roadmap` | Build prioritized, phased roadmap | Yes -- feeds `/coco.phase` with structured phase tables |
+
 ### Planning Commands
 
 | Command | Purpose | Used in Pipeline |
 |---------|---------|-----------------|
-| `/coco.spec` | Create spec from natural language | Yes -- primary entry point |
+| `/coco.spec` | Create spec from natural language | Yes -- primary entry point for individual features |
 | `/coco.clarify` | Reduce ambiguity (max 5 questions) | Optional -- available for tactical sessions |
 | `/coco.plan` | Generate implementation plan | Yes -- produces design artifacts |
 | `/coco.tasks` | Generate task list (auto-analyzes) | Yes -- core output for tracker import |
@@ -116,7 +123,7 @@ Spec-Kit (8 commands) -> Beads (bd CLI, SQLite, daemon) -> Linear (hardcoded)
 ### Current (unified plugin)
 
 ```
-Coco commands (15) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
+Coco commands (17) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
 ```
 
 **Improvements:**
@@ -125,7 +132,8 @@ Coco commands (15) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
 - Generic and portable (git submodule)
 - Auto-analyze gate in `/coco.tasks`
 - Autonomous execution loop (`/coco.loop`) with circuit breaker
-- Consolidated command surface (15 commands, 2 skills, 2 agents)
+- Consolidated command surface (17 commands, 2 skills, 2 agents)
+- Discovery Phase: PRD -> analysis -> roadmap pipeline before feature specification
 - Two-tier PR workflow with AI code review (`code-reviewer` agent)
 - Issues resolve at PR merge, not at commit (proper PR-driven lifecycle)
 

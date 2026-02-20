@@ -6,7 +6,8 @@ Coco-workflow is a Claude Code plugin that provides a spec-driven development wo
 
 ## Architecture
 
-Four layers:
+Five layers:
+- **Discovery**: `/coco.prd` and `/coco.roadmap` produce PRD, analysis, and roadmap artifacts in `docs/`
 - **Planning**: `/coco.*` commands produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
@@ -19,14 +20,14 @@ Four layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 15 slash commands (coco.spec, coco.plan, coco.tasks, coco.import, coco.execute, coco.loop, etc.) |
+| `commands/` | 17 slash commands (coco.prd, coco.roadmap, coco.spec, coco.plan, coco.tasks, coco.import, coco.execute, coco.loop, etc.) |
 | `skills/execute/SKILL.md` | Primary execution skill (15-step TDD + PR loop) |
 | `skills/hotfix/SKILL.md` | Single-issue hotfix workflow (with optional PR) |
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
 | `hooks/commit-msg.sh` | Commit message validation (reads config) |
 | `hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
-| `templates/` | Default templates for spec, plan, tasks, constitution |
+| `templates/` | Default templates for PRD, analysis, roadmap, spec, plan, tasks, constitution |
 | `workflows/` | Reference documentation for workflows |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
@@ -81,6 +82,7 @@ Projects configure behavior in `.coco/config.yaml`. The schema with defaults is 
 
 Key sections:
 - `project` -- name, specs directory
+- `discovery` -- PRD path, analysis directory, roadmap directory
 - `issue_tracker` -- provider (linear/github/none), status mappings, team/labels
 - `commit` -- title format, exempt patterns
 - `pre_commit` -- UI patterns for agent triggering, build command
@@ -118,11 +120,15 @@ The bridge is implemented as conditional instructions in command markdown files 
 
 ## Command Pipeline
 
-Typical flow: `/coco.spec` -> `/coco.plan` -> `/coco.tasks` (auto-runs `/coco.analyze`) -> `/coco.import` -> `/coco.loop`
+Full pipeline: `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` -> (per feature) `/coco.spec` -> `/coco.plan` -> `/coco.tasks` -> `/coco.import` -> `/coco.loop`
 
+- `/coco.prd` creates or audits the Product Requirements Document
+- `/coco.roadmap` synthesizes PRD + analysis docs into a prioritized, phased roadmap
+- `/coco.phase` reads the roadmap and orchestrates multiple features in a phase
 - `/coco.loop` runs autonomously with circuit breaker and PR workflow
 - `/coco.execute` runs one task at a time for manual review
-- `/coco.phase` orchestrates multiple features in a roadmap phase
+
+Projects can skip the discovery phase and start at `/coco.spec` for individual features.
 
 ## Template System
 

@@ -182,6 +182,12 @@ gh pr merge {feature-pr-number} --{pr.feature_merge_strategy} --delete-branch
 
 Update all issues in the epic to final status (`status_map.completed`).
 
+**Update roadmap** (if a roadmap file references this feature):
+1. Read `discovery.roadmap_dir` from config (default: `docs/roadmap`)
+2. Glob `{roadmap_dir}/*.md` and search for the feature slug in roadmap tables
+3. If found, update the feature's `Status` column from "In Progress" to "Complete"
+4. Update the feature's `Spec` column to point to `specs/{slug}/`
+
 **If `pr.enabled` is false:**
 
 Fall back to direct merge:
