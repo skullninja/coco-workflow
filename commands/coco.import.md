@@ -20,7 +20,8 @@ You **MUST** consider the user input before proceeding (if not empty).
 1. Read `.coco/config.yaml` for `project.specs_dir` and `issue_tracker` config.
 2. Determine the current feature by:
    - Checking the current git branch name
-   - Looking for the matching directory in `{specs_dir}/{branch-name}/`
+   - Strip the `feature/` prefix (or whatever `pr.branch.feature_prefix` is) from the branch name
+   - Looking for the matching directory in `{specs_dir}/{stripped-name}/`
    - Or use `$ARGUMENTS` if it specifies a feature name
 3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to run `/coco.tasks` first.
 4. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh` for tracker operations.
@@ -51,7 +52,7 @@ coco_tracker create --epic "{epic-id}" \
   --title "Sub-Phase {N}: {title}" \
   --description "{sub-phase purpose + task list}" \
   --priority {priority} \
-  --metadata '{"sub_phase": N, "issue_key": null}'
+  --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}"}'
 ```
 
 ### Step 4: Set Dependencies

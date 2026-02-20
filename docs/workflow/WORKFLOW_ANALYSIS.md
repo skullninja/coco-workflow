@@ -125,7 +125,9 @@ Coco commands (15) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
 - Generic and portable (git submodule)
 - Auto-analyze gate in `/coco.tasks`
 - Autonomous execution loop (`/coco.loop`) with circuit breaker
-- Consolidated command surface (15 commands, 2 skills, 1 agent)
+- Consolidated command surface (15 commands, 2 skills, 2 agents)
+- Two-tier PR workflow with AI code review (`code-reviewer` agent)
+- Issues resolve at PR merge, not at commit (proper PR-driven lifecycle)
 
 ---
 
@@ -133,30 +135,27 @@ Coco commands (15) -> Coco tracker (bash+jq) -> Issue tracker (configurable)
 
 | # | Gap | Impact | Difficulty |
 |---|-----|--------|------------|
-| G1 | No GitHub MCP | PRs created via `gh` CLI, not automated | Medium | Medium |
-| G2 | One-way issue sync | Tracker -> issue tracker only; manual changes not reflected back | Medium | Medium |
-| G3 | No phase-level analytics | No burndown or velocity metrics | Low | Medium |
-| G4 | No automated conflict detection | File ownership is self-declared | Low | Medium |
+| ~~G1~~ | ~~No PR automation~~ | **RESOLVED** -- Two-tier PR workflow with AI code review | -- |
+| G2 | One-way issue sync | Tracker -> issue tracker only; manual changes not reflected back | Medium |
+| G3 | No phase-level analytics | No burndown or velocity metrics | Low |
+| G4 | No automated conflict detection | File ownership is self-declared | Low |
 
 ## Improvement Recommendations
 
 ### High Priority
 
-**1. GitHub MCP Integration**
-Add GitHub MCP for automated PR creation, review tracking, and post-merge cleanup.
-
-**2. Bidirectional Sync**
+**1. Bidirectional Sync**
 Extend `/coco.sync` to pull issue tracker changes back to the tracker.
 
 ### Medium Priority
 
-**3. Phase Velocity Metrics**
+**2. Phase Velocity Metrics**
 New `/coco.metrics` command aggregating tracker timestamps, git log, and issue tracker data.
 
 ### Low Priority
 
-**4. Automated Conflict Detection**
+**3. Automated Conflict Detection**
 Enforce file ownership checking automatically rather than relying on agent self-declaration.
 
-**5. Notification Integration**
+**4. Notification Integration**
 Webhook or Slack integration for key pipeline events.

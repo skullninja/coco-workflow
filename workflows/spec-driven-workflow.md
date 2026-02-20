@@ -4,7 +4,7 @@ End-to-end reference for implementing features using the coco-workflow system.
 
 ## Overview
 
-Spec-driven features follow a structured process from specification to implementation, with the coco tracker managing dependencies and optional issue tracker integration providing visibility.
+Spec-driven features follow a structured process from specification to merged code, with the coco tracker managing dependencies, PRs providing review gates, and optional issue tracker integration providing visibility.
 
 ## Three-Layer Architecture
 
@@ -12,7 +12,21 @@ Spec-driven features follow a structured process from specification to implement
 |-------|------|------|
 | **Planning** | Coco commands | Produces `specs/{feature}/` with spec, plan, tasks |
 | **Execution** | Coco tracker | Manages dependencies, session memory, task ordering |
+| **Review** | PRs + code-reviewer agent | AI code review on every PR before merge |
 | **Visibility** | Issue tracker | Mirrors task status for human tracking (optional) |
+
+## Branching Model
+
+When `pr.enabled` is true (default), the system uses a two-tier branching model:
+
+```
+main
+  └── feature/{name}                    (one per epic)
+        ├── feature/{name}/{ISSUE-1}    (one per task, PR -> feature branch)
+        ├── feature/{name}/{ISSUE-2}
+        └── ...
+  └── PR: feature/{name} -> main        (one per feature)
+```
 
 ## Workflow Steps
 
@@ -27,6 +41,8 @@ Create spec artifacts in `specs/{feature}/`:
 - **contracts/** -- Service/protocol interfaces (if applicable)
 - **research.md** -- Technical research and decisions (if applicable)
 
+`/coco.spec` creates the feature branch (`feature/{name}`) automatically.
+
 ### 2. Import to Tracker
 
 Use `/coco.import` to:
@@ -34,24 +50,31 @@ Use `/coco.import` to:
 - Set dependency graph
 - Create issue tracker project and issues (if configured)
 - Link tracker tasks to issues via metadata
+- Store feature branch name in task metadata
 
 ### 3. Execute
 
-**Autonomous (recommended):** Use `/coco.loop` for hands-off execution with circuit breaker protection. Runs the full TDD cycle for every task until the epic is complete.
+**Autonomous (recommended):** Use `/coco.loop` for hands-off execution with circuit breaker protection. Runs the full TDD + PR + review cycle for every task until the epic is complete.
 
 **Manual:** Use `/coco.execute` or the `coco-execute` skill for one task at a time with manual review between steps.
 
-Either approach follows the same TDD flow per task:
-- `coco_tracker ready` finds next unblocked task
-- Claim task, update issue tracker status
-- Implement with TDD (test first, then code)
-- Pre-commit validation for UI changes
-- Commit with issue key reference
-- Close task, update issue tracker
-- Loop until epic complete
+Either approach follows the same flow per task:
+1. `coco_tracker ready` finds next unblocked task
+2. Create issue branch off feature branch (if `pr.enabled`)
+3. Claim task, update issue tracker to "In Progress"
+4. Implement with TDD (test first, then code)
+5. Pre-commit validation for UI changes
+6. Commit with `Completes {ISSUE-KEY}` (traceability only -- does NOT resolve issue)
+7. Create PR from issue branch to feature branch (if `pr.enabled`)
+8. AI code review via `code-reviewer` agent
+9. Fix critical findings, re-review (up to 3 iterations)
+10. Merge PR -- **this is when the issue resolves** (moves to "Done")
+11. Close tracker task
+12. Loop until epic complete
 
 ### 4. Commit Standards
 
+**Implementation commits:**
 ```
 Brief description of changes. Completes ISSUE-KEY
 
@@ -64,33 +87,53 @@ Task References:
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
+**Review-fix commits:**
+```
+Address review feedback (iteration N). Ref ISSUE-KEY
+
+Fixes:
+- CR-1: Description of fix
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
 **Format Rules:**
 - Issue key at the END of first line (not beginning)
-- "Completes" prefix before the issue key
+- `Completes` prefix for implementation commits, `Ref` prefix for review fixes
 - No brackets around the issue key
 
-### 5. Progress Tracking
+### 5. PR and Code Review
 
-As work progresses:
-1. Tracker task status updates automatically via execution loop
-2. Issue tracker status syncs via bridge (if configured)
-3. Use `/coco.status` for current state
-4. Use `/coco.sync` to reconcile any drift
+Every PR goes through AI code review before merge:
+
+1. **PR created** with issue ID in body (`Resolves {ISSUE-KEY}` or `Closes #{N}`)
+2. **code-reviewer agent** reads the diff, posts structured findings
+3. Findings classified as **critical** (blocks merge) or **warning** (advisory)
+4. Critical findings are auto-fixed, pushed, and re-reviewed (max 3 iterations)
+5. After approval, PR is merged
+
+Issue status transitions:
+- Commit pushed: issue stays "In Progress"
+- PR created: issue moves to "In Review"
+- PR merged: issue moves to "Done"
 
 ### 6. Feature Completion
 
-When all sub-phases are done:
-1. All tracker tasks closed
-2. Issue tracker issues in final status
-3. Full test suite passes
-4. Create pull request
-5. After merge: update issue tracker projects to completed
+When all tasks are done, `/coco.loop` (or manual flow) creates a feature PR to main:
+
+1. All issue PRs merged to feature branch
+2. Feature PR created: `feature/{name}` -> `main`
+3. Full-feature AI code review (reviews entire feature diff)
+4. Critical findings fixed on feature branch
+5. PR merged to main
+6. All issues updated to final status ("Done")
+7. Feature branch deleted
 
 ## When to Use What
 
-- **Autonomous features**: Use `/coco.loop` (hands-off, circuit breaker, full epic in one command)
+- **Autonomous features**: Use `/coco.loop` (hands-off, PRs, AI review, circuit breaker)
 - **Manual features**: Use `/coco.execute` (step-by-step, manual review between tasks)
-- **Single-issue hotfixes**: Use `coco-hotfix` skill (simpler, no epic overhead)
+- **Single-issue hotfixes**: Use `coco-hotfix` skill (simpler, optional PR)
 - **Quick changes**: Commit directly with `Completes ISSUE-KEY` format
 
 ## Parallel Execution

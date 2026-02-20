@@ -94,18 +94,42 @@ coco_tracker epic-status {epic-id}
 Confirm tracker tasks exist with dependencies and issue keys.
 
 **Step F: Create feature branch**
+
+Read `pr.branch.feature_prefix` from config (default: `feature`):
+
 ```bash
 git checkout main && git pull
-git checkout -b {feature-name}
+FEATURE_BRANCH="{feature_prefix}/{feature-name}"
+git checkout -b "$FEATURE_BRANCH"
+git push -u origin "$FEATURE_BRANCH"
 ```
 
 **Step G: Execute**
-Use `/coco.execute` to run the TDD execution loop for all sub-phases.
+Use `/coco.loop` (autonomous) or `/coco.execute` (manual) to run the TDD execution loop for all sub-phases. Each task creates an issue branch, PR, and AI review when `pr.enabled` is true.
 
-**Step H: Merge to main**
-After all sub-phases complete:
+**Step H: Feature PR to main**
+
+If `pr.enabled`:
+
+After all sub-phases complete, `/coco.loop` will have already created the feature PR to main (with full-feature AI review). If running manually:
+
+1. Create feature PR:
+   ```bash
+   gh pr create --base main --head "$FEATURE_BRANCH" \
+     --title "{feature-name}: {description}" \
+     --body "{feature summary, list of issue PRs merged, test results}"
+   ```
+2. Invoke `code-reviewer` agent for full-feature review
+3. Address critical findings via review-fix loop
+4. Merge after approval:
+   ```bash
+   gh pr merge {pr-number} --{pr.feature_merge_strategy} --delete-branch
+   ```
+5. Update all issues in the epic to `status_map.completed` ("Done")
+
+If `pr.enabled` is false (backward compatible):
 ```bash
-git checkout main && git pull && git merge {branch-name} && git push
+git checkout main && git pull && git merge "$FEATURE_BRANCH" && git push
 ```
 
 ### 5. Repeat for Next Spec

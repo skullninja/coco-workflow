@@ -4,14 +4,15 @@ Spec-driven development workflow for [Claude Code](https://docs.anthropic.com/en
 
 ## What It Does
 
-Coco-workflow unifies planning, task tracking, and issue tracker integration into a single Claude Code plugin. After an initial specification step, the pipeline handles task decomposition, dependency resolution, TDD implementation, commit operations, and issue tracker sync autonomously.
+Coco-workflow unifies planning, task tracking, PR workflow with AI code review, and issue tracker integration into a single Claude Code plugin. After an initial specification step, the pipeline handles task decomposition, dependency resolution, TDD implementation, PR creation, AI code review, and issue tracker sync autonomously.
 
-### Three-Layer Architecture
+### Architecture
 
 | Layer | Tool | Role |
 |-------|------|------|
 | **Planning** | Slash commands (`/coco.*`) | Produces spec, plan, and task artifacts |
 | **Execution** | Built-in tracker (`lib/tracker.sh`) | Manages dependencies, session memory, task ordering |
+| **Review** | PRs + code-reviewer agent | AI code review on every PR before merge |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking (Linear, GitHub, or none) |
 
 ## Installation
@@ -30,6 +31,7 @@ bash coco-workflow/scripts/setup.sh
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 - `jq` (for the built-in task tracker)
 - `git`
+- `gh` (GitHub CLI -- for PR workflow; optional if `pr.enabled: false`)
 
 No daemon, no database, no additional CLI tools.
 
@@ -100,14 +102,34 @@ Configured in `.coco/config.yaml`:
 
 Status mappings, team names, labels, and issue key formats are all config-driven.
 
+## PR Workflow and Code Review
+
+When `pr.enabled` is true (default), the system uses a two-tier branching model:
+
+```
+main
+  └── feature/{name}                    (one per epic)
+        ├── feature/{name}/{ISSUE-1}    (one per task, PR -> feature branch)
+        └── ...
+  └── PR: feature/{name} -> main        (one per feature, after all tasks done)
+```
+
+Every PR is reviewed by the AI `code-reviewer` agent before merge:
+- Findings classified as **critical** (blocks merge) or **warning** (advisory)
+- Critical findings are auto-fixed and re-reviewed (up to 3 iterations)
+- Issues resolve at PR merge, not at commit push
+
+Set `pr.enabled: false` to disable PRs and use direct merge.
+
 ## Autonomous Loop
 
-The `/coco.loop` command (inspired by the [Ralph loop](https://github.com/frankbria/ralph-claude-code) pattern) wraps the TDD execution cycle in an autonomous loop that runs until all tasks in an epic are complete. It includes:
+The `/coco.loop` command (inspired by the [Ralph loop](https://github.com/frankbria/ralph-claude-code) pattern) wraps the full TDD + PR + review cycle in an autonomous loop that runs until all tasks in an epic are complete. It includes:
 
 - **Circuit breaker** -- Pauses after consecutive iterations with no progress
 - **Safety limit** -- Configurable max iterations
 - **Error pause** -- Stops on test/build failures (configurable)
 - **Progress tracking** -- Measured by git commits, not just status changes
+- **Feature PR** -- Automatically creates and reviews the feature-to-main PR on completion
 
 ## Project Structure
 
@@ -116,7 +138,7 @@ coco-workflow/                         # This repo (git submodule in your projec
   plugin.json                          # Claude Code plugin manifest
   commands/                            # 15 slash commands
   skills/                              # 2 skills (execute, hotfix)
-  agents/                              # 1 agent (pre-commit-tester)
+  agents/                              # 2 agents (code-reviewer, pre-commit-tester)
   lib/tracker.sh                       # Built-in task tracker
   hooks/                               # Git hooks (commit-msg, pre-commit)
   templates/                           # Default spec/plan/tasks/constitution templates
@@ -152,6 +174,14 @@ loop:
   max_iterations: 20
   no_progress_threshold: 3
   pause_on_error: true
+
+pr:
+  enabled: true
+  issue_merge_strategy: "squash"
+  feature_merge_strategy: "merge"
+  review:
+    enabled: true
+    max_review_iterations: 3
 ```
 
 See `config/coco.default.yaml` for all options.

@@ -51,17 +51,19 @@ if echo "$FIRST_LINE" | grep -qiE '^co-authored-by:'; then
     exit 0
 fi
 
-# If an issue key pattern is present, validate the "Completes" format
+# If an issue key pattern is present, validate the format
 # Detect issue key patterns: SKU-N, PROJ-N, #N, GH-N, etc.
 if echo "$FIRST_LINE" | grep -qE '[A-Z]+-[0-9]+'; then
-    # Issue key found - verify it's in "Completes KEY" format at end of line
-    if ! echo "$FIRST_LINE" | grep -qE 'Completes [A-Z]+-[0-9]+$'; then
+    # Allow "Completes KEY" (implementation commits) and "Ref KEY" (review-fix commits)
+    if ! echo "$FIRST_LINE" | grep -qE '(Completes|Ref) [A-Z]+-[0-9]+$'; then
         echo "ERROR: Issue key found but not in correct format."
         echo ""
-        echo "  The first line must END with 'Completes ISSUE-KEY'"
+        echo "  The first line must END with 'Completes ISSUE-KEY' or 'Ref ISSUE-KEY'"
         echo "  Current: $FIRST_LINE"
         echo ""
-        echo "  Example: Brief description of changes. Completes PROJ-5"
+        echo "  Examples:"
+        echo "    Brief description of changes. Completes PROJ-5"
+        echo "    Address review feedback (iteration 1). Ref PROJ-5"
         exit 1
     fi
 fi

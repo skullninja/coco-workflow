@@ -2,13 +2,14 @@
 
 ## Project Overview
 
-Coco-workflow is a Claude Code plugin that provides a spec-driven development workflow. It unifies planning (slash commands), execution (built-in task tracker), and visibility (configurable issue tracker) into a single plugin deliverable as a git submodule.
+Coco-workflow is a Claude Code plugin that provides a spec-driven development workflow. It unifies planning (slash commands), execution (built-in task tracker), PR workflow with AI code review, and visibility (configurable issue tracker) into a single plugin deliverable as a git submodule.
 
 ## Architecture
 
-Three layers:
+Four layers:
 - **Planning**: `/coco.*` commands produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
+- **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
 - **Visibility**: Issue tracker bridge (Linear MCP, GitHub CLI, or none) mirrors status
 
 ## Key Files
@@ -19,8 +20,9 @@ Three layers:
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
 | `commands/` | 15 slash commands (coco.spec, coco.plan, coco.tasks, coco.import, coco.execute, coco.loop, etc.) |
-| `skills/execute/SKILL.md` | Primary execution skill (10-step TDD loop) |
-| `skills/hotfix/SKILL.md` | Single-issue hotfix workflow |
+| `skills/execute/SKILL.md` | Primary execution skill (15-step TDD + PR loop) |
+| `skills/hotfix/SKILL.md` | Single-issue hotfix workflow (with optional PR) |
+| `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
 | `hooks/commit-msg.sh` | Commit message validation (reads config) |
 | `hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
@@ -84,6 +86,28 @@ Key sections:
 - `pre_commit` -- UI patterns for agent triggering, build command
 - `testing` -- test command, timeout
 - `loop` -- max iterations, no-progress threshold, pause-on-error
+- `pr` -- PR workflow, merge strategies, AI review config, branch naming
+
+## PR Workflow
+
+When `pr.enabled` is true (default), the system uses a two-tier branching model:
+
+```
+main
+  └── feature/{name}                    (one per epic)
+        ├── feature/{name}/{ISSUE-KEY}  (one per task, PR -> feature branch)
+        └── ...
+  └── PR: feature/{name} -> main        (one per feature)
+```
+
+**Issue lifecycle** (issues resolve at PR merge, not at commit):
+- Task claimed: issue "In Progress"
+- PR created: issue "In Review" (PR body includes `Resolves {ISSUE-KEY}`)
+- PR merged: issue "Done"
+
+**Code review**: The `code-reviewer` agent reviews every PR. Findings are classified as critical (blocks merge) or warning (advisory). Critical findings are auto-fixed in a review-fix loop (max 3 iterations). If the loop exhausts, the PR is left open for human review.
+
+Set `pr.enabled: false` to disable PRs and use direct merge (backward compatible).
 
 ## Issue Tracker Bridge
 
@@ -96,7 +120,7 @@ The bridge is implemented as conditional instructions in command markdown files 
 
 Typical flow: `/coco.spec` -> `/coco.plan` -> `/coco.tasks` (auto-runs `/coco.analyze`) -> `/coco.import` -> `/coco.loop`
 
-- `/coco.loop` runs autonomously with circuit breaker (inspired by Ralph loop pattern)
+- `/coco.loop` runs autonomously with circuit breaker and PR workflow
 - `/coco.execute` runs one task at a time for manual review
 - `/coco.phase` orchestrates multiple features in a roadmap phase
 
@@ -118,8 +142,9 @@ Runs 28 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and
 
 ## Development Notes
 
-- Zero external dependencies beyond bash + jq
+- Zero external dependencies beyond bash + jq (gh CLI needed for PR workflow)
 - All commands are markdown files with frontmatter -- Claude Code executes them as slash commands
 - The plugin uses `${CLAUDE_PLUGIN_ROOT}` to reference its own files
 - Host project state lives in `.coco/` (never inside the plugin directory)
 - Git hooks read config from `.coco/config.yaml` using jq-based YAML parsing
+- Commit formats: `Completes {KEY}` for implementation, `Ref {KEY}` for review fixes

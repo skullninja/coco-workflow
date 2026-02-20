@@ -26,10 +26,14 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ### 2. Create Feature Branch & Directory
 
+Read `pr.branch.feature_prefix` from `.coco/config.yaml` (default: `feature`).
+
 ```bash
-git checkout -b {feature-name}
+git checkout -b {feature_prefix}/{feature-name}
 mkdir -p {specs_dir}/{feature-name}/checklists
 ```
+
+The branch is `feature/{feature-name}` (e.g., `feature/user-auth`). The spec directory is `{specs_dir}/{feature-name}/` (without the prefix).
 
 ### 3. Generate Specification
 

@@ -22,11 +22,12 @@ issue_tracker:
       - "spec-driven"
 
   # Status mapping: internal tracker status -> issue tracker status
+  # With PR workflow: issue moves to in_review at PR creation, completed at PR merge
   status_map:
     pending: "Backlog"
     in_progress: "In Progress"
-    completed: "In Review"
-    merged: "Done"
+    in_review: "In Review"
+    completed: "Done"
 
 commit:
   # Commit message format for issue-linked commits
@@ -40,6 +41,7 @@ commit:
     - "^(workflow|config|gitignore|hooks|scripts)"
     - "^merge "
     - "^revert "
+    - "^Address review feedback"
 
 pre_commit:
   # File patterns that trigger pre-commit validation agent
@@ -69,3 +71,43 @@ loop:
   # Pause the loop on task failure (test/build errors)
   # If false, skips the failed task and tries the next one
   pause_on_error: true
+
+pr:
+  # Enable two-tier PR workflow (if false, merges directly as before)
+  enabled: true
+
+  # Merge strategy for issue PRs into feature branch
+  issue_merge_strategy: "squash"       # squash | merge | rebase
+
+  # Merge strategy for feature PR into main
+  feature_merge_strategy: "merge"      # squash | merge | rebase
+
+  # Delete branch after PR merge
+  delete_branch_after_merge: true
+
+  # AI code review configuration
+  review:
+    # Enable AI code review on PRs
+    enabled: true
+
+    # Maximum review-fix iterations before leaving PR open for human review
+    max_review_iterations: 3
+
+    # Severity levels that block merge (critical = bugs/security, warning = advisory)
+    blocking_severities:
+      - "critical"
+
+    # File patterns to exclude from review
+    exclude_patterns:
+      - "*.lock"
+      - "*.generated.*"
+      - "vendor/**"
+      - "node_modules/**"
+
+  # Branch naming conventions
+  branch:
+    # Prefix for feature branches (e.g., feature/user-auth)
+    feature_prefix: "feature"
+
+    # How to name issue branches: issue_key (e.g., AUTH-3) or task_id (e.g., epic-001.3)
+    issue_branch_naming: "issue_key"   # issue_key | task_id

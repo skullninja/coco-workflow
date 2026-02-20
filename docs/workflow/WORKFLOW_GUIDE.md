@@ -52,7 +52,7 @@ specs/{feature}/
 | Command | Purpose |
 |---------|---------|
 | `/coco.import` | Import tasks.md -> tracker epic + issue tracker |
-| `/coco.execute` | TDD execution loop with issue tracker bridge |
+| `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco.loop` | Autonomous execution loop with circuit breaker |
 | `/coco.sync` | Reconcile tracker and issue tracker state |
 | `/coco.status` | Show execution status and parallel opportunities |
@@ -170,20 +170,25 @@ Configure in `.coco/config.yaml` under `loop:`.
 
 ## Execution Deep-Dive
 
-### TDD Loop (coco-execute skill)
+### Execution Loop (coco-execute skill)
 
-10 steps per sub-phase:
+15 steps per sub-phase (steps 3, 8-11 gated on `pr.enabled`):
 
 1. **Find next task**: `coco_tracker ready --json` returns next unblocked task
 2. **Claim task**: `coco_tracker update <id> --status in_progress`
-3. **Bridge to issue tracker (claim)**: Update issue to "In Progress"
-4. **TDD implementation**: Write tests (RED) -> implement (GREEN) -> verify
-5. **Pre-commit validation**: Check staged files against UI patterns; invoke tester if matches
-6. **Commit**: `Brief description. Completes {issue_key}` with task references
-7. **Close task**: `coco_tracker close <id>`
-8. **Bridge to issue tracker (complete)**: Update to "In Review", post summary
-9. **Verify acceptance criteria**: Check all criteria from tasks.md
-10. **Check next**: Loop back to step 2 or report completion
+3. **Create issue branch**: `git checkout -b feature/{name}/{ISSUE-KEY}` (if PRs enabled)
+4. **Bridge to issue tracker (start)**: Update issue to "In Progress"
+5. **TDD implementation**: Write tests (RED) -> implement (GREEN) -> verify
+6. **Pre-commit validation**: Check staged files against UI patterns; invoke tester if matches
+7. **Commit**: `Brief description. Completes {issue_key}` (traceability -- does NOT resolve issue)
+8. **Create PR**: `gh pr create` with `Resolves {ISSUE-KEY}` in body; issue moves to "In Review"
+9. **AI code review**: `code-reviewer` agent reviews PR diff, posts findings
+10. **Review-fix loop**: Auto-fix critical findings, push, re-review (max 3 iterations)
+11. **Merge PR**: `gh pr merge`; switch back to feature branch
+12. **Close task**: `coco_tracker close <id>`
+13. **Bridge to issue tracker (complete)**: Issue moves to "Done" (at PR merge)
+14. **Verify acceptance criteria**: Check all criteria from tasks.md
+15. **Check next**: Loop back to step 2 or report completion
 
 ### Commit Conventions
 
@@ -297,7 +302,7 @@ git push
 | `/coco.analyze` | Cross-artifact consistency analysis |
 | `/coco.constitution` | Create/update project constitution |
 | `/coco.import` | Import tasks.md -> tracker + issue tracker |
-| `/coco.execute` | TDD execution loop with issue tracker bridge |
+| `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco.loop` | Autonomous loop with circuit breaker |
 | `/coco.sync` | Reconcile tracker and issue tracker state |
 | `/coco.status` | Show execution state and opportunities |

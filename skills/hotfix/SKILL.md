@@ -72,24 +72,65 @@ EOF
 )"
 ```
 
-### 6. Update Issue Tracker
+### 6. Create PR and Review
+
+Read `pr` config from `.coco/config.yaml`.
+
+**If `pr.enabled`:**
+
+```bash
+git push -u origin fix/{short-name}
+
+gh pr create \
+  --base main \
+  --head fix/{short-name} \
+  --title "{issue_key}: {fix description}" \
+  --body "$(cat <<'EOF'
+## Fix Summary
+
+{What was wrong and how it was fixed}
+
+Resolves {issue_key}
+
+## Test Results
+
+{test output summary}
+EOF
+)"
+```
+
+If `pr.review.enabled`:
+- Invoke `code-reviewer` agent on the PR
+- If CHANGES REQUESTED: fix critical findings, push, re-review (same loop as coco-execute)
+- After approval: merge PR
+
+```bash
+gh pr merge {pr-number} --{pr.issue_merge_strategy} --delete-branch
+```
+
+**If `pr.enabled` is false:**
+- Push branch and suggest creating a PR manually
+
+### 7. Update Issue Tracker
+
+**Triggered by PR merge (or by commit if PRs disabled).** This is when the issue resolves.
 
 **If "linear"**:
-- Update state to `status_map.completed` (default: "In Review")
+- Update state to `status_map.completed` (default: "Done")
 - Add implementation summary to issue description
 - Post comment with details
 
 **If "github"**:
 - Add comment with fix details
-- Close issue
+- `Closes #N` in PR body auto-closes the issue (if using PRs)
 
 **If "none"**: Skip
 
-### 7. Report
+### 8. Report
 
 Output:
 - Branch name
 - Issue key (if created)
+- PR number (if created)
 - Commit hash
 - Files changed
-- Suggested next step (push, create PR, merge)
