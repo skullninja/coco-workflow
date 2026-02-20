@@ -136,6 +136,24 @@ Output:
 - Clarification summary (questions asked, sections updated) if clarification pass ran
 - Suggested next step: use the `coco-plan` skill to generate the implementation plan
 
+## Light Mode
+
+When invoked for a **Light-tier** feature (1-3 files, single user story, no internal dependencies):
+
+1. **Simplified spec**: Generate a minimal spec containing:
+   - One-paragraph overview
+   - Single user story
+   - 3-5 acceptance criteria
+   - No sub-phases, no dependency graph, no key entities section
+2. **Skip clarification pass** (Step 5) entirely
+3. **Skip detailed checklist** -- just verify the acceptance criteria are testable
+4. **Suggest next step**: Use the `coco-import` skill in spec-only mode (skipping plan and tasks)
+
+Light mode is triggered by:
+- `/planning-session tactical` routing to Light tier
+- `/coco.phase` classifying the feature as Light tier
+- Explicit request for a "light" or "minimal" spec
+
 ## Guidelines
 
 - Focus on **WHAT** users need and **WHY** -- avoid HOW (no tech stack, APIs, code structure)

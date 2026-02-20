@@ -4,5 +4,6 @@
   "description": "Spec-driven development workflow combining planning, task tracking, and issue tracker integration for Claude Code.",
   "commands": "commands",
   "skills": "skills",
-  "agents": "agents"
+  "agents": "agents",
+  "hooks": "hooks"
 }

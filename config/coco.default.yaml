@@ -34,6 +34,17 @@ issue_tracker:
     in_review: "In Review"
     completed: "Done"
 
+quality:
+  # Lint command run after each file edit (empty = disabled)
+  # Use {file} as placeholder for the modified file path
+  lint_command: ""                     # e.g., "ruff check {file}", "eslint {file}"
+
+  # Type-check command run after each file edit (empty = disabled)
+  typecheck_command: ""                # e.g., "mypy {file}", "tsc --noEmit"
+
+  # Automatically run lint --fix when lint fails
+  auto_fix: false
+
 commit:
   # Commit message format for issue-linked commits
   # Available placeholders: {description}, {issue_key}

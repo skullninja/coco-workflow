@@ -145,6 +145,28 @@ Output:
 - First available task: `coco_tracker ready --json --epic {epic-id}`
 - Suggested next step: `/coco.execute` or `/coco.loop`
 
+## Spec-Only Mode (Light Tier)
+
+When `tasks.md` doesn't exist but `spec.md` does (light-tier feature):
+
+1. Read the spec from `{specs_dir}/{feature}/spec.md`
+2. Create a single-task epic directly from the spec:
+   ```bash
+   coco_tracker epic-create "{feature-name}"
+   coco_tracker create --epic "{epic-id}" \
+     --title "{feature-name}: {spec overview}" \
+     --description "{acceptance criteria from spec}" \
+     --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true}'
+   ```
+3. No dependencies to set (single task)
+4. Run issue tracker bridge (Step 5) as normal -- creates one issue
+5. Run verification (Step 6) and report (Step 7) as normal
+
+Spec-only mode is triggered by:
+- `/planning-session tactical` routing to Light tier
+- `/coco.phase` classifying the feature as Light tier
+- Explicit request when tasks.md is missing and spec.md exists
+
 ## Dry Run Mode
 
 If the conversation context indicates a dry run is desired:

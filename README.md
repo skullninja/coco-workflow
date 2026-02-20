@@ -74,7 +74,7 @@ The pipeline steps (spec, plan, tasks, import) are now automated via skills that
 # Uses the coco-hotfix skill -- no epic overhead
 ```
 
-## Commands (11)
+## Commands (12)
 
 | Command | Purpose |
 |---------|---------|
@@ -85,8 +85,9 @@ The pipeline steps (spec, plan, tasks, import) are now automated via skills that
 | `/coco.execute` | TDD execution loop (one task at a time) |
 | `/coco.constitution` | Manage project constitution |
 | `/coco.status` | Show execution status and parallel opportunities |
+| `/coco.standup` | Daily standup summary with done/in-progress/blocked/metrics |
 | `/coco.sync` | Reconcile tracker and issue tracker state |
-| `/planning-session` | Structured planning sessions (strategic/tactical/operational) |
+| `/planning-session` | Structured planning sessions with adaptive complexity routing |
 | `/planning-triage` | Score and disposition bugs/features/feedback |
 | `/interview` | In-depth user interview for feature specification |
 
@@ -154,16 +155,46 @@ The `/coco.loop` command (inspired by the [Ralph loop](https://github.com/frankb
 - **Progress tracking** -- Measured by git commits, not just status changes
 - **Feature PR** -- Automatically creates and reviews the feature-to-main PR on completion
 
+## Hooks (3)
+
+Claude Code hooks provide event-driven automation:
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `post-tool-use` | After `Write`/`Edit` | Runs configured lint and typecheck commands against modified files |
+| `pre-compact` | Before compaction | Captures active epic, tasks, branch, and context to session memory |
+| `session-start` | Session start | Restores context from session memory if available |
+
+Configure quality hooks in `.coco/config.yaml`:
+
+```yaml
+quality:
+  lint_command: "ruff check {file}"     # Run after each edit
+  typecheck_command: "mypy {file}"      # Run after each edit
+  auto_fix: false                       # Auto-run lint --fix on failure
+```
+
+## Adaptive Complexity Routing
+
+`/planning-session tactical` and `/coco.phase` automatically route features to the right pipeline depth:
+
+| Tier | Signal | Pipeline |
+|------|--------|----------|
+| **Trivial** | Single file, bug fix, "quick" | `coco-hotfix` skill (no epic) |
+| **Light** | 1-3 files, single story | `coco-spec` -> `coco-import` (skip plan + tasks) |
+| **Standard** | Multi-file, dependencies | Full: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+
 ## Project Structure
 
 ```
 coco-workflow/                         # This repo (git submodule in your project)
   plugin.json                          # Claude Code plugin manifest
-  commands/                            # 11 slash commands
+  commands/                            # 12 slash commands
   skills/                              # 5 skills (spec, plan, tasks, import, execute, hotfix)
   agents/                              # 2 agents (code-reviewer, pre-commit-tester)
+  hooks/                               # Claude Code hooks (post-tool-use, pre-compact, session-start)
+  git-hooks/                           # Git hooks (commit-msg, pre-commit)
   lib/tracker.sh                       # Built-in task tracker
-  hooks/                               # Git hooks (commit-msg, pre-commit)
   templates/                           # Default templates (PRD, analysis, roadmap, spec, plan, tasks, constitution)
   workflows/                           # Reference workflow documentation
   config/coco.default.yaml             # Default configuration
@@ -198,6 +229,11 @@ discovery:
 
 issue_tracker:
   provider: "none"          # linear | github | none
+
+quality:
+  lint_command: ""            # e.g., "ruff check {file}", "eslint {file}"
+  typecheck_command: ""       # e.g., "mypy {file}", "tsc --noEmit"
+  auto_fix: false
 
 commit:
   title_format: "{description}. Completes {issue_key}"

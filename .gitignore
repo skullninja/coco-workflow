@@ -14,3 +14,6 @@ Thumbs.db
 
 # Test artifacts
 /tmp/
+
+# Internal docs (not for distribution)
+docs/competitive-analysis.md

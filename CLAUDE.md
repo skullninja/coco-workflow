@@ -20,7 +20,7 @@ Five layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 11 slash commands (coco.prd, coco.roadmap, coco.phase, coco.loop, coco.execute, etc.) |
+| `commands/` | 12 slash commands (coco.prd, coco.roadmap, coco.phase, coco.loop, coco.execute, coco.standup, etc.) |
 | `skills/spec/SKILL.md` | Feature specification with clarification (AI-selected) |
 | `skills/plan/SKILL.md` | Implementation plan generation (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
@@ -29,8 +29,11 @@ Five layers:
 | `skills/hotfix/SKILL.md` | Single-issue hotfix workflow (with optional PR) |
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
-| `hooks/commit-msg.sh` | Commit message validation (reads config) |
-| `hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
+| `hooks/post-tool-use.md` | PostToolUse hook -- runs lint/typecheck after file edits |
+| `hooks/pre-compact.md` | PreCompact hook -- captures session state before compaction |
+| `hooks/session-start.md` | SessionStart hook -- restores session context |
+| `git-hooks/commit-msg.sh` | Commit message validation (reads config) |
+| `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
 | `templates/` | Default templates for PRD, analysis, roadmap, spec, plan, tasks, constitution |
 | `workflows/` | Reference documentation for workflows |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
@@ -87,6 +90,7 @@ Projects configure behavior in `.coco/config.yaml`. The schema with defaults is 
 Key sections:
 - `project` -- name, specs directory
 - `discovery` -- PRD path, analysis directory, roadmap directory
+- `quality` -- lint command, typecheck command, auto-fix (used by PostToolUse hook)
 - `issue_tracker` -- provider (linear/github/none), status mappings, team/labels
 - `commit` -- title format, exempt patterns
 - `pre_commit` -- UI patterns for agent triggering, build command
@@ -133,6 +137,29 @@ Full pipeline: `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` -> (per feature) 
 - `/coco.execute` runs one task at a time for manual review
 
 The pipeline steps (spec, plan, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco.phase`, `/planning-session tactical`, or natural language requests.
+
+## Adaptive Complexity Routing
+
+`/planning-session tactical` and `/coco.phase` classify features by complexity tier:
+
+| Tier | Pipeline |
+|------|----------|
+| **Trivial** | `coco-hotfix` skill (no epic overhead) |
+| **Light** | `coco-spec` (light mode) -> `coco-import` (spec-only mode) |
+| **Standard** | Full: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+
+Light mode: `coco-spec` generates a minimal spec (single user story, 3-5 acceptance criteria, no clarification pass). `coco-import` creates a single-task epic directly from the spec without requiring plan.md or tasks.md.
+
+## Hooks
+
+Two types of hooks in separate directories:
+- **Claude Code hooks** (`hooks/`): Prompt-based `.md` files auto-discovered by Claude Code via `plugin.json`
+  - `post-tool-use.md` -- Runs quality checks (lint, typecheck) after Write/Edit
+  - `pre-compact.md` -- Captures session state to `.coco/state/session-memory.md`
+  - `session-start.md` -- Restores context from session memory
+- **Git hooks** (`git-hooks/`): Shell scripts installed to `.git/hooks/` by `setup.sh`
+  - `commit-msg.sh` -- Commit message validation
+  - `pre-commit.sh` -- Build check + UI change detection
 
 ## Template System
 

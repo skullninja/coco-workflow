@@ -55,10 +55,21 @@ coco_tracker list --json | jq 'select(.type == "epic")'
 **d. Check issue tracker** (if configured):
 Based on `issue_tracker.provider`, search for existing projects/issues.
 
-**e. Determine scope** for each feature:
+**e. Determine scope and complexity tier** for each feature:
+
+Scope:
 - **Already complete** -- spec exists, code merged, tests pass -> skip
 - **Partially built** -- some code exists -> reduced spec
 - **Greenfield** -- nothing exists -> full spec workflow
+
+Complexity tier (determines pipeline depth):
+
+| Tier | Signal | Pipeline |
+|------|--------|----------|
+| **Light** | 1-3 files/components mentioned, single user story, no internal dependencies | `coco-spec` (light mode) -> `coco-import` (spec-only) |
+| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+
+Classify based on: number of files/components mentioned in the roadmap, feature description complexity, and whether the feature has internal dependencies.
 
 ### 3. Present Phase Plan
 
@@ -68,9 +79,9 @@ Before doing anything, present the audit results:
 Phase: {PHASE_NAME}
 ============================
 
-| # | Feature | Existing Code | Scope | Proposed Order |
-|---|---------|---------------|-------|----------------|
-| 1 | {name}  | {summary}     | {type}| {order}        |
+| # | Feature | Existing Code | Scope | Tier | Proposed Order |
+|---|---------|---------------|-------|------|----------------|
+| 1 | {name}  | {summary}     | {type}| {Light/Standard} | {order} |
 
 Proposed execution order: {rationale}
 
@@ -84,17 +95,21 @@ Wait for user confirmation using AskUserQuestion.
 For each spec in the approved order:
 
 **Step A: Interview/Specify (if spec doesn't exist)**
-- Use `/interview` or the `coco-spec` skill to create the specification
+- For **Light** tier: Use the `coco-spec` skill in light mode (minimal spec, skip clarification)
+- For **Standard** tier: Use `/interview` or the `coco-spec` skill for full specification
 - Wait for completion before proceeding
 
-**Step B: Plan (if plan doesn't exist)**
+**Step B: Plan (if plan doesn't exist) -- Standard tier only**
 - Use the `coco-plan` skill to generate the implementation plan
+- **Skip for Light tier** -- go directly to Step D
 
-**Step C: Generate tasks (if tasks don't exist)**
+**Step C: Generate tasks (if tasks don't exist) -- Standard tier only**
 - Use the `coco-tasks` skill to generate the task list
+- **Skip for Light tier** -- go directly to Step D
 
 **Step D: Import to tracker (if epic doesn't exist)**
-- Use the `coco-import` skill to create tracker epic, tasks, dependencies, and issues
+- For **Light** tier: Use the `coco-import` skill in spec-only mode (generates single-task epic from spec)
+- For **Standard** tier: Use the `coco-import` skill for full import from tasks.md
 - This includes the full import workflow with issue tracker bridge
 
 **Step E: Verify Pre-Execution Gate**

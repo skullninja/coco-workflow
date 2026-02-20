@@ -51,7 +51,7 @@ if git rev-parse --show-toplevel >/dev/null 2>&1; then
     mkdir -p "$HOOKS_DIR"
 
     for hook in commit-msg pre-commit; do
-        HOOK_SRC="$COCO_WORKFLOW_ROOT/hooks/${hook}.sh"
+        HOOK_SRC="$COCO_WORKFLOW_ROOT/git-hooks/${hook}.sh"
         HOOK_DST="$HOOKS_DIR/$hook"
 
         if [[ ! -f "$HOOK_SRC" ]]; then

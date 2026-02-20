@@ -32,9 +32,33 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
    - These analysis docs are discoverable by `/coco.roadmap` for roadmap generation
 
 ### Tactical
-1. Run coco workflow skills: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import`
-2. Verify import and pre-execution gate
-3. Save notes to `docs/planning-sessions/YYYY-MM-DD-{feature}.md`
+
+**Step 1: Determine Complexity Tier**
+
+Before running the pipeline, classify the feature scope:
+
+| Tier | Signal | Pipeline |
+|------|--------|----------|
+| **Trivial** | User says "small", "quick", "hotfix"; single file mentioned; bug fix | `coco-hotfix` skill (no epic) |
+| **Light** | 1-3 files, single user story, no internal dependencies | `coco-spec` (light mode) -> `coco-import` (spec-only) |
+| **Standard** | Multi-file, multiple stories, dependencies between components | `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+
+Ask the user using AskUserQuestion: "How complex is this feature?" with options:
+- **Quick fix** -- Single issue, 1 file (routes to Trivial)
+- **Small feature** -- 1-3 files, straightforward (routes to Light)
+- **Full feature** -- Multiple files, dependencies, needs detailed planning (routes to Standard)
+
+If the user already described the scope clearly, infer the tier without asking.
+
+**Step 2: Execute Pipeline**
+
+- **Trivial**: Use the `coco-hotfix` skill. Done.
+- **Light**: Use `coco-spec` skill (light mode) -> `coco-import` skill (spec-only mode). Skips plan and tasks generation.
+- **Standard**: Run full pipeline: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import`
+
+**Step 3: Verify and Save**
+1. Verify import and pre-execution gate
+2. Save notes to `docs/planning-sessions/YYYY-MM-DD-{feature}.md`
 
 ### Operational
 1. Check current tracker state:
