@@ -9,8 +9,13 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Claude Code local settings
-.claude/settings.local.json
+# Claude Code local settings (created by setup.sh in consumer projects)
+.claude/
+.coco/
+
+# Environment
+.env
+.env.*
 
 # Test artifacts
 /tmp/
