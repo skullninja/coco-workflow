@@ -34,7 +34,7 @@ coco_tracker epic-status {epic-id}
 3. **Commit message issue keys are real** -- keys must reference actual issues
 4. **If `pr.enabled`**: verify on a `feature/*` branch and remote origin is configured
 
-If any check fails, STOP and use the `coco-import` skill first.
+If any check fails, STOP and use the `import` skill first.
 
 ## Execution Loop
 
@@ -348,5 +348,5 @@ coco_tracker session-end
 - **Review-fix loop exhausted**: Leave PR open, exit task with warning
 - **`gh` not available**: STOP with error asking user to install GitHub CLI
 - **No remote configured**: STOP with error (PRs require a remote)
-- **Issue tracker unavailable**: Log failure, continue with tracker, run `/coco.sync` at session end
+- **Issue tracker unavailable**: Log failure, continue with tracker, run `/coco:sync` at session end
 - **Missing `issue_key`**: STOP and fix metadata before continuing

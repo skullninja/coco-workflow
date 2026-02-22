@@ -1,11 +1,11 @@
 ---
-name: coco-execute
+name: execute
 description: Execute the next available tracked task with TDD, pre-commit validation, PR workflow, AI code review, and issue tracker bridge sync. Primary execution interface for multi-session feature work.
 ---
 
 # Coco Execute Skill
 
-This skill delegates to the `/coco.execute` command, which implements the full 15-step TDD execution loop with PR workflow, AI code review, and issue tracker bridge sync.
+This skill delegates to the `/coco:execute` command, which implements the full 15-step TDD execution loop with PR workflow, AI code review, and issue tracker bridge sync.
 
 ## When to Use
 
@@ -15,12 +15,12 @@ This skill delegates to the `/coco.execute` command, which implements the full 1
 
 ## Alternatives
 
-- For single-issue hotfixes or quick changes, use the `coco-hotfix` skill instead
-- For autonomous execution until epic completion, use `/coco.loop`
+- For single-issue hotfixes or quick changes, use the `hotfix` skill instead
+- For autonomous execution until epic completion, use `/coco:loop`
 
 ## Execution
 
-Run the `/coco.execute` command. It handles:
+Run the `/coco:execute` command. It handles:
 
 1. Pre-execution gate (tracker + issue tracker verification)
 2. Dependency-aware task selection via `coco_tracker ready`

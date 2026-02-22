@@ -29,7 +29,7 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
    - Load analysis template from `.coco/templates/analysis-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/analysis-template.md`
    - Fill in findings, implications, and recommendations from the session discussion
    - Write to `{discovery.analysis_dir}/{topic-slug}.md`
-   - These analysis docs are discoverable by `/coco.roadmap` for roadmap generation
+   - These analysis docs are discoverable by `/coco:roadmap` for roadmap generation
 
 ### Tactical
 
@@ -39,9 +39,9 @@ Before running the pipeline, classify the feature scope:
 
 | Tier | Signal | Pipeline |
 |------|--------|----------|
-| **Trivial** | User says "small", "quick", "hotfix"; single file mentioned; bug fix | `coco-hotfix` skill (no epic) |
-| **Light** | 1-3 files, single user story, no internal dependencies | `coco-spec` (light mode) -> `coco-import` (spec-only) |
-| **Standard** | Multi-file, multiple stories, dependencies between components | `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+| **Trivial** | User says "small", "quick", "hotfix"; single file mentioned; bug fix | `hotfix` skill (no epic) |
+| **Light** | 1-3 files, single user story, no internal dependencies | `spec` (light mode) -> `import` (spec-only) |
+| **Standard** | Multi-file, multiple stories, dependencies between components | `spec` -> `plan` -> `tasks` -> `import` |
 
 Ask the user using AskUserQuestion: "How complex is this feature?" with options:
 - **Quick fix** -- Single issue, 1 file (routes to Trivial)
@@ -52,9 +52,9 @@ If the user already described the scope clearly, infer the tier without asking.
 
 **Step 2: Execute Pipeline**
 
-- **Trivial**: Use the `coco-hotfix` skill. Done.
-- **Light**: Use `coco-spec` skill (light mode) -> `coco-import` skill (spec-only mode). Skips plan and tasks generation.
-- **Standard**: Run full pipeline: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import`
+- **Trivial**: Use the `hotfix` skill. Done.
+- **Light**: Use `spec` skill (light mode) -> `import` skill (spec-only mode). Skips plan and tasks generation.
+- **Standard**: Run full pipeline: `spec` -> `plan` -> `tasks` -> `import`
 
 **Step 3: Verify and Save**
 1. Verify import and pre-execution gate
@@ -66,7 +66,7 @@ If the user already described the scope clearly, infer the tier without asking.
    source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
    coco_tracker epic-status
    ```
-2. Run `/coco.sync` to reconcile with issue tracker
+2. Run `/coco:sync` to reconcile with issue tracker
 3. Reprioritize and unblock tasks
 4. Plan the week's work
 

@@ -1,6 +1,6 @@
 ---
-name: coco-tasks
-description: Generate a coco-workflow dependency-ordered task list (tasks.md) with sub-phases and cross-artifact consistency analysis from spec.md and plan.md in specs/{feature}/.
+name: tasks
+description: Generate a dependency-ordered task list (tasks.md) with sub-phases and cross-artifact consistency analysis from spec.md and plan.md in specs/{feature}/.
 ---
 
 # Coco Tasks Skill
@@ -9,11 +9,11 @@ Generate an actionable, dependency-ordered tasks.md for the feature based on ava
 
 ## When to Use
 
-- Generating a task list as part of the coco-workflow pipeline
-- Called by `/coco.phase` (Step C) or `/planning-session tactical`
+- Generating a task list as part of the coco pipeline
+- Called by `/coco:phase` (Step C) or `/planning-session tactical`
 - When a tasks.md is needed in `specs/{feature}/` before tracker import
 
-Prerequisites: `plan.md` and `spec.md` must exist. If missing, use the `coco-plan` skill first.
+Prerequisites: `plan.md` and `spec.md` must exist. If missing, use the `plan` skill first.
 
 ## Setup
 
@@ -79,7 +79,7 @@ If `plan.md` contains file-level implementation details, extract file ownership 
 **owns_files**: `src/auth/**`, `tests/auth/**`
 ```
 
-These annotations are consumed by the `coco-import` skill to populate task metadata, enabling worktree-based parallel execution. Only include `owns_files` when file paths are determinable from the plan -- omit for sub-phases with unclear file boundaries.
+These annotations are consumed by the `import` skill to populate task metadata, enabling worktree-based parallel execution. Only include `owns_files` when file paths are determinable from the plan -- omit for sub-phases with unclear file boundaries.
 
 ### 5. Write tasks.md
 
@@ -87,7 +87,7 @@ Write to `{specs_dir}/{feature}/tasks.md`.
 
 ### 6. Cross-Artifact Consistency Analysis
 
-After generating tasks.md, automatically run the full consistency analysis. This replaces what was previously the `/coco.analyze` command.
+After generating tasks.md, automatically run the full consistency analysis. This replaces what was previously the `/coco:analyze` command.
 
 **STRICTLY READ-ONLY**: Do not modify any files during analysis. Output findings inline.
 
@@ -166,7 +166,7 @@ Output:
 - Independent test criteria for each story
 - Suggested MVP scope (typically User Story 1)
 - Analysis findings (from consistency analysis step)
-- Suggested next step: use the `coco-import` skill to load tasks into the tracker
+- Suggested next step: use the `import` skill to load tasks into the tracker
 
 ## Rules
 

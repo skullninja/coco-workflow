@@ -67,8 +67,8 @@ Complexity tier (determines pipeline depth):
 
 | Tier | Signal | Pipeline |
 |------|--------|----------|
-| **Light** | 1-3 files/components mentioned, single user story, no internal dependencies | `coco-spec` (light mode) -> `coco-import` (spec-only) |
-| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+| **Light** | 1-3 files/components mentioned, single user story, no internal dependencies | `spec` (light mode) -> `import` (spec-only) |
+| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `spec` -> `plan` -> `tasks` -> `import` |
 
 Classify based on: number of files/components mentioned in the roadmap, feature description complexity, and whether the feature has internal dependencies.
 
@@ -96,21 +96,21 @@ Wait for user confirmation using AskUserQuestion.
 For each spec in the approved order:
 
 **Step A: Interview/Specify (if spec doesn't exist)**
-- For **Light** tier: Use the `coco-spec` skill in light mode (minimal spec, skip clarification)
-- For **Standard** tier: Use `/interview` or the `coco-spec` skill for full specification
+- For **Light** tier: Use the `spec` skill in light mode (minimal spec, skip clarification)
+- For **Standard** tier: Use `/interview` or the `spec` skill for full specification
 - Wait for completion before proceeding
 
 **Step B: Plan (if plan doesn't exist) -- Standard tier only**
-- Use the `coco-plan` skill to generate the implementation plan
+- Use the `plan` skill to generate the implementation plan
 - **Skip for Light tier** -- go directly to Step D
 
 **Step C: Generate tasks (if tasks don't exist) -- Standard tier only**
-- Use the `coco-tasks` skill to generate the task list
+- Use the `tasks` skill to generate the task list
 - **Skip for Light tier** -- go directly to Step D
 
 **Step D: Import to tracker (if epic doesn't exist)**
-- For **Light** tier: Use the `coco-import` skill in spec-only mode (generates single-task epic from spec)
-- For **Standard** tier: Use the `coco-import` skill for full import from tasks.md
+- For **Light** tier: Use the `import` skill in spec-only mode (generates single-task epic from spec)
+- For **Standard** tier: Use the `import` skill for full import from tasks.md
 - This includes the full import workflow with issue tracker bridge
 
 **Step E: Verify Pre-Execution Gate**
@@ -131,13 +131,13 @@ git push -u origin "$FEATURE_BRANCH"
 ```
 
 **Step G: Execute**
-Use `/coco.loop` (autonomous) or `/coco.execute` (manual) to run the TDD execution loop for all sub-phases. Each task creates an issue branch, PR, and AI review when `pr.enabled` is true.
+Use `/coco:loop` (autonomous) or `/coco:execute` (manual) to run the TDD execution loop for all sub-phases. Each task creates an issue branch, PR, and AI review when `pr.enabled` is true.
 
 **Step H: Feature PR to main**
 
 If `pr.enabled`:
 
-After all sub-phases complete, `/coco.loop` will have already created the feature PR to main (with full-feature AI review). If running manually:
+After all sub-phases complete, `/coco:loop` will have already created the feature PR to main (with full-feature AI review). If running manually:
 
 1. Create feature PR:
    ```bash
@@ -167,7 +167,7 @@ Loop back to Step 4 for the next feature in the phase.
 After all features are merged:
 
 1. Update issue tracker projects to "Completed" (if configured)
-   - **github** with Projects V2: Close each feature's GitHub Project via `gh project close {project_number} --owner {github.owner}`. Also close the phase-level project if one was created by `/coco.roadmap`.
+   - **github** with Projects V2: Close each feature's GitHub Project via `gh project close {project_number} --owner {github.owner}`. Also close the phase-level project if one was created by `/coco:roadmap`.
 2. Verify all tracker epics are closed
 3. Run full test suite to confirm no regressions
 4. **Update roadmap** (if phase was sourced from a roadmap file):
@@ -189,5 +189,5 @@ Roadmap updated: {roadmap file path} (if applicable)
 ## Notes
 
 - Each feature in the phase is self-contained -- if one fails, others can proceed
-- The user can interrupt at any point and resume with `/coco.execute`
+- The user can interrupt at any point and resume with `/coco:execute`
 - Session close protocol applies after each feature merge

@@ -127,7 +127,7 @@ pre_commit_count=$(git rev-list --count HEAD)
 
 **5. Execute the task (serial path)**
 
-Follow the full `/coco.execute` flow for a single task (all 15 steps):
+Follow the full `/coco:execute` flow for a single task (all 15 steps):
 - Claim task
 - Create issue branch (if `pr.enabled`)
 - Bridge to issue tracker (start)
@@ -272,8 +272,8 @@ LOOP PAUSED: Circuit breaker triggered.
 {no_progress_threshold} consecutive iterations with no commits.
 Last attempted task: {task-id} -- {task-title}
 
-To resume: /coco.loop {epic-id}
-To debug: /coco.status {epic-id}
+To resume: /coco:loop {epic-id}
+To debug: /coco:status {epic-id}
 ```
 
 ### Safety Limit: Max Iterations
@@ -289,7 +289,7 @@ LOOP PAUSED: Reached max iterations ({max_iterations}).
 Tasks completed: {count} of {total}
 Remaining tasks: {list}
 
-To resume: /coco.loop {epic-id}
+To resume: /coco:loop {epic-id}
 ```
 
 ### Error Pause
@@ -304,7 +304,7 @@ coco_tracker session-end
 LOOP PAUSED: Task {task-id} failed.
 Error: {description}
 
-To resume after fixing: /coco.loop {epic-id}
+To resume after fixing: /coco:loop {epic-id}
 ```
 
 ## Error Handling
@@ -312,7 +312,7 @@ To resume after fixing: /coco.loop {epic-id}
 - **Build/test failure**: If `pause_on_error` is true, exit the loop with a report. If false, skip the task (leave in_progress) and try the next ready task.
 - **PR creation fails**: Log error, leave branch with commits, exit iteration.
 - **Review-fix loop exhausted**: Leave PR open, exit iteration with warning, continue to next task.
-- **Issue tracker unavailable**: Log and continue. Run `/coco.sync` after loop completes.
+- **Issue tracker unavailable**: Log and continue. Run `/coco:sync` after loop completes.
 - **Git conflicts**: Exit the loop. Manual resolution required.
 - **No ready tasks but epic incomplete**: Exit with blocked-task report.
 - **`gh` not available**: STOP with error if `pr.enabled`.
@@ -320,8 +320,8 @@ To resume after fixing: /coco.loop {epic-id}
 ## Notes
 
 - The loop runs within a single Claude Code session (no fresh instances per iteration).
-- Each iteration follows the exact same flow as `/coco.execute` (including PR steps when enabled).
+- Each iteration follows the exact same flow as `/coco:execute` (including PR steps when enabled).
 - Progress is measured by git commits, not just task status changes. PR merge commits count as progress.
 - The circuit breaker prevents infinite loops when a task can't be completed.
 - The feature PR to main on epic completion gets a full-feature review (larger diff scope).
-- Use `/coco.status` to inspect state between loop runs.
+- Use `/coco:status` to inspect state between loop runs.

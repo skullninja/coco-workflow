@@ -34,18 +34,18 @@ main
 
 Create spec artifacts in `specs/{feature}/`:
 
-- **spec.md** -- Feature specification with user stories and acceptance criteria (`coco-spec` skill)
-- **plan.md** -- Technical implementation plan (`coco-plan` skill)
-- **tasks.md** -- Dependency-ordered task list (`coco-tasks` skill)
+- **spec.md** -- Feature specification with user stories and acceptance criteria (`spec` skill)
+- **plan.md** -- Technical implementation plan (`plan` skill)
+- **tasks.md** -- Dependency-ordered task list (`tasks` skill)
 - **data-model.md** -- Data structures and relationships (if applicable)
 - **contracts/** -- Service/protocol interfaces (if applicable)
 - **research.md** -- Technical research and decisions (if applicable)
 
-The `coco-spec` skill creates the feature branch (`feature/{name}`) automatically.
+The `spec` skill creates the feature branch (`feature/{name}`) automatically.
 
 ### 2. Import to Tracker
 
-Use the `coco-import` skill to:
+Use the `import` skill to:
 - Create tracker epic and tasks (one per sub-phase)
 - Set dependency graph
 - Create issue tracker project and issues (if configured)
@@ -54,9 +54,9 @@ Use the `coco-import` skill to:
 
 ### 3. Execute
 
-**Autonomous (recommended):** Use `/coco.loop` for hands-off execution with circuit breaker protection. Runs the full TDD + PR + review cycle for every task until the epic is complete.
+**Autonomous (recommended):** Use `/coco:loop` for hands-off execution with circuit breaker protection. Runs the full TDD + PR + review cycle for every task until the epic is complete.
 
-**Manual:** Use `/coco.execute` or the `coco-execute` skill for one task at a time with manual review between steps.
+**Manual:** Use `/coco:execute` or the `execute` skill for one task at a time with manual review between steps.
 
 Either approach follows the same flow per task:
 1. `coco_tracker ready` finds next unblocked task
@@ -119,7 +119,7 @@ Issue status transitions:
 
 ### 6. Feature Completion
 
-When all tasks are done, `/coco.loop` (or manual flow) creates a feature PR to main:
+When all tasks are done, `/coco:loop` (or manual flow) creates a feature PR to main:
 
 1. All issue PRs merged to feature branch
 2. Feature PR created: `feature/{name}` -> `main`
@@ -131,9 +131,9 @@ When all tasks are done, `/coco.loop` (or manual flow) creates a feature PR to m
 
 ## When to Use What
 
-- **Autonomous features**: Use `/coco.loop` (hands-off, PRs, AI review, circuit breaker)
-- **Manual features**: Use `/coco.execute` (step-by-step, manual review between tasks)
-- **Single-issue hotfixes**: Use `coco-hotfix` skill (simpler, optional PR)
+- **Autonomous features**: Use `/coco:loop` (hands-off, PRs, AI review, circuit breaker)
+- **Manual features**: Use `/coco:execute` (step-by-step, manual review between tasks)
+- **Single-issue hotfixes**: Use `hotfix` skill (simpler, optional PR)
 - **Quick changes**: Commit directly with `Completes ISSUE-KEY` format
 
 ## Parallel Execution

@@ -28,7 +28,7 @@ $ARGUMENTS
 ### 1. Load Context
 
 **PRD** (required):
-Read `{discovery.prd_path}`. If the file does not exist, ERROR: "No PRD found at `{discovery.prd_path}`. Run `/coco.prd` first."
+Read `{discovery.prd_path}`. If the file does not exist, ERROR: "No PRD found at `{discovery.prd_path}`. Run `/coco:prd` first."
 
 **Analysis docs** (optional):
 Glob `{discovery.analysis_dir}/*.md` and read all found documents. Extract:
@@ -203,22 +203,22 @@ Output:
 - Path to the roadmap file
 - Summary: N features across M phases, N unscheduled
 - Top-priority phase: "Phase 1: {name}" with feature count
-- Suggested next step: "Run `/coco.phase \"Phase 1: {name}\"` to begin execution"
+- Suggested next step: "Run `/coco:phase \"Phase 1: {name}\"` to begin execution"
 
 ## Parsing Contract
 
-The roadmap file format is designed to be both human-readable and machine-parseable by `/coco.phase`:
+The roadmap file format is designed to be both human-readable and machine-parseable by `/coco:phase`:
 
 - Phase sections are identified by `### Phase N: {Name}` headers
 - Feature tables use a consistent 7-column format: `| # | Feature | Slug | Priority | Score | Status | Spec |`
 - The `Slug` column maps directly to `specs/{slug}/` directories
 - The `Status` column values are: `Planned`, `In Progress`, `Complete`
-- `/coco.phase` reads a specific phase section and extracts features from table rows
-- `/coco.loop` updates the `Status` column when features complete
+- `/coco:phase` reads a specific phase section and extracts features from table rows
+- `/coco:loop` updates the `Status` column when features complete
 
 ## Notes
 
 - Each release gets its own roadmap file -- this allows parallel releases (e.g., v1.0 and v1.1)
-- The roadmap is the source of truth for phase composition; `/coco.phase` reads it directly
-- Features can be moved between phases by editing the roadmap and re-running `/coco.roadmap`
+- The roadmap is the source of truth for phase composition; `/coco:phase` reads it directly
+- Features can be moved between phases by editing the roadmap and re-running `/coco:roadmap`
 - Unscheduled features are preserved across updates for future consideration

@@ -2,7 +2,7 @@
 
 <!--
   This constitution defines the non-negotiable principles for your project.
-  Use /coco.constitution to customize it for your project.
+  Use /coco:constitution to customize it for your project.
 
   Instructions:
   - Replace the example principles below with your project's actual principles

@@ -11,8 +11,8 @@ Use the Discovery Phase when:
 - Needing to align stakeholders on priorities before writing specs
 
 Skip it when:
-- Working on a single known feature (start with the `coco-spec` skill)
-- Applying a hotfix (use the coco-hotfix skill)
+- Working on a single known feature (start with the `spec` skill)
+- Applying a hotfix (use the hotfix skill)
 - The roadmap already exists and is current
 
 ## Artifact Structure
@@ -46,12 +46,12 @@ discovery:
 ### 1. Create the PRD
 
 ```
-/coco.prd "Brief product description"
+/coco:prd "Brief product description"
 ```
 
 For an existing project:
 ```
-/coco.prd audit
+/coco:prd audit
 ```
 
 The PRD command interviews you through each section (vision, users, goals, scope, constraints, feature candidates) and writes a structured PRD. For existing projects, it scans the codebase and infers what it can, then validates with you.
@@ -74,12 +74,12 @@ Use the analysis template at `templates/analysis-template.md`. Each analysis doc
 - Implications for the roadmap (which features are affected and how)
 - Concrete recommendations
 
-Analysis docs are automatically discovered by `/coco.roadmap`.
+Analysis docs are automatically discovered by `/coco:roadmap`.
 
 ### 3. Build the Roadmap
 
 ```
-/coco.roadmap v1.0
+/coco:roadmap v1.0
 ```
 
 The roadmap command:
@@ -98,10 +98,10 @@ If an issue tracker is configured, it also creates:
 ### 4. Execute Phases
 
 ```
-/coco.phase "Phase 1: Foundation"
+/coco:phase "Phase 1: Foundation"
 ```
 
-`/coco.phase` reads the roadmap table directly, extracting features with their slugs, priorities, and dependencies. It then orchestrates the full per-feature pipeline (spec -> plan -> tasks -> import -> execute).
+`/coco:phase` reads the roadmap table directly, extracting features with their slugs, priorities, and dependencies. It then orchestrates the full per-feature pipeline (spec -> plan -> tasks -> import -> execute).
 
 ## Roadmap Sync
 
@@ -109,8 +109,8 @@ The roadmap is automatically updated as work progresses:
 
 | Event | Update |
 |-------|--------|
-| Feature completed (`/coco.loop` epic done) | Feature row Status -> "Complete", Spec column filled |
-| Phase completed (`/coco.phase` all features merged) | Phase Status -> "Complete", Change Log entry added |
+| Feature completed (`/coco:loop` epic done) | Feature row Status -> "Complete", Spec column filled |
+| Phase completed (`/coco:phase` all features merged) | Phase Status -> "Complete", Change Log entry added |
 
 This keeps the roadmap as a live dashboard of release progress.
 
@@ -120,20 +120,20 @@ The Discovery Phase sits before the existing planning pipeline:
 
 ```
 Discovery Phase (NEW)
-  /coco.prd              Create/audit Product Requirements Document
+  /coco:prd              Create/audit Product Requirements Document
   /planning-session      Analysis docs via strategic sessions
-  /coco.roadmap          Synthesize PRD + analysis into per-release roadmap
+  /coco:roadmap          Synthesize PRD + analysis into per-release roadmap
 
 Planning Phase (existing -- now uses skills)
-  /coco.phase            Reads roadmap, orchestrates features
-  coco-spec skill        Per-feature specification
-  coco-plan skill        Implementation plan
-  coco-tasks skill       Task decomposition
+  /coco:phase            Reads roadmap, orchestrates features
+  spec skill        Per-feature specification
+  plan skill        Implementation plan
+  tasks skill       Task decomposition
 
 Execution Phase (existing)
-  coco-import skill      Import to tracker + issue tracker
-  /coco.loop             Autonomous TDD + PR + review
-  /coco.execute          Manual step-by-step
+  import skill      Import to tracker + issue tracker
+  /coco:loop             Autonomous TDD + PR + review
+  /coco:execute          Manual step-by-step
 ```
 
 Projects without discovery docs work exactly as before -- all roadmap lookups gracefully fall back to the existing behavior (scanning README/docs/specs).

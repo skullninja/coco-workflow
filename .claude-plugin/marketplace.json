@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "coco-workflow",
+      "name": "coco",
       "source": "./",
       "description": "Autonomous spec-driven development for Claude Code. Describe a feature, get merged, tested, reviewed code."
     }

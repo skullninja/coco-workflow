@@ -88,7 +88,7 @@ Output:
 - Summary: product vision, number of goals, number of feature candidates
 - Suggested next steps:
   - "Create analysis docs for open questions (save to `{discovery.analysis_dir}/`)"
-  - "Run `/coco.roadmap {release-name}` to build a prioritized roadmap"
+  - "Run `/coco:roadmap {release-name}` to build a prioritized roadmap"
 
 ---
 
@@ -167,7 +167,7 @@ Output:
 
 ## Notes
 
-- The PRD is a living document -- it can be updated by running `/coco.prd` again
+- The PRD is a living document -- it can be updated by running `/coco:prd` again
 - If the PRD already exists, load it and present options: overwrite, update specific sections, or cancel
-- Feature candidates in the PRD feed directly into `/coco.roadmap` for prioritization
+- Feature candidates in the PRD feed directly into `/coco:roadmap` for prioritization
 - Open questions are candidates for standalone analysis docs in `{discovery.analysis_dir}/`

@@ -20,9 +20,9 @@ Resuming coco-workflow context:
 
 3. If there are in-progress tasks, suggest:
    - Verify the current state: `coco_tracker epic-status {epic-id}`
-   - Continue execution: `/coco.execute` or `/coco.loop`
+   - Continue execution: `/coco:execute` or `/coco:loop`
 
-4. If the session memory is older than 24 hours, note this and suggest running `/coco.sync` to reconcile state.
+4. If the session memory is older than 24 hours, note this and suggest running `/coco:sync` to reconcile state.
 
 ## Important
 

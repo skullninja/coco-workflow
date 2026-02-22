@@ -7,8 +7,8 @@ Coco is a Claude Code plugin that provides autonomous spec-driven development. I
 ## Architecture
 
 Five layers:
-- **Discovery**: `/coco.prd` and `/coco.roadmap` produce PRD, analysis, and roadmap artifacts
-- **Planning**: Skills (`coco-spec`, `coco-plan`, `coco-tasks`, `coco-import`) produce spec artifacts in `specs/{feature}/`
+- **Discovery**: `/coco:prd` and `/coco:roadmap` produce PRD, analysis, and roadmap artifacts
+- **Planning**: Skills (`spec`, `plan`, `tasks`, `import`) produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
 - **Visibility**: Issue tracker bridge (Linear MCP, GitHub CLI, or none) mirrors status
@@ -20,12 +20,12 @@ Five layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 12 slash commands (coco.prd, coco.roadmap, coco.phase, coco.loop, coco.execute, coco.standup, etc.) |
+| `commands/` | 12 slash commands (prd, roadmap, phase, loop, execute, standup, etc.) |
 | `skills/spec/SKILL.md` | Feature specification with clarification (AI-selected) |
 | `skills/plan/SKILL.md` | Implementation plan generation (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
 | `skills/import/SKILL.md` | Tracker + issue tracker import (AI-selected) |
-| `skills/execute/SKILL.md` | Execution skill (delegates to `/coco.execute` command) |
+| `skills/execute/SKILL.md` | Execution skill (delegates to `/coco:execute` command) |
 | `skills/hotfix/SKILL.md` | Single-issue hotfix workflow (with optional PR) |
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/task-executor.md` | Worktree-isolated task executor for parallel execution |
@@ -132,11 +132,11 @@ The bridge is implemented as conditional instructions in command and skill markd
 
 When `issue_tracker.github.use_projects` is `true` (default), the GitHub integration creates and manages GitHub Projects V2 boards:
 
-- **One project per feature**: Created during `coco-import`, matching Linear's project-per-feature model
+- **One project per feature**: Created during `import`, matching Linear's project-per-feature model
 - **Status columns**: Todo, In Progress, In Review, Done -- mapped via `status_map` config values
 - **Field ID caching**: `gh project item-edit` requires opaque IDs. Resolved once during import, cached in `.coco/state/gh-projects.json`
 - **Issue lifecycle**: Issues are added to the project board and moved between columns as status changes
-- **Phase projects**: `/coco.roadmap` creates a project per phase (cached under `phases` key)
+- **Phase projects**: `/coco:roadmap` creates a project per phase (cached under `phases` key)
 - **Backward compatibility**: Set `use_projects: false` to fall back to label-based status tracking
 
 Cache file structure (`.coco/state/gh-projects.json`):
@@ -158,27 +158,27 @@ Cache file structure (`.coco/state/gh-projects.json`):
 
 ## Pipeline
 
-Full pipeline: `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` -> (per feature) `coco-spec` skill -> `coco-plan` skill -> `coco-tasks` skill -> `coco-import` skill -> `/coco.loop`
+Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) `spec` skill -> `plan` skill -> `tasks` skill -> `import` skill -> `/coco:loop`
 
-- `/coco.prd` creates or audits the Product Requirements Document
-- `/coco.roadmap` synthesizes PRD + analysis docs into a prioritized, phased roadmap
-- `/coco.phase` reads the roadmap and orchestrates multiple features in a phase (invoking skills for each step)
-- `/coco.loop` runs autonomously with circuit breaker and PR workflow
-- `/coco.execute` runs one task at a time for manual review
+- `/coco:prd` creates or audits the Product Requirements Document
+- `/coco:roadmap` synthesizes PRD + analysis docs into a prioritized, phased roadmap
+- `/coco:phase` reads the roadmap and orchestrates multiple features in a phase (invoking skills for each step)
+- `/coco:loop` runs autonomously with circuit breaker and PR workflow
+- `/coco:execute` runs one task at a time for manual review
 
-The pipeline steps (spec, plan, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco.phase`, `/planning-session tactical`, or natural language requests.
+The pipeline steps (spec, plan, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests.
 
 ## Adaptive Complexity Routing
 
-`/planning-session tactical` and `/coco.phase` classify features by complexity tier:
+`/planning-session tactical` and `/coco:phase` classify features by complexity tier:
 
 | Tier | Pipeline |
 |------|----------|
-| **Trivial** | `coco-hotfix` skill (no epic overhead) |
-| **Light** | `coco-spec` (light mode) -> `coco-import` (spec-only mode) |
-| **Standard** | Full: `coco-spec` -> `coco-plan` -> `coco-tasks` -> `coco-import` |
+| **Trivial** | `hotfix` skill (no epic overhead) |
+| **Light** | `spec` (light mode) -> `import` (spec-only mode) |
+| **Standard** | Full: `spec` -> `plan` -> `tasks` -> `import` |
 
-Light mode: `coco-spec` generates a minimal spec (single user story, 3-5 acceptance criteria, no clarification pass). `coco-import` creates a single-task epic directly from the spec without requiring plan.md or tasks.md.
+Light mode: `spec` generates a minimal spec (single user story, 3-5 acceptance criteria, no clarification pass). `import` creates a single-task epic directly from the spec without requiring plan.md or tasks.md.
 
 ## Hooks
 
@@ -201,11 +201,11 @@ After foundation sub-phases complete, user story sub-phases can run in parallel 
 
 ### Worktree-Based Parallel Execution
 
-When `loop.parallel.enabled` is `true`, `/coco.loop` uses git worktree isolation for real parallel execution:
+When `loop.parallel.enabled` is `true`, `/coco:loop` uses git worktree isolation for real parallel execution:
 
 - **`task-executor` agent**: A new agent (`agents/task-executor.md`) with `isolation: worktree` frontmatter. Executes a single task in an isolated git worktree -- TDD, commit, PR creation.
-- **Dispatch**: `/coco.loop` detects multiple ready tasks with non-overlapping `owns_files`, spawns up to `max_agents` `task-executor` agents simultaneously via the Task tool.
-- **Review flow**: Parent `/coco.loop` handles AI code review and merge after agents complete. Agents do NOT review or merge their own PRs.
+- **Dispatch**: `/coco:loop` detects multiple ready tasks with non-overlapping `owns_files`, spawns up to `max_agents` `task-executor` agents simultaneously via the Task tool.
+- **Review flow**: Parent `/coco:loop` handles AI code review and merge after agents complete. Agents do NOT review or merge their own PRs.
 - **Fallback**: Tasks without `owns_files` metadata, or when only one task is ready, execute serially (unchanged behavior).
 
 Config:

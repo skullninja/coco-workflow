@@ -1,6 +1,6 @@
 ---
 name: task-executor
-description: "Use this agent to execute a single tracked task with TDD, commit, and PR creation in an isolated git worktree. Dispatched by /coco.loop for parallel execution.\n\n<example>\nContext: Multiple tasks are ready with non-overlapping file ownership. /coco.loop dispatches parallel agents.\n\nassistant: \"I'll dispatch task-executor agents for each ready task.\"\n\n<uses Task tool to launch multiple task-executor agents simultaneously>\n</example>"
+description: "Use this agent to execute a single tracked task with TDD, commit, and PR creation in an isolated git worktree. Dispatched by /coco:loop for parallel execution.\n\n<example>\nContext: Multiple tasks are ready with non-overlapping file ownership. /coco:loop dispatches parallel agents.\n\nassistant: \"I'll dispatch task-executor agents for each ready task.\"\n\n<uses Task tool to launch multiple task-executor agents simultaneously>\n</example>"
 model: sonnet
 isolation: worktree
 color: green
@@ -194,7 +194,7 @@ Return a structured summary to the parent:
 
 ## Important Notes
 
-- Do NOT run AI code review -- the parent `/coco.loop` handles reviews after all parallel tasks complete
+- Do NOT run AI code review -- the parent `/coco:loop` handles reviews after all parallel tasks complete
 - Do NOT merge the PR -- the parent handles merge after review
 - Do NOT modify files outside the task's `owns_files` metadata patterns
 - If the task fails (tests don't pass, build breaks), report failure and let the parent handle retry

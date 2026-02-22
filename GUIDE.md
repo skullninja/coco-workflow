@@ -14,8 +14,8 @@ This workflow uses a unified pipeline to take features from description to merge
 
 | Layer | Tool | Role |
 |-------|------|------|
-| **Discovery** | `/coco.prd`, `/coco.roadmap` | Produces PRD, analysis docs, and per-release roadmaps |
-| **Planning** | Coco skills (`coco-spec`, `coco-plan`, `coco-tasks`) | Produces `specs/{feature}/` artifacts: spec.md, plan.md, tasks.md |
+| **Discovery** | `/coco:prd`, `/coco:roadmap` | Produces PRD, analysis docs, and per-release roadmaps |
+| **Planning** | Coco skills (`spec`, `plan`, `tasks`) | Produces `specs/{feature}/` artifacts: spec.md, plan.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
 
@@ -25,12 +25,12 @@ This workflow uses a unified pipeline to take features from description to merge
 
 | Command | Purpose | Input | Output |
 |---------|---------|-------|--------|
-| `/coco.prd` | Create or audit PRD | Product description or "audit" | `docs/prd.md` |
-| `/coco.roadmap` | Build prioritized roadmap | Release name (e.g., "v1.0") | `docs/roadmap/{release}.md` |
+| `/coco:prd` | Create or audit PRD | Product description or "audit" | `docs/prd.md` |
+| `/coco:roadmap` | Build prioritized roadmap | Release name (e.g., "v1.0") | `docs/roadmap/{release}.md` |
 
-The Discovery Phase is optional -- projects can start directly with the `coco-spec` skill for individual features. Use it when starting a new product or major release to establish priorities before writing feature specs.
+The Discovery Phase is optional -- projects can start directly with the `spec` skill for individual features. Use it when starting a new product or major release to establish priorities before writing feature specs.
 
-**Workflow**: `/coco.prd` -> analysis docs (via `/planning-session strategic`) -> `/coco.roadmap` -> `/coco.phase`
+**Workflow**: `/coco:prd` -> analysis docs (via `/planning-session strategic`) -> `/coco:roadmap` -> `/coco:phase`
 
 See `workflows/discovery-workflow.md` for full details.
 
@@ -38,20 +38,20 @@ See `workflows/discovery-workflow.md` for full details.
 
 ## Planning Skills
 
-Planning steps are AI-selected skills (invisible in `/` autocomplete). They are invoked automatically by `/coco.phase`, `/planning-session tactical`, or natural language requests.
+Planning steps are AI-selected skills (invisible in `/` autocomplete). They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests.
 
 | Skill | Purpose | Input | Output |
 |-------|---------|-------|--------|
-| `coco-spec` | Create feature specification with optional clarification | Feature description | `spec.md` |
-| `coco-plan` | Generate implementation plan | `spec.md` | `plan.md`, `research.md`, `data-model.md`, `contracts/` |
-| `coco-tasks` | Generate task list with consistency analysis | `spec.md` + `plan.md` | `tasks.md` with sub-phases + analysis report |
-| `coco-import` | Import tasks to tracker + issue tracker | `tasks.md` | Tracker epic + issues |
+| `spec` | Create feature specification with optional clarification | Feature description | `spec.md` |
+| `plan` | Generate implementation plan | `spec.md` | `plan.md`, `research.md`, `data-model.md`, `contracts/` |
+| `tasks` | Generate task list with consistency analysis | `spec.md` + `plan.md` | `tasks.md` with sub-phases + analysis report |
+| `import` | Import tasks to tracker + issue tracker | `tasks.md` | Tracker epic + issues |
 
 ### Additional Planning Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/coco.constitution` | Create/update project constitution |
+| `/coco:constitution` | Create/update project constitution |
 
 **Artifact structure** produced per feature:
 
@@ -73,11 +73,11 @@ specs/{feature}/
 
 | Command | Purpose |
 |---------|---------|
-| `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
-| `/coco.loop` | Autonomous execution loop with circuit breaker |
-| `/coco.sync` | Reconcile tracker and issue tracker state |
-| `/coco.status` | Show execution status and parallel opportunities |
-| `/coco.phase` | Orchestrate full pipeline for a roadmap phase |
+| `/coco:execute` | TDD + PR + AI review loop with issue tracker bridge |
+| `/coco:loop` | Autonomous execution loop with circuit breaker |
+| `/coco:sync` | Reconcile tracker and issue tracker state |
+| `/coco:status` | Show execution status and parallel opportunities |
+| `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
 
 ## Coco Tracker
 
@@ -122,18 +122,18 @@ Configured in `.coco/config.yaml` under `issue_tracker`:
 
 When `issue_tracker.github.use_projects` is `true` (default), the GitHub integration creates GitHub Projects V2 boards for visual status tracking:
 
-- **One project per feature** -- created during `coco-import`, with Status columns (Todo, In Progress, In Review, Done)
-- **Phase-level projects** -- `/coco.roadmap` creates a project per roadmap phase
+- **One project per feature** -- created during `import`, with Status columns (Todo, In Progress, In Review, Done)
+- **Phase-level projects** -- `/coco:roadmap` creates a project per roadmap phase
 - **Field ID caching** -- opaque IDs for `gh project item-edit` are resolved once and cached in `.coco/state/gh-projects.json`
-- **Automatic status transitions** -- `/coco.execute` and `/coco.loop` move issues between board columns
-- **Backfill support** -- `/coco.sync` detects pre-existing issues without project association and offers to add them
+- **Automatic status transitions** -- `/coco:execute` and `/coco:loop` move issues between board columns
+- **Backfill support** -- `/coco:sync` detects pre-existing issues without project association and offers to add them
 - **Legacy fallback** -- set `use_projects: false` for label-based tracking (existing behavior)
 
 ---
 
-## The `/coco.phase` Pipeline
+## The `/coco:phase` Pipeline
 
-The `/coco.phase` command orchestrates the full lifecycle for all features in a phase.
+The `/coco:phase` command orchestrates the full lifecycle for all features in a phase.
 
 ### Step-by-Step
 
@@ -147,12 +147,12 @@ Present audit results to the user. This is the **last required human interaction
 
 **Phase 3: Per-Spec Pipeline (Steps A-G)**
 
-- **Step A -- Specify**: If no `spec.md`, run `/interview` or the `coco-spec` skill
-- **Step B -- Plan**: If no `plan.md`, run the `coco-plan` skill
-- **Step C -- Generate tasks**: If no `tasks.md`, run the `coco-tasks` skill
-- **Step D -- Import**: Run the `coco-import` skill (tracker epic + dependencies + issue tracker)
+- **Step A -- Specify**: If no `spec.md`, run `/interview` or the `spec` skill
+- **Step B -- Plan**: If no `plan.md`, run the `plan` skill
+- **Step C -- Generate tasks**: If no `tasks.md`, run the `tasks` skill
+- **Step D -- Import**: Run the `import` skill (tracker epic + dependencies + issue tracker)
 - **Step E -- Create branch**: `git checkout -b {feature-name}`
-- **Step F -- Execute**: Run `/coco.execute` for TDD loop
+- **Step F -- Execute**: Run `/coco:execute` for TDD loop
 - **Step G -- Merge**: Merge to main, update issue tracker
 
 **Phase 4: Completion**
@@ -160,21 +160,21 @@ Verify all epics closed, run full test suite, report summary.
 
 ---
 
-## The `/coco.loop` Autonomous Loop
+## The `/coco:loop` Autonomous Loop
 
-The `/coco.loop` command wraps `/coco.execute` in an autonomous loop that runs until the epic is complete or a safety condition triggers.
+The `/coco:loop` command wraps `/coco:execute` in an autonomous loop that runs until the epic is complete or a safety condition triggers.
 
 ### How It Works
 
 ```
-/coco.loop {epic-id}
+/coco:loop {epic-id}
 
   while tasks remain:
     1. coco_tracker ready -> next unblocked task(s)
     2. If parallel enabled + multiple ready tasks with non-overlapping owns_files:
        -> Dispatch task-executor agents in parallel (worktree isolation)
        -> Review and merge PRs after all agents complete
-    3. Otherwise: Execute full TDD cycle serially (same as /coco.execute)
+    3. Otherwise: Execute full TDD cycle serially (same as /coco:execute)
     4. Check progress (git commits)
     5. Check epic status (all tasks closed?)
     6. If no progress for N iterations -> circuit breaker
@@ -197,15 +197,15 @@ Configure in `.coco/config.yaml` under `loop:`.
 
 | Situation | Command |
 |-----------|---------|
-| Hands-off execution of an entire epic | `/coco.loop` |
-| Step-by-step execution with manual review | `/coco.execute` |
-| Full phase with multiple features | `/coco.phase` (which can use `/coco.loop` per feature) |
+| Hands-off execution of an entire epic | `/coco:loop` |
+| Step-by-step execution with manual review | `/coco:execute` |
+| Full phase with multiple features | `/coco:phase` (which can use `/coco:loop` per feature) |
 
 ---
 
 ## Execution Deep-Dive
 
-### Execution Loop (coco-execute skill)
+### Execution Loop (execute skill)
 
 15 steps per sub-phase (steps 3, 8-11 gated on `pr.enabled`):
 
@@ -249,7 +249,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Worktree-Based Parallel Execution
 
-When `loop.parallel.enabled` is `true`, `/coco.loop` dispatches `task-executor` agents with `isolation: worktree` for real parallel execution:
+When `loop.parallel.enabled` is `true`, `/coco:loop` dispatches `task-executor` agents with `isolation: worktree` for real parallel execution:
 
 ```
 Sub-Phase 1: Setup ---------> Sub-Phase 2: Foundational
@@ -268,7 +268,7 @@ Sub-Phase 1: Setup ---------> Sub-Phase 2: Foundational
                                  Sub-Phase N: Polish
 ```
 
-Each `task-executor` runs in its own git worktree with full filesystem isolation. After agents complete, `/coco.loop` reviews and merges each PR sequentially.
+Each `task-executor` runs in its own git worktree with full filesystem isolation. After agents complete, `/coco:loop` reviews and merges each PR sequentially.
 
 ### Configuration
 
@@ -285,7 +285,7 @@ loop:
 - **Never parallelize same-file tasks** -- requires non-overlapping `owns_files` metadata
 - **Foundation must be serial** (Sub-Phases 1-2)
 - **Integration must be serial** (final polish sub-phase)
-- File ownership generated by `coco-tasks` skill, stored in tracker metadata by `coco-import`
+- File ownership generated by `tasks` skill, stored in tracker metadata by `import`
 - Tasks without `owns_files` execute serially even when parallel is enabled
 
 ---
@@ -328,7 +328,7 @@ coco_tracker ready --json --epic {epic-id}
 
 - `coco_tracker ready` always returns the correct next task based on dependencies
 - Issue tracker reflects current progress for human visibility
-- `/coco.execute` can be invoked at any point to continue
+- `/coco:execute` can be invoked at any point to continue
 
 ### Ending a Session
 
@@ -346,15 +346,15 @@ git push
 
 | Command | Purpose |
 |---------|---------|
-| `/coco.prd` | Create or audit Product Requirements Document |
-| `/coco.roadmap` | Build prioritized, phased roadmap from PRD + analysis |
-| `/coco.phase` | Orchestrate full pipeline for a phase |
-| `/coco.loop` | Autonomous loop with circuit breaker |
-| `/coco.execute` | TDD + PR + AI review loop with issue tracker bridge |
-| `/coco.constitution` | Create/update project constitution |
-| `/coco.status` | Show execution state and opportunities |
-| `/coco.standup` | Daily standup -- done, in-progress, blocked, metrics |
-| `/coco.sync` | Reconcile tracker and issue tracker state |
+| `/coco:prd` | Create or audit Product Requirements Document |
+| `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
+| `/coco:phase` | Orchestrate full pipeline for a phase |
+| `/coco:loop` | Autonomous loop with circuit breaker |
+| `/coco:execute` | TDD + PR + AI review loop with issue tracker bridge |
+| `/coco:constitution` | Create/update project constitution |
+| `/coco:status` | Show execution state and opportunities |
+| `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
+| `/coco:sync` | Reconcile tracker and issue tracker state |
 | `/planning-session` | Start a planning session |
 | `/planning-triage` | Score and disposition an item |
 | `/interview` | In-depth interview to create feature spec |
@@ -363,58 +363,58 @@ git push
 
 | Skill | Purpose |
 |-------|---------|
-| `coco-spec` | Create spec.md with optional clarification |
-| `coco-plan` | Generate plan.md + research + data model |
-| `coco-tasks` | Generate tasks.md with sub-phases + consistency analysis |
-| `coco-import` | Import tasks.md -> tracker + issue tracker |
-| `coco-hotfix` | Single-issue hotfix workflow |
-| `coco-execute` | Delegates to /coco.execute command |
+| `spec` | Create spec.md with optional clarification |
+| `plan` | Generate plan.md + research + data model |
+| `tasks` | Generate tasks.md with sub-phases + consistency analysis |
+| `import` | Import tasks.md -> tracker + issue tracker |
+| `hotfix` | Single-issue hotfix workflow |
+| `execute` | Delegates to /coco:execute command |
 
 ### Common Workflows
 
 **Full product (discovery to delivery):**
 ```
-/coco.prd {description}         -->  Product Requirements Document
+/coco:prd {description}         -->  Product Requirements Document
 /planning-session strategic      -->  analysis docs for open questions
-/coco.roadmap v1.0               -->  prioritized, phased roadmap
-/coco.phase "Phase 1: ..."       -->  autonomous pipeline per phase
+/coco:roadmap v1.0               -->  prioritized, phased roadmap
+/coco:phase "Phase 1: ..."       -->  autonomous pipeline per phase
 ```
 
 **Full feature (multi-session):**
 ```
-/coco.phase {phase-description}  -->  autonomous pipeline
+/coco:phase {phase-description}  -->  autonomous pipeline
 ```
 
 **Single feature (automated pipeline):**
 ```
-/planning-session tactical   -->  runs coco-spec -> coco-plan -> coco-tasks -> coco-import
-/coco.loop                   -->  autonomous until epic complete
+/planning-session tactical   -->  runs spec -> plan -> tasks -> import
+/coco:loop                   -->  autonomous until epic complete
 ```
 
 **Single feature (manual step-by-step):**
 ```
 /planning-session tactical   -->  runs skills for spec, plan, tasks, import
-/coco.execute                -->  one task at a time
+/coco:execute                -->  one task at a time
 ```
 
 **Hotfix (single-issue):**
 ```
-# Uses the coco-hotfix skill
+# Uses the hotfix skill
 ```
 
 **Sync drift:**
 ```
-/coco.sync
+/coco:sync
 ```
 
 ### Routing Decision
 
 | Scenario | Approach |
 |----------|----------|
-| New product or major release | `/coco.prd` -> `/coco.roadmap` -> `/coco.phase` |
-| Existing project onboarding | `/coco.prd audit` -> `/coco.roadmap` |
-| Autonomous feature (hands-off) | `/coco.loop` -- runs until epic complete |
-| Multi-session feature (manual) | `/coco.execute` -- one task per invocation |
-| Single-issue hotfix | coco-hotfix skill |
-| Phase orchestration | `/coco.phase` |
-| Sync drift | `/coco.sync` |
+| New product or major release | `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` |
+| Existing project onboarding | `/coco:prd audit` -> `/coco:roadmap` |
+| Autonomous feature (hands-off) | `/coco:loop` -- runs until epic complete |
+| Multi-session feature (manual) | `/coco:execute` -- one task per invocation |
+| Single-issue hotfix | hotfix skill |
+| Phase orchestration | `/coco:phase` |
+| Sync drift | `/coco:sync` |

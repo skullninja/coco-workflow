@@ -1,6 +1,6 @@
 ---
-name: coco-spec
-description: Generate a coco-workflow feature specification (spec.md) in specs/{feature}/ with user stories, acceptance criteria, and clarification of ambiguities.
+name: spec
+description: Generate a feature specification (spec.md) in specs/{feature}/ with user stories, acceptance criteria, and clarification of ambiguities.
 ---
 
 # Coco Spec Skill
@@ -9,11 +9,11 @@ Generate a feature specification from a natural language description, with optio
 
 ## When to Use
 
-- Creating a new feature specification as part of the coco-workflow pipeline
-- Called by `/coco.phase` (Step A) or `/planning-session tactical`
+- Creating a new feature specification as part of the coco pipeline
+- Called by `/coco:phase` (Step A) or `/planning-session tactical`
 - When a spec.md is needed in `specs/{feature}/` before planning can begin
 
-For single-issue fixes, use the `coco-hotfix` skill instead.
+For single-issue fixes, use the `hotfix` skill instead.
 
 ## Setup
 
@@ -90,7 +90,7 @@ If `[NEEDS CLARIFICATION]` markers remain (max 3), present them to the user as a
 
 ### 5. Clarification Pass (Optional)
 
-After spec generation, perform a structured ambiguity scan. This step absorbs the logic previously in `/coco.clarify`.
+After spec generation, perform a structured ambiguity scan. This step absorbs the logic previously in `/coco:clarify`.
 
 **Ambiguity Scan**: Check coverage across these categories, marking each as Clear / Partial / Missing:
 
@@ -134,7 +134,7 @@ Output:
 - Spec file path
 - Checklist results
 - Clarification summary (questions asked, sections updated) if clarification pass ran
-- Suggested next step: use the `coco-plan` skill to generate the implementation plan
+- Suggested next step: use the `plan` skill to generate the implementation plan
 
 ## Light Mode
 
@@ -147,11 +147,11 @@ When invoked for a **Light-tier** feature (1-3 files, single user story, no inte
    - No sub-phases, no dependency graph, no key entities section
 2. **Skip clarification pass** (Step 5) entirely
 3. **Skip detailed checklist** -- just verify the acceptance criteria are testable
-4. **Suggest next step**: Use the `coco-import` skill in spec-only mode (skipping plan and tasks)
+4. **Suggest next step**: Use the `import` skill in spec-only mode (skipping plan and tasks)
 
 Light mode is triggered by:
 - `/planning-session tactical` routing to Light tier
-- `/coco.phase` classifying the feature as Light tier
+- `/coco:phase` classifying the feature as Light tier
 - Explicit request for a "light" or "minimal" spec
 
 ## Guidelines

@@ -1,5 +1,5 @@
 ---
-name: coco-hotfix
+name: hotfix
 description: Single-issue workflow for quick fixes and small changes that don't need full epic tracking. Creates a branch, implements the fix, commits with issue tracking, and closes.
 ---
 
@@ -14,7 +14,7 @@ Lightweight workflow for single-issue fixes and small changes that don't warrant
 - Quick changes where dependency tracking isn't needed
 - Any work that maps to a single issue tracker entry
 
-For multi-session features with dependencies, use the `coco-execute` skill instead.
+For multi-session features with dependencies, use the `execute` skill instead.
 
 ## Workflow
 
@@ -111,7 +111,7 @@ EOF
 
 If `pr.review.enabled`:
 - Invoke `code-reviewer` agent on the PR
-- If CHANGES REQUESTED: fix critical findings, push, re-review (same loop as coco-execute)
+- If CHANGES REQUESTED: fix critical findings, push, re-review (same loop as `/coco:execute`)
 - After approval: merge PR
 
 ```bash

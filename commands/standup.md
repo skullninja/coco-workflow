@@ -96,6 +96,6 @@ If an issue tracker is configured, append:
 
 ## Rules
 
-- If no active epics exist, report "No active epics. Start with `/coco.phase` or `/planning-session tactical`."
+- If no active epics exist, report "No active epics. Start with `/coco:phase` or `/planning-session tactical`."
 - If no activity in the last 24 hours, report "No activity in the last 24 hours" with current state.
 - Keep the output scannable -- tables and bullet points, not prose.

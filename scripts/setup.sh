@@ -30,10 +30,18 @@ CLAUDE_SETTINGS="$CLAUDE_SETTINGS_DIR/settings.json"
 
 mkdir -p "$CLAUDE_SETTINGS_DIR"
 
+# Migrate from old plugin name (coco-workflow -> coco)
+if [[ -f "$CLAUDE_SETTINGS" ]]; then
+    if jq -e '.enabledPlugins["coco-workflow@coco-local"] // false' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+        jq 'del(.enabledPlugins["coco-workflow@coco-local"])' "$CLAUDE_SETTINGS" > "${CLAUDE_SETTINGS}.tmp" && mv "${CLAUDE_SETTINGS}.tmp" "$CLAUDE_SETTINGS"
+        echo "  Migrated plugin registration: coco-workflow@coco-local -> coco@coco-local"
+    fi
+fi
+
 # Check if plugin is already registered
 ALREADY_REGISTERED=false
 if [[ -f "$CLAUDE_SETTINGS" ]]; then
-    if jq -e '.enabledPlugins["coco-workflow@coco-local"] // false' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+    if jq -e '.enabledPlugins["coco@coco-local"] // false' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
         ALREADY_REGISTERED=true
     fi
 fi
@@ -48,7 +56,7 @@ else
             .extraKnownMarketplaces = (.extraKnownMarketplaces // {}) * {
                 "coco-local": { "source": { "source": "directory", "path": $path } }
             }
-            | .enabledPlugins = (.enabledPlugins // {}) * { "coco-workflow@coco-local": true }
+            | .enabledPlugins = (.enabledPlugins // {}) * { "coco@coco-local": true }
         ' "$CLAUDE_SETTINGS" > "${CLAUDE_SETTINGS}.tmp" && mv "${CLAUDE_SETTINGS}.tmp" "$CLAUDE_SETTINGS"
         echo "  Registered plugin in .claude/settings.json"
     else
@@ -60,7 +68,7 @@ else
     }
   },
   "enabledPlugins": {
-    "coco-workflow@coco-local": true
+    "coco@coco-local": true
   }
 }
 EOF
@@ -220,6 +228,6 @@ fi
 echo ""
 echo "Setup complete. Next steps:"
 echo "  1. Restart Claude Code to load the Coco plugin"
-echo "  2. Run /coco.constitution to set up project principles"
-echo "  3. For new projects: /coco.prd to create a Product Requirements Document"
-echo "  4. For existing projects: /coco.prd audit to generate a PRD from your codebase"
+echo "  2. Run /coco:constitution to set up project principles"
+echo "  3. For new projects: /coco:prd to create a Product Requirements Document"
+echo "  4. For existing projects: /coco:prd audit to generate a PRD from your codebase"

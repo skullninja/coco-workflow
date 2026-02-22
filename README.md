@@ -59,23 +59,23 @@ The setup script registers the plugin with Claude Code, walks you through key se
 
 ```bash
 # Full pipeline: discovery to delivery
-/coco.prd "My product description"       # Create PRD
-/coco.roadmap v1.0                       # Prioritized roadmap
-/coco.phase "Phase 1: Foundation"        # Orchestrate all features
+/coco:prd "My product description"       # Create PRD
+/coco:roadmap v1.0                       # Prioritized roadmap
+/coco:phase "Phase 1: Foundation"        # Orchestrate all features
 
 # Single feature
 /planning-session tactical               # Spec -> plan -> tasks -> import
-/coco.loop                               # Autonomous execution until done
+/coco:loop                               # Autonomous execution until done
 
 # Quick fix
-# Just describe the bug -- coco-hotfix skill handles it
+# Just describe the bug -- hotfix skill handles it
 ```
 
 ### Check in on progress
 
 ```bash
-/coco.standup                            # What happened, what's next, what's stuck
-/coco.status                             # Execution state and parallel opportunities
+/coco:standup                            # What happened, what's next, what's stuck
+/coco:status                             # Execution state and parallel opportunities
 ```
 
 ## How It Works
@@ -84,25 +84,25 @@ The setup script registers the plugin with Claude Code, walks you through key se
 
 | Layer | What | How |
 |-------|------|-----|
-| **Discovery** | PRD, analysis, roadmap | `/coco.prd`, `/coco.roadmap` |
-| **Planning** | Spec, plan, task decomposition | AI-selected skills (`coco-spec`, `coco-plan`, `coco-tasks`) |
-| **Execution** | Dependency resolution, TDD loop | Built-in tracker + `/coco.loop` |
+| **Discovery** | PRD, analysis, roadmap | `/coco:prd`, `/coco:roadmap` |
+| **Planning** | Spec, plan, task decomposition | AI-selected skills (`spec`, `plan`, `tasks`) |
+| **Execution** | Dependency resolution, TDD loop | Built-in tracker + `/coco:loop` |
 | **Review** | AI code review on every PR | `code-reviewer` agent |
 | **Visibility** | Issue tracker sync | Linear MCP, GitHub CLI, or none |
 
 ### Adaptive Complexity Routing
 
-Not every change needs the full pipeline. `/planning-session tactical` and `/coco.phase` automatically right-size the workflow:
+Not every change needs the full pipeline. `/planning-session tactical` and `/coco:phase` automatically right-size the workflow:
 
 | Tier | Signal | What Runs |
 |------|--------|-----------|
-| **Trivial** | Single file, bug fix, "quick" | `coco-hotfix` -- no epic, no ceremony |
+| **Trivial** | Single file, bug fix, "quick" | `hotfix` -- no epic, no ceremony |
 | **Light** | 1-3 files, single story | Spec + import -- skip plan and task decomposition |
 | **Standard** | Multi-file, dependencies | Full pipeline -- spec, plan, tasks, import |
 
 ### Autonomous Loop
 
-`/coco.loop` wraps TDD + PR + review in an autonomous loop:
+`/coco:loop` wraps TDD + PR + review in an autonomous loop:
 
 - **Circuit breaker** -- Pauses after consecutive iterations with no progress
 - **Safety limit** -- Configurable max iterations (default: 20)
@@ -161,15 +161,15 @@ Human-facing entry points. These show up in `/` autocomplete.
 
 | Command | Purpose |
 |---------|---------|
-| `/coco.prd` | Create or audit Product Requirements Document |
-| `/coco.roadmap` | Build prioritized, phased roadmap from PRD + analysis |
-| `/coco.phase` | Orchestrate full pipeline for a roadmap phase |
-| `/coco.loop` | Autonomous execution loop with circuit breaker |
-| `/coco.execute` | TDD execution loop (one task at a time) |
-| `/coco.constitution` | Manage project constitution (guiding principles) |
-| `/coco.status` | Execution state and parallel opportunities |
-| `/coco.standup` | Daily standup -- done, in-progress, blocked, metrics |
-| `/coco.sync` | Reconcile tracker with issue tracker |
+| `/coco:prd` | Create or audit Product Requirements Document |
+| `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
+| `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
+| `/coco:loop` | Autonomous execution loop with circuit breaker |
+| `/coco:execute` | TDD execution loop (one task at a time) |
+| `/coco:constitution` | Manage project constitution (guiding principles) |
+| `/coco:status` | Execution state and parallel opportunities |
+| `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
+| `/coco:sync` | Reconcile tracker with issue tracker |
 | `/planning-session` | Guided planning (strategic / tactical / operational) |
 | `/planning-triage` | Score and disposition bugs, features, feedback |
 | `/interview` | In-depth user interview for feature specification |
@@ -180,11 +180,11 @@ AI-selected workflow steps. These run automatically as part of the pipeline -- y
 
 | Skill | Purpose |
 |-------|---------|
-| `coco-spec` | Feature specification with optional clarification (supports light mode) |
-| `coco-plan` | Implementation plan with design artifacts |
-| `coco-tasks` | Dependency-ordered task list with 6-pass consistency analysis |
-| `coco-import` | Import to tracker + issue tracker (supports spec-only mode) |
-| `coco-hotfix` | Single-issue fix -- no epic, no ceremony |
+| `spec` | Feature specification with optional clarification (supports light mode) |
+| `plan` | Implementation plan with design artifacts |
+| `tasks` | Dependency-ordered task list with 6-pass consistency analysis |
+| `import` | Import to tracker + issue tracker (supports spec-only mode) |
+| `hotfix` | Single-issue fix -- no epic, no ceremony |
 
 ## Issue Tracker Integration
 
@@ -216,7 +216,7 @@ bash coco-workflow/scripts/setup.sh
 
 This registers the plugin with Claude Code, creates the `.coco/` directory structure, walks through key configuration (project name, issue tracker, parallel execution), and installs git hooks. Restart Claude Code after setup.
 
-For existing projects, run `/coco.prd audit` after setup to generate a PRD from your codebase.
+For existing projects, run `/coco:prd audit` after setup to generate a PRD from your codebase.
 
 ### Project Structure
 

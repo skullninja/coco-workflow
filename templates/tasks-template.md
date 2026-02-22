@@ -23,7 +23,7 @@
 <!--
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
 
-  The coco-tasks skill MUST replace these with actual tasks based on:
+  The tasks skill MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md

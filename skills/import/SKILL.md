@@ -1,6 +1,6 @@
 ---
-name: coco-import
-description: Import a coco-workflow tasks.md into the coco tracker as an epic with dependencies, and create matching issues in the configured issue tracker.
+name: import
+description: Import a tasks.md into the coco tracker as an epic with dependencies, and create matching issues in the configured issue tracker.
 ---
 
 # Coco Import Skill
@@ -9,11 +9,11 @@ Import a tasks.md into the coco tracker and optionally create matching issues in
 
 ## When to Use
 
-- Importing tasks as part of the coco-workflow pipeline
-- Called by `/coco.phase` (Step D) or `/planning-session tactical`
+- Importing tasks as part of the coco pipeline
+- Called by `/coco:phase` (Step D) or `/planning-session tactical`
 - When tasks.md exists in `specs/{feature}/` and needs to be loaded into the tracker
 
-Prerequisites: `tasks.md` must exist. If missing, use the `coco-tasks` skill first.
+Prerequisites: `tasks.md` must exist. If missing, use the `tasks` skill first.
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ Prerequisites: `tasks.md` must exist. If missing, use the `coco-tasks` skill fir
    - Strip the `feature/` prefix (or whatever `pr.branch.feature_prefix` is) from the branch name
    - Looking for the matching directory in `{specs_dir}/{stripped-name}/`
    - Or from conversation context if a feature was recently discussed
-3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to use the `coco-tasks` skill first.
+3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to use the `tasks` skill first.
 4. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh` for tracker operations.
 
 ## Execution
@@ -211,7 +211,7 @@ Output:
 - Dependency graph summary
 - Issue tracker project/issues (if applicable)
 - First available task: `coco_tracker ready --json --epic {epic-id}`
-- Suggested next step: `/coco.execute` or `/coco.loop`
+- Suggested next step: `/coco:execute` or `/coco:loop`
 
 ## Spec-Only Mode (Light Tier)
 
@@ -232,7 +232,7 @@ When `tasks.md` doesn't exist but `spec.md` does (light-tier feature):
 
 Spec-only mode is triggered by:
 - `/planning-session tactical` routing to Light tier
-- `/coco.phase` classifying the feature as Light tier
+- `/coco:phase` classifying the feature as Light tier
 - Explicit request when tasks.md is missing and spec.md exists
 
 ## Dry Run Mode

@@ -38,7 +38,7 @@ loop:
 
 ### File Ownership
 
-File ownership is determined during task generation (`coco-tasks` skill) and stored in tracker metadata during import (`coco-import` skill):
+File ownership is determined during task generation (`tasks` skill) and stored in tracker metadata during import (`import` skill):
 
 ```bash
 coco_tracker create --epic "{epic-id}" \
@@ -46,11 +46,11 @@ coco_tracker create --epic "{epic-id}" \
   --metadata '{"owns_files": ["src/auth/**", "tests/auth/**"]}'
 ```
 
-`/coco.loop` checks for overlap before dispatching parallel agents.
+`/coco:loop` checks for overlap before dispatching parallel agents.
 
 ### Conflict Resolution
 
-With worktree isolation, filesystem conflicts are eliminated. Merge conflicts are handled by the parent `/coco.loop`:
+With worktree isolation, filesystem conflicts are eliminated. Merge conflicts are handled by the parent `/coco:loop`:
 
 1. Each `task-executor` agent works in its own worktree -- no shared filesystem state
 2. After agents complete, the parent merges PRs sequentially into the feature branch
@@ -77,7 +77,7 @@ Sub-Phase 1: Setup ---------> Sub-Phase 2: Foundational
 
 ## How It Works
 
-### 1. `/coco.loop` detects parallel opportunity
+### 1. `/coco:loop` detects parallel opportunity
 
 ```bash
 coco_tracker ready --json --epic {epic-id}
@@ -86,7 +86,7 @@ coco_tracker ready --json --epic {epic-id}
 
 ### 2. Dispatch `task-executor` agents
 
-`/coco.loop` spawns up to `max_agents` `task-executor` agents via the `Task` tool in a single message (multiple tool calls for true parallelism).
+`/coco:loop` spawns up to `max_agents` `task-executor` agents via the `Task` tool in a single message (multiple tool calls for true parallelism).
 
 Each `task-executor` agent:
 - Has `isolation: worktree` in its frontmatter -- Claude Code automatically creates a git worktree
@@ -109,7 +109,7 @@ The agent does **not** run AI code review or merge the PR -- the parent handles 
 
 ### 4. Parent handles review and merge
 
-After all agents complete, `/coco.loop`:
+After all agents complete, `/coco:loop`:
 1. Pulls the feature branch
 2. For each successful agent's PR:
    - Invokes `code-reviewer` agent
@@ -120,11 +120,11 @@ After all agents complete, `/coco.loop`:
 
 ### 5. Continue loop
 
-After the parallel batch is processed, `/coco.loop` checks for more ready tasks and repeats.
+After the parallel batch is processed, `/coco:loop` checks for more ready tasks and repeats.
 
 ## Monitoring
 
-Use `/coco.status` to see:
+Use `/coco:status` to see:
 - Which worktrees are running (active `task-executor` agents)
 - Agent status per worktree (in-progress, completed, failed)
 - File ownership map per active task
@@ -140,4 +140,4 @@ Parallel execution gracefully degrades to serial when:
 - Ready tasks lack `owns_files` metadata
 - Ready tasks have overlapping file ownership
 
-In all these cases, `/coco.loop` falls through to the standard serial execution path.
+In all these cases, `/coco:loop` falls through to the standard serial execution path.
