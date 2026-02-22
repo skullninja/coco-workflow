@@ -53,7 +53,7 @@ git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
 bash coco-workflow/scripts/setup.sh
 ```
 
-Claude Code auto-discovers the plugin. No configuration required to start.
+The setup script registers the plugin with Claude Code, walks you through key settings (project name, issue tracker, parallel execution), and installs git hooks. Restart Claude Code after setup to load the plugin.
 
 ### Build something
 
@@ -214,7 +214,9 @@ git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
 bash coco-workflow/scripts/setup.sh
 ```
 
-This creates the `.coco/` directory structure and installs git hooks. Edit `.coco/config.yaml` to configure your project.
+This registers the plugin with Claude Code, creates the `.coco/` directory structure, walks through key configuration (project name, issue tracker, parallel execution), and installs git hooks. Restart Claude Code after setup.
+
+For existing projects, run `/coco.prd audit` after setup to generate a PRD from your codebase.
 
 ### Project Structure
 

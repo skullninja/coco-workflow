@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # coco-workflow setup script
-# Creates .coco/ directory structure and installs git hooks.
+# Creates .coco/ directory structure, registers the plugin with Claude Code,
+# walks through key configuration, and installs git hooks.
 # Idempotent -- safe to run multiple times.
 set -euo pipefail
 
@@ -21,6 +22,52 @@ echo "  Project root: $PROJECT_ROOT"
 echo "  Plugin root:  $COCO_WORKFLOW_ROOT"
 echo ""
 
+# --- Register plugin with Claude Code ---
+
+PLUGIN_REL_PATH="${COCO_WORKFLOW_ROOT#"$PROJECT_ROOT/"}"
+CLAUDE_SETTINGS_DIR="$PROJECT_ROOT/.claude"
+CLAUDE_SETTINGS="$CLAUDE_SETTINGS_DIR/settings.json"
+
+mkdir -p "$CLAUDE_SETTINGS_DIR"
+
+# Check if plugin is already registered
+ALREADY_REGISTERED=false
+if [[ -f "$CLAUDE_SETTINGS" ]]; then
+    if jq -e '.enabledPlugins["coco-workflow@coco-local"] // false' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+        ALREADY_REGISTERED=true
+    fi
+fi
+
+if [[ "$ALREADY_REGISTERED" == "true" ]]; then
+    echo "  Plugin already registered in .claude/settings.json (skipping)"
+else
+    # Register the coco-workflow submodule as a local marketplace plugin
+    if [[ -f "$CLAUDE_SETTINGS" ]]; then
+        # Merge into existing settings
+        jq --arg path "$PLUGIN_REL_PATH" '
+            .extraKnownMarketplaces = (.extraKnownMarketplaces // {}) * {
+                "coco-local": { "source": { "source": "directory", "path": $path } }
+            }
+            | .enabledPlugins = (.enabledPlugins // {}) * { "coco-workflow@coco-local": true }
+        ' "$CLAUDE_SETTINGS" > "${CLAUDE_SETTINGS}.tmp" && mv "${CLAUDE_SETTINGS}.tmp" "$CLAUDE_SETTINGS"
+        echo "  Registered plugin in .claude/settings.json"
+    else
+        cat > "$CLAUDE_SETTINGS" <<EOF
+{
+  "extraKnownMarketplaces": {
+    "coco-local": {
+      "source": { "source": "directory", "path": "$PLUGIN_REL_PATH" }
+    }
+  },
+  "enabledPlugins": {
+    "coco-workflow@coco-local": true
+  }
+}
+EOF
+        echo "  Created .claude/settings.json with plugin registration"
+    fi
+fi
+
 # --- Create .coco/ directory structure ---
 
 mkdir -p "$COCO_DIR/tasks"
@@ -32,17 +79,92 @@ mkdir -p "$COCO_DIR/state"
 mkdir -p "$PROJECT_ROOT/docs/analysis"
 mkdir -p "$PROJECT_ROOT/docs/roadmap"
 
-# Copy default config if none exists
-if [[ ! -f "$COCO_DIR/config.yaml" ]]; then
-    cp "$COCO_WORKFLOW_ROOT/config/coco.default.yaml" "$COCO_DIR/config.yaml"
-    echo "  Created .coco/config.yaml (edit to configure your project)"
-else
-    echo "  .coco/config.yaml already exists (skipping)"
-fi
-
 # Create empty JSONL files if they don't exist
 touch "$COCO_DIR/tasks/tasks.jsonl"
 touch "$COCO_DIR/tasks/sessions.jsonl"
+
+# --- Configuration wizard (only for new configs) ---
+
+CONFIG_FILE="$COCO_DIR/config.yaml"
+
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    cp "$COCO_WORKFLOW_ROOT/config/coco.default.yaml" "$CONFIG_FILE"
+    echo ""
+    echo "--- Configuration ---"
+    echo ""
+
+    # Helper: prompt with default value
+    prompt() {
+        local message="$1"
+        local default="$2"
+        local result
+        read -r -p "  $message [$default]: " result
+        echo "${result:-$default}"
+    }
+
+    # --- Project name ---
+    PROJECT_NAME=$(prompt "Project name" "My Project")
+    sed -i '' "s/name: \"My Project\"/name: \"$PROJECT_NAME\"/" "$CONFIG_FILE"
+
+    # --- Issue tracker ---
+    echo ""
+    PROVIDER=$(prompt "Issue tracker (none/github/linear)" "none")
+    sed -i '' "s/provider: \"none\"/provider: \"$PROVIDER\"/" "$CONFIG_FILE"
+
+    if [[ "$PROVIDER" == "github" ]]; then
+        echo ""
+        REPO=$(prompt "GitHub repo (owner/repo, e.g., skullninja/my-app)" "")
+        if [[ -n "$REPO" ]]; then
+            # Auto-derive owner from repo
+            OWNER_DEFAULT="${REPO%%/*}"
+            OWNER=$(prompt "GitHub owner for project boards" "$OWNER_DEFAULT")
+            USE_PROJECTS=$(prompt "Use GitHub Projects V2? (true/false)" "true")
+
+            sed -i '' "s|repo: \"\"|repo: \"$REPO\"|" "$CONFIG_FILE"
+            sed -i '' "s|owner: \"\"|owner: \"$OWNER\"|" "$CONFIG_FILE"
+            sed -i '' "s|use_projects: true|use_projects: $USE_PROJECTS|" "$CONFIG_FILE"
+        fi
+    elif [[ "$PROVIDER" == "linear" ]]; then
+        echo ""
+        TEAM=$(prompt "Linear team name" "")
+        INITIATIVE=$(prompt "Linear initiative (optional, press Enter to skip)" "")
+
+        if [[ -n "$TEAM" ]]; then
+            sed -i '' "s|team: \"\"|team: \"$TEAM\"|" "$CONFIG_FILE"
+        fi
+        if [[ -n "$INITIATIVE" ]]; then
+            sed -i '' "s|initiative: \"\"|initiative: \"$INITIATIVE\"|" "$CONFIG_FILE"
+        fi
+    fi
+
+    # --- Parallel execution ---
+    echo ""
+    PARALLEL=$(prompt "Enable parallel execution with git worktrees? (true/false)" "false")
+    sed -i '' "s|enabled: false.*# Enable worktree|enabled: $PARALLEL                     # Enable worktree|" "$CONFIG_FILE"
+
+    if [[ "$PARALLEL" == "true" ]]; then
+        MAX_AGENTS=$(prompt "Max parallel agents" "3")
+        sed -i '' "s|max_agents: 3|max_agents: $MAX_AGENTS|" "$CONFIG_FILE"
+    fi
+
+    # --- Summary ---
+    echo ""
+    echo "  Wrote .coco/config.yaml:"
+    echo "    project.name: $PROJECT_NAME"
+    echo "    issue_tracker.provider: $PROVIDER"
+    if [[ "$PROVIDER" == "github" && -n "${REPO:-}" ]]; then
+        echo "    github.repo: $REPO"
+        echo "    github.owner: ${OWNER:-}"
+        echo "    github.use_projects: ${USE_PROJECTS:-true}"
+    elif [[ "$PROVIDER" == "linear" && -n "${TEAM:-}" ]]; then
+        echo "    linear.team: $TEAM"
+        [[ -n "${INITIATIVE:-}" ]] && echo "    linear.initiative: $INITIATIVE"
+    fi
+    echo "    loop.parallel.enabled: $PARALLEL"
+    [[ "$PARALLEL" == "true" ]] && echo "    loop.parallel.max_agents: ${MAX_AGENTS:-3}"
+else
+    echo "  .coco/config.yaml already exists (skipping configuration)"
+fi
 
 # --- Install git hooks ---
 
@@ -97,6 +219,7 @@ fi
 
 echo ""
 echo "Setup complete. Next steps:"
-echo "  1. Edit .coco/config.yaml to configure your project"
+echo "  1. Restart Claude Code to load the Coco plugin"
 echo "  2. Run /coco.constitution to set up project principles"
-echo "  3. Start with /interview or /coco.spec to create your first feature spec"
+echo "  3. For new projects: /coco.prd to create a Product Requirements Document"
+echo "  4. For existing projects: /coco.prd audit to generate a PRD from your codebase"

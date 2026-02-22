@@ -1,0 +1,13 @@
+{
+  "name": "coco-local",
+  "owner": {
+    "name": "Coco Workflow"
+  },
+  "plugins": [
+    {
+      "name": "coco-workflow",
+      "source": "./",
+      "description": "Autonomous spec-driven development for Claude Code. Describe a feature, get merged, tested, reviewed code."
+    }
+  ]
+}
