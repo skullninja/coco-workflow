@@ -60,6 +60,16 @@ coco_tracker create --epic "{epic-id}" \
   --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}"}'
 ```
 
+If tasks.md includes `owns_files` annotations (file ownership per sub-phase), include them in metadata:
+
+```bash
+coco_tracker create --epic "{epic-id}" \
+  --title "Sub-Phase {N}: {title}" \
+  --description "{sub-phase purpose + task list}" \
+  --priority {priority} \
+  --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"]}'
+```
+
 ### Step 4: Set Dependencies
 
 ```bash
@@ -108,6 +118,64 @@ Read `.coco/config.yaml` `issue_tracker.provider`:
    ```
 
 **If "github"**:
+
+Read `issue_tracker.github.use_projects` from config (default: `true`).
+
+**If Projects V2 enabled** (`use_projects: true`):
+
+1. Create a GitHub Project for the feature:
+   ```bash
+   gh project create --owner {github.owner} --title "{feature-name}" --format "BOARD"
+   ```
+   Capture the project number from output.
+
+2. Resolve Status field and option IDs:
+   ```bash
+   gh project field-list {project_number} --owner {github.owner} --format json
+   ```
+   Find the "Status" field. Extract `field_id` and option IDs for each status value (Todo, In Progress, In Review, Done).
+
+3. Cache project metadata to `.coco/state/gh-projects.json`:
+   ```json
+   {
+     "features": {
+       "{feature-name}": {
+         "project_number": {N},
+         "project_id": "PVT_...",
+         "status_field_id": "PVTSSF_...",
+         "status_options": {
+           "Todo": "opt-id-1", "In Progress": "opt-id-2",
+           "In Review": "opt-id-3", "Done": "opt-id-4"
+         }
+       }
+     }
+   }
+   ```
+   Ensure `.coco/state/` directory exists. If `gh-projects.json` already exists, merge into the `features` key.
+
+4. Create issues and add to project:
+   ```bash
+   # Create issue
+   gh issue create --title "Sub-Phase {N}: {title}" --body "{description}" --label {labels}
+
+   # Add issue to project
+   gh project item-add {project_number} --owner {github.owner} --url {issue_url}
+   # Capture the item ID from output
+
+   # Set initial status to "Todo"
+   gh project item-edit \
+     --project-id {project_id} \
+     --id {item_id} \
+     --field-id {status_field_id} \
+     --single-select-option-id {status_options["Todo"]}
+   ```
+
+5. Store issue numbers AND project item IDs in tracker metadata:
+   ```bash
+   coco_tracker update {task-id} --metadata '{"issue_key": "#{N}", "gh_project_item_id": "{item_id}", "gh_project_number": {project_number}}'
+   ```
+
+**If Projects V2 disabled** (`use_projects: false`):
 
 1. Create issues using `gh`:
    ```bash

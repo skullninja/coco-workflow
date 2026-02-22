@@ -63,12 +63,23 @@ Organize tasks by user story. Every task MUST use this format:
 
 Each sub-phase MUST have an **Acceptance Criteria** section with specific, testable outcomes.
 
-### 4. Dependencies & Parallel Map
+### 4. Dependencies, Parallel Map & File Ownership
 
 Generate:
 - Dependency graph showing sub-phase completion order
 - File ownership per sub-phase with conflict risk
 - Parallel execution opportunities
+
+**File Ownership (`owns_files`) Annotations:**
+
+If `plan.md` contains file-level implementation details, extract file ownership per sub-phase. For each user story sub-phase, identify the files/directories it exclusively modifies:
+
+```markdown
+### Sub-Phase 3: User Authentication
+**owns_files**: `src/auth/**`, `tests/auth/**`
+```
+
+These annotations are consumed by the `coco-import` skill to populate task metadata, enabling worktree-based parallel execution. Only include `owns_files` when file paths are determinable from the plan -- omit for sub-phases with unclear file boundaries.
 
 ### 5. Write tasks.md
 

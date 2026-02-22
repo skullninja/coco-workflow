@@ -38,7 +38,7 @@ Coco is the whole pipeline in one plugin:
 
 - **Discovery to delivery** -- PRD, roadmap, spec, plan, tasks, implementation, review, merge. One plugin.
 - **Dependency-aware execution** -- Built-in tracker with topological sort. `ready` always returns the next unblocked task.
-- **Autonomous loop** -- Circuit breaker, progress detection, configurable safety limits. Runs until done or stuck.
+- **Autonomous loop** -- Circuit breaker, progress detection, configurable safety limits. Runs until done or stuck. Supports worktree-based parallel execution.
 - **AI code review** -- Every PR reviewed before merge. Critical findings auto-fixed. Up to 3 review iterations.
 - **Adaptive routing** -- Quick fix? Skip the ceremony. Full feature? Full pipeline. Complexity detected automatically.
 - **Session memory** -- Survives context compaction. Pick up where you left off across sessions.
@@ -191,10 +191,12 @@ AI-selected workflow steps. These run automatically as part of the pipeline -- y
 | Provider | Integration |
 |----------|------------|
 | **Linear** | Via Linear MCP -- projects, issues, comments, status updates |
-| **GitHub** | Via `gh` CLI -- issues, labels, comments |
+| **GitHub** | Via `gh` CLI -- issues + GitHub Projects V2 boards for visual status tracking |
 | **None** | Tracker-only. No external calls. |
 
 All config-driven. Status mappings, team names, labels, issue key formats -- everything lives in `.coco/config.yaml`.
+
+**GitHub Projects V2**: When `use_projects: true` (default), creates a project board per feature with status columns (Todo, In Progress, In Review, Done). Issues move between columns automatically as tasks progress. Set `use_projects: false` for label-based tracking.
 
 ## Installation
 
@@ -221,7 +223,7 @@ coco-workflow/                          # This repo (git submodule)
   plugin.json                           # Claude Code plugin manifest
   commands/                             # 12 slash commands
   skills/                               # 5 AI-selected skills
-  agents/                               # 2 agents (code-reviewer, pre-commit-tester)
+  agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
   hooks/                                # Claude Code hooks (quality, session memory)
   git-hooks/                            # Git hooks (commit-msg, pre-commit)
   lib/tracker.sh                        # Built-in task tracker
@@ -270,6 +272,9 @@ loop:
   max_iterations: 20
   no_progress_threshold: 3
   pause_on_error: true
+  parallel:
+    enabled: false              # Enable worktree-based parallel execution
+    max_agents: 3
 
 pr:
   enabled: true

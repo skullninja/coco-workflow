@@ -59,7 +59,31 @@ Cannot parallelize:
   - {task title} (blocked by {blocking-tasks})
 ```
 
-### 5. Dependency Graph
+### 5. Worktree / Parallel Status
+
+Read `loop.parallel.enabled` from `.coco/config.yaml`. If parallel execution is enabled:
+
+```
+Parallel Execution
+==================
+Mode: {enabled | disabled}
+Max agents: {max_agents}
+
+Active Worktrees:
+  - worktree-{task-id}: {task title} ({status: running | completed | failed})
+    Branch: {issue-branch}
+    PR: #{pr-number} ({review status})
+
+Merge Queue:
+  - PR #{N}: {task title} (awaiting review)
+
+Recently Completed:
+  - {task-id}: {title} -- merged via PR #{N}
+```
+
+If parallel execution is not enabled, skip this section.
+
+### 6. Dependency Graph
 
 Show the dependency tree with status indicators:
 
@@ -75,7 +99,7 @@ Dependency Graph
 
 Legend: `[x]` completed, `[>]` in progress, `[ ]` available, `[~]` blocked
 
-### 6. Output
+### 7. Output
 
 Present all sections in a clear format. Include:
 - Total progress (e.g., "4/8 tasks complete, 1 running, 3 remaining")

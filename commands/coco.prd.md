@@ -126,7 +126,7 @@ coco_tracker list --json 2>/dev/null || true
 **Issue tracker** (if configured):
 Based on `issue_tracker.provider`:
 - **linear**: List recent projects and issues for the team
-- **github**: List milestones and recent issues
+- **github**: List milestones and recent issues. If `github.use_projects` is true, also list projects via `gh project list --owner {github.owner}` to capture board-based tracking state.
 - **none**: Skip
 
 ### 2. Synthesize PRD

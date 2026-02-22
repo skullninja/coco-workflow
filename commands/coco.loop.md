@@ -81,13 +81,51 @@ Blocked tasks: {list}
 Waiting on: {dependency list}
 ```
 
-**3. Record pre-iteration commit count**
+**3. Check for parallel dispatch opportunity**
+
+Read `loop.parallel.enabled` from config (default: `false`).
+
+**If parallel is enabled:**
+
+1. Check if multiple tasks are ready:
+   ```bash
+   coco_tracker ready --json --epic {epic-id}
+   ```
+   If only one task is ready, fall through to serial execution (step 4).
+
+2. If 2+ tasks are ready, check `owns_files` metadata for overlap:
+   ```bash
+   coco_tracker list --json --epic {epic-id}
+   ```
+   Parse `owns_files` from each ready task's metadata. Two tasks overlap if any glob pattern from one matches files that the other also claims.
+
+3. If 2+ tasks have non-overlapping `owns_files`, dispatch them in parallel:
+   - Spawn up to `loop.parallel.max_agents` (default: 3) `task-executor` agents via the `Task` tool
+   - Send all agent calls in a **single message** (multiple tool calls) for true parallelism
+   - Each agent receives: task ID, epic ID, feature branch name, config values
+   - Wait for all agents to complete
+
+4. After parallel batch completes:
+   - Pull the feature branch to get any remote changes
+   - For each successful agent:
+     a. Run AI code review on its PR (invoke `code-reviewer` agent)
+     b. Handle review-fix loop per PR (max `pr.review.max_review_iterations`)
+     c. Merge approved PRs: `gh pr merge {pr-number} --{pr.issue_merge_strategy} --delete-branch`
+     d. Bridge to issue tracker (complete) -- set "Done"
+   - For each failed agent: mark task for retry in next iteration
+
+5. Skip to step 7 (Check progress) after handling all parallel results.
+
+**If parallel is disabled**, or if ready tasks lack `owns_files` metadata, or if only one task is ready:
+Fall through to serial execution (step 4).
+
+**4. Record pre-iteration commit count (serial path)**
 
 ```bash
 pre_commit_count=$(git rev-list --count HEAD)
 ```
 
-**4. Execute the task**
+**5. Execute the task (serial path)**
 
 Follow the full `/coco.execute` flow for a single task (all 15 steps):
 - Claim task
@@ -103,7 +141,7 @@ Follow the full `/coco.execute` flow for a single task (all 15 steps):
 - Bridge to issue tracker (complete -- issue resolves at PR merge)
 - Acceptance criteria check
 
-**5. Check progress**
+**6. Check progress**
 
 ```bash
 post_commit_count=$(git rev-list --count HEAD)
@@ -117,7 +155,7 @@ If `post_commit_count == pre_commit_count`:
 - `consecutive_no_progress += 1`
 - Log: `Iteration {iteration}: No progress. ({consecutive_no_progress}/{no_progress_threshold})`
 
-**6. Check epic status**
+**7. Check epic status**
 
 ```bash
 coco_tracker epic-status {epic-id}
@@ -125,7 +163,7 @@ coco_tracker epic-status {epic-id}
 
 If all tasks are closed: break loop (success).
 
-**7. Increment and continue**
+**8. Increment and continue**
 
 `iteration += 1`
 
@@ -181,6 +219,15 @@ gh pr merge {feature-pr-number} --{pr.feature_merge_strategy} --delete-branch
 ```
 
 Update all issues in the epic to final status (`status_map.completed`).
+
+**If "github"** with Projects V2 enabled:
+- Iterate all tasks in the epic, set project status to "Done" via `gh project item-edit`
+- Close the GitHub Project:
+  ```bash
+  gh project close {project_number} --owner {github.owner}
+  ```
+
+**If "linear"**: Update all issues and close the project as before.
 
 **Update roadmap** (if a roadmap file references this feature):
 1. Read `discovery.roadmap_dir` from config (default: `docs/roadmap`)

@@ -28,6 +28,7 @@ Five layers:
 | `skills/execute/SKILL.md` | Execution skill (delegates to `/coco.execute` command) |
 | `skills/hotfix/SKILL.md` | Single-issue hotfix workflow (with optional PR) |
 | `agents/code-reviewer.md` | AI code review agent for PRs |
+| `agents/task-executor.md` | Worktree-isolated task executor for parallel execution |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
 | `hooks/post-tool-use.md` | PostToolUse hook -- runs lint/typecheck after file edits |
 | `hooks/pre-compact.md` | PreCompact hook -- captures session state before compaction |
@@ -92,11 +93,11 @@ Key sections:
 - `project` -- name, specs directory
 - `discovery` -- PRD path, analysis directory, roadmap directory
 - `quality` -- lint command, typecheck command, auto-fix (used by PostToolUse hook)
-- `issue_tracker` -- provider (linear/github/none), status mappings, team/labels
+- `issue_tracker` -- provider (linear/github/none), status mappings, team/labels, GitHub Projects V2 config
 - `commit` -- title format, exempt patterns
 - `pre_commit` -- UI patterns for agent triggering, build command
 - `testing` -- test command, timeout
-- `loop` -- max iterations, no-progress threshold, pause-on-error
+- `loop` -- max iterations, no-progress threshold, pause-on-error, parallel execution config
 - `pr` -- PR workflow, merge strategies, AI review config, branch naming
 
 ## PR Workflow
@@ -124,8 +125,36 @@ Set `pr.enabled: false` to disable PRs and use direct merge (backward compatible
 
 The bridge is implemented as conditional instructions in command and skill markdown files (not shell abstractions). Commands and skills read `issue_tracker.provider` from config and follow the appropriate branch:
 - **linear**: Uses `mcp__plugin_linear_linear__*` MCP tools
-- **github**: Uses `gh` CLI commands
+- **github**: Uses `gh` CLI commands. Supports GitHub Projects V2 for board-based status tracking.
 - **none**: Skips all issue tracker operations
+
+### GitHub Projects V2
+
+When `issue_tracker.github.use_projects` is `true` (default), the GitHub integration creates and manages GitHub Projects V2 boards:
+
+- **One project per feature**: Created during `coco-import`, matching Linear's project-per-feature model
+- **Status columns**: Todo, In Progress, In Review, Done -- mapped via `status_map` config values
+- **Field ID caching**: `gh project item-edit` requires opaque IDs. Resolved once during import, cached in `.coco/state/gh-projects.json`
+- **Issue lifecycle**: Issues are added to the project board and moved between columns as status changes
+- **Phase projects**: `/coco.roadmap` creates a project per phase (cached under `phases` key)
+- **Backward compatibility**: Set `use_projects: false` to fall back to label-based status tracking
+
+Cache file structure (`.coco/state/gh-projects.json`):
+```json
+{
+  "features": {
+    "feature-name": {
+      "project_number": 42,
+      "project_id": "PVT_...",
+      "status_field_id": "PVTSSF_...",
+      "status_options": { "Todo": "opt-id-1", "In Progress": "opt-id-2", ... }
+    }
+  },
+  "phases": {
+    "Phase 1: Foundation": { "project_number": 43, "project_id": "PVT_..." }
+  }
+}
+```
 
 ## Pipeline
 
@@ -168,7 +197,26 @@ Templates resolve in order: `.coco/templates/{name}` (project override) -> `${CL
 
 ## Parallel Execution
 
-After foundation sub-phases complete, user story sub-phases can run in parallel (max 3 agents). File ownership is tracked via task metadata (`owns_files`). See `workflows/parallel-execution.md`.
+After foundation sub-phases complete, user story sub-phases can run in parallel (max 3 agents). File ownership is tracked via task metadata (`owns_files`).
+
+### Worktree-Based Parallel Execution
+
+When `loop.parallel.enabled` is `true`, `/coco.loop` uses git worktree isolation for real parallel execution:
+
+- **`task-executor` agent**: A new agent (`agents/task-executor.md`) with `isolation: worktree` frontmatter. Executes a single task in an isolated git worktree -- TDD, commit, PR creation.
+- **Dispatch**: `/coco.loop` detects multiple ready tasks with non-overlapping `owns_files`, spawns up to `max_agents` `task-executor` agents simultaneously via the Task tool.
+- **Review flow**: Parent `/coco.loop` handles AI code review and merge after agents complete. Agents do NOT review or merge their own PRs.
+- **Fallback**: Tasks without `owns_files` metadata, or when only one task is ready, execute serially (unchanged behavior).
+
+Config:
+```yaml
+loop:
+  parallel:
+    enabled: false      # Enable worktree-based parallel execution
+    max_agents: 3       # Max concurrent task-executor agents
+```
+
+See `workflows/parallel-execution.md` for full details.
 
 ## Testing
 

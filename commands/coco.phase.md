@@ -54,6 +54,7 @@ coco_tracker list --json | jq 'select(.type == "epic")'
 
 **d. Check issue tracker** (if configured):
 Based on `issue_tracker.provider`, search for existing projects/issues.
+- **github** with Projects V2: Also check `gh project list --owner {github.owner}` for existing projects matching feature names. Cross-reference with `.coco/state/gh-projects.json` if it exists.
 
 **e. Determine scope and complexity tier** for each feature:
 
@@ -166,6 +167,7 @@ Loop back to Step 4 for the next feature in the phase.
 After all features are merged:
 
 1. Update issue tracker projects to "Completed" (if configured)
+   - **github** with Projects V2: Close each feature's GitHub Project via `gh project close {project_number} --owner {github.owner}`. Also close the phase-level project if one was created by `/coco.roadmap`.
 2. Verify all tracker epics are closed
 3. Run full test suite to confirm no regressions
 4. **Update roadmap** (if phase was sourced from a roadmap file):

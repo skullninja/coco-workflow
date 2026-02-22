@@ -72,7 +72,19 @@ git checkout -b "$ISSUE_BRANCH"
 Read `issue_key` from task metadata. Based on `issue_tracker.provider` in config:
 
 **If "linear"**: Update issue to `status_map.in_progress` using `mcp__plugin_linear_linear__update_issue`
-**If "github"**: Add "in-progress" label via `gh issue edit`
+
+**If "github"**:
+- If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
+  Read `.coco/state/gh-projects.json` for field IDs, then:
+  ```bash
+  gh project item-edit \
+    --project-id {project_id} \
+    --id {gh_project_item_id} \
+    --field-id {status_field_id} \
+    --single-select-option-id {status_options[status_map.in_progress]}
+  ```
+- Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "in-progress"`
+
 **If "none"**: Skip
 
 If `issue_key` is missing and provider is configured, STOP and fix metadata.
@@ -182,7 +194,18 @@ EOF
 Update issue tracker status to "In Review":
 
 **If "linear"**: Update issue state to `status_map.in_review` using `mcp__plugin_linear_linear__update_issue`
-**If "github"**: Add "in-review" label via `gh issue edit`
+
+**If "github"**:
+- If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
+  ```bash
+  gh project item-edit \
+    --project-id {project_id} \
+    --id {gh_project_item_id} \
+    --field-id {status_field_id} \
+    --single-select-option-id {status_options[status_map.in_review]}
+  ```
+- Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "in-review"`
+
 **If "none"**: Skip
 
 ### 9. AI Code Review
@@ -274,7 +297,15 @@ Based on `issue_tracker.provider`:
 - Post comment with test/build details
 
 **If "github"**:
-- Update labels, add comment with summary
+- If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
+  ```bash
+  gh project item-edit \
+    --project-id {project_id} \
+    --id {gh_project_item_id} \
+    --field-id {status_field_id} \
+    --single-select-option-id {status_options[status_map.completed]}
+  ```
+- Add comment with summary
 - Close issue (the `Closes #N` in PR body may auto-close it)
 
 **If "none"**: Skip

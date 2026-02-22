@@ -39,6 +39,16 @@ Parameters:
 gh issue create --title "{fix description}" --label {labels}
 ```
 
+If `github.use_projects` is true: check `.coco/state/gh-projects.json` for an active feature project. If one exists, add the issue to it and set status to "In Progress":
+```bash
+gh project item-add {project_number} --owner {github.owner} --url {issue_url}
+gh project item-edit \
+  --project-id {project_id} \
+  --id {item_id} \
+  --field-id {status_field_id} \
+  --single-select-option-id {status_options["In Progress"]}
+```
+
 **If "none"**: Skip issue creation.
 
 ### 2. Create Branch
@@ -123,6 +133,14 @@ gh pr merge {pr-number} --{pr.issue_merge_strategy} --delete-branch
 **If "github"**:
 - Add comment with fix details
 - `Closes #N` in PR body auto-closes the issue (if using PRs)
+- If `github.use_projects` is true and the issue was added to a project: set status to "Done":
+  ```bash
+  gh project item-edit \
+    --project-id {project_id} \
+    --id {item_id} \
+    --field-id {status_field_id} \
+    --single-select-option-id {status_options["Done"]}
+  ```
 
 **If "none"**: Skip
 

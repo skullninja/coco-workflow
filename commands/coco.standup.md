@@ -48,7 +48,9 @@ Read `issue_tracker.provider` from config:
 
 **If "linear"**: Use `mcp__plugin_linear_linear__list_issues` to get issues for active projects with recent updates.
 
-**If "github"**: Use `gh issue list` to get recent issue activity.
+**If "github"**:
+- Use `gh issue list` to get recent issue activity.
+- If `github.use_projects` is true: also query `gh project item-list {project_number} --owner {github.owner} --format json` to show board column status alongside tracker state.
 
 **If "none"**: Skip.
 

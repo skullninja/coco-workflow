@@ -40,6 +40,21 @@ Parameters:
 ```
 
 **If "github"**:
+
+If `github.use_projects` is true:
+1. Read `.coco/state/gh-projects.json` for project metadata.
+2. Query project board status as source of truth:
+   ```bash
+   gh project item-list {project_number} --owner {github.owner} --format json
+   ```
+   Match each task's `gh_project_item_id` to get its current board column status.
+3. **Backfill detection**: For tasks with `issue_key` but no `gh_project_item_id` (pre-existing issues created before Projects V2 was enabled), offer to backfill:
+   ```bash
+   gh project item-add {project_number} --owner {github.owner} --url {issue_url}
+   ```
+   Then update tracker metadata with the new `gh_project_item_id`.
+
+If `github.use_projects` is false (legacy):
 ```bash
 gh issue view {issue_number} --json state,labels
 ```

@@ -178,6 +178,21 @@ Based on `issue_tracker.provider`:
 **github:**
 - Create a milestone for the release: title = "{release}"
 - Set milestone description to the roadmap overview
+- If `github.use_projects` is true: create a GitHub Project per phase:
+  ```bash
+  gh project create --owner {github.owner} --title "Phase N: {name}" --format "BOARD"
+  ```
+  Cache phase project metadata in `.coco/state/gh-projects.json` under the `phases` key:
+  ```json
+  {
+    "phases": {
+      "Phase 1: Foundation": {
+        "project_number": 43,
+        "project_id": "PVT_..."
+      }
+    }
+  }
+  ```
 
 **none:**
 - Skip all issue tracker operations

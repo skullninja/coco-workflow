@@ -23,6 +23,8 @@ issue_tracker:
   # GitHub Issues configuration (when provider: github)
   github:
     repo: ""                           # owner/repo format
+    owner: ""                          # GitHub org or user (for gh project commands)
+    use_projects: true                 # Use GitHub Projects V2 for status tracking
     labels:
       - "spec-driven"
 
@@ -87,6 +89,11 @@ loop:
   # Pause the loop on task failure (test/build errors)
   # If false, skips the failed task and tries the next one
   pause_on_error: true
+
+  # Worktree-based parallel execution
+  parallel:
+    enabled: false                     # Enable worktree-based parallel execution
+    max_agents: 3                      # Max concurrent task-executor agents
 
 pr:
   # Enable two-tier PR workflow (if false, merges directly as before)
