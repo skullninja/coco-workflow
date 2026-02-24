@@ -225,6 +225,24 @@ EOF
     echo "  Created .coco/.gitignore"
 fi
 
+# --- Ensure .claude/worktrees/ is gitignored ---
+
+ROOT_GITIGNORE="$PROJECT_ROOT/.gitignore"
+if [[ -f "$ROOT_GITIGNORE" ]]; then
+    if ! grep -q '.claude/worktrees/' "$ROOT_GITIGNORE" 2>/dev/null; then
+        echo "" >> "$ROOT_GITIGNORE"
+        echo "# Claude Code runtime state" >> "$ROOT_GITIGNORE"
+        echo ".claude/worktrees/" >> "$ROOT_GITIGNORE"
+        echo "  Added .claude/worktrees/ to .gitignore"
+    fi
+else
+    cat > "$ROOT_GITIGNORE" <<'EOF'
+# Claude Code runtime state
+.claude/worktrees/
+EOF
+    echo "  Created .gitignore with .claude/worktrees/"
+fi
+
 echo ""
 echo "Setup complete. Next steps:"
 echo "  1. Restart Claude Code to load the Coco plugin"
