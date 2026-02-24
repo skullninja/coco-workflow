@@ -223,6 +223,94 @@ assert_eq "standalone epic_id is null" "null" "$(echo "$standalone" | jq -r '.ep
 
 # ============================================================
 echo ""
+echo "=== Test: Update Field Variants ==="
+
+# Create a task to update
+coco_tracker epic-create "Update Tests" >/dev/null
+upd=$(coco_tracker create --epic "epic-003" --title "Original title" --priority 3)
+upd_id=$(echo "$upd" | jq -r '.id')
+
+coco_tracker update "$upd_id" --title "New title" >/dev/null
+assert_eq "title updated" "New title" "$(coco_tracker show "$upd_id" | jq -r '.title')"
+
+coco_tracker update "$upd_id" --description "Added description" >/dev/null
+assert_eq "description updated" "Added description" "$(coco_tracker show "$upd_id" | jq -r '.description')"
+
+coco_tracker update "$upd_id" --priority 1 >/dev/null
+assert_eq "priority updated" "1" "$(coco_tracker show "$upd_id" | jq -r '.priority')"
+
+# ============================================================
+echo ""
+echo "=== Test: Close With Reason ==="
+
+coco_tracker close "$upd_id" "Duplicate task" >/dev/null
+upd_closed=$(coco_tracker show "$upd_id")
+assert_eq "close reason stored" "Duplicate task" "$(echo "$upd_closed" | jq -r '.close_reason')"
+assert_not_null "closed_at timestamp set" "$(echo "$upd_closed" | jq -r '.closed_at')"
+
+# ============================================================
+echo ""
+echo "=== Test: ID Collision Avoidance ==="
+
+# epic-001 already exists with tasks epic-001.1 through epic-001.5
+# Creating a new epic should be epic-004 (not collide with epic-001.x)
+new_epic=$(coco_tracker epic-create "Collision Test")
+new_epic_id=$(echo "$new_epic" | jq -r '.id')
+assert_eq "new epic avoids collision with dotted IDs" "epic-004" "$new_epic_id"
+
+# Create tasks in new epic, verify sequential numbering
+ct1=$(coco_tracker create --epic "epic-004" --title "CT Task 1")
+ct2=$(coco_tracker create --epic "epic-004" --title "CT Task 2")
+assert_eq "first task in new epic" "epic-004.1" "$(echo "$ct1" | jq -r '.id')"
+assert_eq "second task in new epic" "epic-004.2" "$(echo "$ct2" | jq -r '.id')"
+
+# Second standalone task should be task-002 (task-001 exists from earlier)
+standalone2=$(coco_tracker create --title "Another standalone" --priority 2)
+assert_eq "standalone ID increments correctly" "task-002" "$(echo "$standalone2" | jq -r '.id')"
+
+# ============================================================
+echo ""
+echo "=== Test: Ready Across Epics ==="
+
+# epic-004 has two pending tasks with no deps -- ready without --epic should find them
+ready_all=$(coco_tracker ready --json)
+ready_all_id=$(echo "$ready_all" | jq -r '.id')
+# Should return a task (not null) -- exact ID depends on priority sort
+assert_not_null "cross-epic ready finds a task" "$ready_all_id"
+
+# ============================================================
+echo ""
+echo "=== Test: Error Handling ==="
+
+# Missing required args
+create_err=$(coco_tracker create 2>&1 || true)
+assert_contains "create without --title errors" "ERROR" "$create_err"
+
+epic_create_err=$(coco_tracker epic-create 2>&1 || true)
+assert_contains "epic-create without title errors" "ERROR" "$epic_create_err"
+
+dep_add_err=$(coco_tracker dep-add 2>&1 || true)
+assert_contains "dep-add without args errors" "ERROR" "$dep_add_err"
+
+# Non-existent IDs
+show_err=$(coco_tracker show "nonexistent-999" 2>&1 || true)
+assert_contains "show non-existent ID errors" "ERROR" "$show_err"
+
+update_err=$(coco_tracker update "nonexistent-999" --status "in_progress" 2>&1 || true)
+assert_contains "update non-existent ID errors" "ERROR" "$update_err"
+
+close_err=$(coco_tracker close "nonexistent-999" 2>&1 || true)
+assert_contains "close non-existent ID errors" "ERROR" "$close_err"
+
+dep_add_bad=$(coco_tracker dep-add "nonexistent-999" --blocks "epic-004.1" 2>&1 || true)
+assert_contains "dep-add with bad dependency errors" "ERROR" "$dep_add_bad"
+
+# Unknown subcommand
+unknown_err=$(coco_tracker foobar 2>&1 || true)
+assert_contains "unknown subcommand errors" "ERROR" "$unknown_err"
+
+# ============================================================
+echo ""
 echo "==============================="
 echo "Results: $PASS passed, $FAIL failed"
 echo "==============================="
