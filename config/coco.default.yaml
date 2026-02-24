@@ -9,6 +9,7 @@ discovery:
   prd_path: "docs/prd.md"             # Product Requirements Document location
   analysis_dir: "docs/analysis"        # Analysis documents directory
   roadmap_dir: "docs/roadmap"          # Per-release roadmap documents directory
+  source_prd: ""                       # Path to source PRD (for derived/satellite repos)
 
 issue_tracker:
   provider: "none"                     # linear | github | none

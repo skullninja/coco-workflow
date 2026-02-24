@@ -25,7 +25,7 @@ This workflow uses a unified pipeline to take features from description to merge
 
 | Command | Purpose | Input | Output |
 |---------|---------|-------|--------|
-| `/coco:prd` | Create or audit PRD | Product description or "audit" | `docs/prd.md` |
+| `/coco:prd` | Create, audit, or derive PRD | Product description, "audit", or "derive /path" | `docs/prd.md` |
 | `/coco:roadmap` | Build prioritized roadmap | Release name (e.g., "v1.0") | `docs/roadmap/{release}.md` |
 
 The Discovery Phase is optional -- projects can start directly with the `design` skill for individual features. Use it when starting a new product or major release to establish priorities before writing feature designs.
@@ -33,6 +33,46 @@ The Discovery Phase is optional -- projects can start directly with the `design`
 **Workflow**: `/coco:prd` -> analysis docs (via `/planning-session strategic`) -> `/coco:roadmap` -> `/coco:phase`
 
 See `workflows/discovery-workflow.md` for full details.
+
+---
+
+## Multi-Repo Projects
+
+For multi-platform products with separate repositories (e.g., backend + web UI + iOS), Coco supports **derived PRDs**. A primary repo holds the canonical PRD; satellite repos derive platform-specific PRDs from it.
+
+### The Derive Pattern
+
+```
+Backend repo (primary)              Web UI repo (satellite)           iOS repo (satellite)
+───────────────────────             ───────────────────────           ──────────────────────
+/coco:prd "Full product"            /coco:prd derive ../backend/...  /coco:prd derive ../backend/...
+/coco:roadmap v1.0                  /coco:roadmap v1.0               /coco:roadmap v1.0
+/coco:phase "Phase 1"               /coco:phase "Phase 1"            /coco:phase "Phase 2"
+     │                                   │                                │
+     ▼                                   ▼                                ▼
+  Independent pipeline               Independent pipeline            Independent pipeline
+```
+
+### When to Use
+
+- **Multi-platform products**: backend + web + mobile repos that share a product vision
+- **Microservice architectures**: multiple service repos driven from one product spec
+- **Monorepo alternatives**: when teams prefer separate repos but need shared planning
+
+### Workflow
+
+1. **Primary repo**: Create the canonical PRD with `/coco:prd` and roadmap with `/coco:roadmap`
+2. **Satellite repo**: Run `/coco:prd derive ../primary/docs/prd.md` to select platform-relevant features
+   - Optionally pass a phase name to pre-select features: `/coco:prd derive ../primary/docs/prd.md "Phase 2: iOS App"`
+3. **Independent pipelines**: Each satellite runs its own `/coco:roadmap` -> `/coco:phase` -> `/coco:loop`
+
+### Cross-Repo Dependency Tracking
+
+Derived PRDs include a **Cross-Repo Dependencies** table listing APIs and services from other repos. The design template's **Cross-Repo Context** section lets designers document specific external dependencies per feature.
+
+### Keeping Derived PRDs in Sync
+
+When the source PRD is updated (new features, changed priorities), re-run `/coco:prd derive` in the satellite repo. The command detects the existing derived PRD and enters update mode -- showing new features from the source and letting you add or remove features while preserving the Change Log.
 
 ---
 
@@ -340,7 +380,7 @@ git push
 
 | Command | Purpose |
 |---------|---------|
-| `/coco:prd` | Create or audit Product Requirements Document |
+| `/coco:prd` | Create, audit, or derive Product Requirements Document |
 | `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco:phase` | Orchestrate full pipeline for a phase |
 | `/coco:loop` | Autonomous loop with circuit breaker |
@@ -406,6 +446,7 @@ git push
 | Scenario | Approach |
 |----------|----------|
 | New product or major release | `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` |
+| Multi-repo satellite | `/coco:prd derive /path/to/source` -> `/coco:roadmap` -> `/coco:phase` |
 | Existing project onboarding | `/coco:prd audit` -> `/coco:roadmap` |
 | Autonomous feature (hands-off) | `/coco:loop` -- runs until epic complete |
 | Multi-session feature (manual) | `/coco:execute` -- one task per invocation |

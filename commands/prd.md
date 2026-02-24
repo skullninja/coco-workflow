@@ -1,6 +1,6 @@
 ---
-argument-hint: [product description or "audit" for existing projects]
-description: Create or update the Product Requirements Document. Use "audit" mode for existing projects.
+argument-hint: [product description | "audit" | "derive /path/to/source/prd.md"]
+description: Create, audit, or derive a Product Requirements Document. Use "derive" for satellite repos in multi-repo projects.
 allowed-tools: AskUserQuestion, Read, Write, Glob, Grep, Bash
 ---
 
@@ -15,6 +15,7 @@ $ARGUMENTS
 1. Read `.coco/config.yaml` for `discovery.prd_path` (default: `docs/prd.md`).
 2. Load PRD template from `.coco/templates/prd-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/prd-template.md`.
 3. Determine mode:
+   - If `$ARGUMENTS` starts with "derive" -> **Derive mode** (satellite repo)
    - If `$ARGUMENTS` contains "audit" -> **Audit mode**
    - Otherwise -> **Greenfield mode** (use `$ARGUMENTS` as initial product description if non-empty)
 
@@ -164,6 +165,113 @@ Output:
 - Summary of what was inferred vs. confirmed
 - Sections marked `[INFERRED]` that may need refinement
 - Suggested next steps (same as greenfield mode)
+
+## Mode 3: Derive (Satellite Repo)
+
+Generate a derived PRD from a source PRD in another repository. Used for multi-repo projects where a primary repo holds the canonical PRD and satellite repos (web frontend, iOS app, API gateway, etc.) derive platform-specific PRDs from it.
+
+### 1. Read Source PRD
+
+Parse `$ARGUMENTS` after "derive" for the source PRD path and optional phase name in quotes.
+
+Examples:
+- `derive ../backend/docs/prd.md`
+- `derive ../backend/docs/prd.md "Phase 2: iOS App"`
+
+If no path is provided, check `discovery.source_prd` in `.coco/config.yaml`. If that's also empty, use `AskUserQuestion` to ask the user for the path.
+
+Read the source PRD file. Validate it contains a `## Feature Candidates` table. Extract the product name from the `# Product Requirements Document: [NAME]` heading.
+
+### 2. Read Source Roadmap (if phase specified)
+
+If a phase name was provided:
+1. Infer the roadmap directory from the source PRD path -- look for a sibling `roadmap/` directory (same parent as the PRD file, e.g., if source PRD is `../backend/docs/prd.md`, check `../backend/docs/roadmap/`)
+2. Glob `*.md` in that directory
+3. Read each roadmap file and find the matching phase by looking for `### Phase N: {name}` headers (fuzzy match on the name portion)
+4. Extract feature slugs from the phase's feature table
+
+If the roadmap directory doesn't exist or the phase isn't found, warn the user and continue with manual feature selection in step 4.
+
+### 3. Identify Platform
+
+Use `AskUserQuestion`:
+- **Question**: "What platform or component does this repo own?"
+- **Options**: Web Frontend, Mobile (iOS), Mobile (Android), API/Microservice (with Other as automatic fallback)
+
+### 4. Select Features
+
+Present the source PRD's Feature Candidates table as a multiSelect `AskUserQuestion`:
+- **Question**: "Which features should be included in this repo's PRD?"
+- List all features from the source PRD's Feature Candidates table
+- If a phase was matched in step 2, pre-select features from that phase (note the phase name in each pre-selected option's description)
+
+The user confirms or adjusts the selection.
+
+### 5. Cross-Repo Dependencies
+
+Use `AskUserQuestion`:
+- **Question**: "What does this platform depend on from other repos? (e.g., REST APIs, shared services, data from other repos)"
+
+The user describes the dependencies in free text.
+
+### 6. Platform Constraints
+
+Use `AskUserQuestion`:
+- **Question**: "What are the technical constraints for this platform? (language, framework, deployment target)"
+
+The user provides platform-specific constraints.
+
+### 7. Detect Update Mode
+
+Check if a PRD already exists at `{discovery.prd_path}`:
+- If it exists and contains a `## Source PRD` section, this is a **re-derive** (update mode):
+  - Preserve the existing Change Log entries
+  - Show new features from source that aren't in the current derived PRD
+  - Let the user add/remove features
+- If it doesn't exist, this is a fresh derive
+
+### 8. Generate Derived PRD
+
+Fill the PRD template with:
+- **Source PRD section**: source path, source product name, platform name, current date, phase name (if used)
+- **Cross-Repo Dependencies table**: parsed from the user's dependency description in step 5
+- **Product Vision**: scoped to this platform (e.g., "Deliver the iOS experience for [product]")
+- **Target Users**: inherited from source PRD
+- **Product Goals**: inherited from source PRD, filtered to goals relevant to selected features
+- **Feature Candidates**: only the selected features, keeping original F-numbers for traceability
+- **Scope**: platform-specific scope derived from the selected features + constraints
+- **Constraints**: platform-specific constraints from step 6
+- **Open Questions**: any cross-repo coordination questions that emerged
+- **Change Log**: fresh entry for the derive, or preserved entries in update mode
+
+### 9. Save Config
+
+Update `.coco/config.yaml` to set `discovery.source_prd` to the source PRD path (for future re-derive).
+
+If `.coco/config.yaml` doesn't exist yet, note the path for the user to configure after running `setup.sh`.
+
+### 10. Write PRD
+
+```bash
+mkdir -p "$(dirname "{discovery.prd_path}")"
+```
+
+Write to `{discovery.prd_path}`.
+
+### 11. Report
+
+Output:
+- Path to the derived PRD
+- Source PRD: path and product name
+- Platform: selected platform
+- Features: count of selected features (with F-numbers)
+- Phase filter: which phase was used (if any)
+- Cross-repo dependencies: count
+- Suggested next steps:
+  - "Run `/coco:roadmap {release-name}` to build a prioritized roadmap for this platform"
+  - "To refresh from the source PRD later, run `/coco:prd derive` again"
+
+---
 
 ## Notes
 

@@ -42,6 +42,7 @@ Coco is the whole pipeline in one plugin:
 - **AI code review** -- Every PR reviewed before merge. Critical findings auto-fixed. Up to 3 review iterations.
 - **Adaptive routing** -- Quick fix? Skip the ceremony. Full feature? Full pipeline. Complexity detected automatically.
 - **Session memory** -- Survives context compaction. Pick up where you left off across sessions.
+- **Multi-repo support** -- Derive platform-specific PRDs from a primary repo. Each satellite runs its own independent pipeline.
 - **Issue tracker sync** -- Linear, GitHub Issues, or neither. Config-driven, not hard-coded.
 
 ## Quick Start
@@ -84,7 +85,7 @@ The setup script registers the plugin with Claude Code, walks you through key se
 
 | Layer | What | How |
 |-------|------|-----|
-| **Discovery** | PRD, analysis, roadmap | `/coco:prd`, `/coco:roadmap` |
+| **Discovery** | PRD, analysis, roadmap, multi-repo derive | `/coco:prd`, `/coco:roadmap` |
 | **Planning** | Design, task decomposition | AI-selected skills (`design`, `tasks`) |
 | **Execution** | Dependency resolution, TDD loop | Built-in tracker + `/coco:loop` |
 | **Review** | AI code review on every PR | `code-reviewer` agent |
@@ -155,18 +156,19 @@ quality:
 
 ## Commands and Skills
 
-### Commands (12)
+### Commands (13)
 
 Human-facing entry points. These show up in `/` autocomplete.
 
 | Command | Purpose |
 |---------|---------|
-| `/coco:prd` | Create or audit Product Requirements Document |
+| `/coco:prd` | Create, audit, or derive Product Requirements Document |
 | `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
 | `/coco:loop` | Autonomous execution loop with circuit breaker |
 | `/coco:execute` | TDD execution loop (one task at a time) |
 | `/coco:constitution` | Manage project constitution (guiding principles) |
+| `/coco:dashboard` | Compact visual progress dashboard |
 | `/coco:status` | Execution state and parallel opportunities |
 | `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco:sync` | Reconcile tracker with issue tracker |
@@ -216,14 +218,14 @@ bash coco-workflow/scripts/setup.sh
 
 This registers the plugin with Claude Code, creates the `.coco/` directory structure, walks through key configuration (project name, issue tracker, parallel execution), and installs git hooks. Restart Claude Code after setup.
 
-For existing projects, run `/coco:prd audit` after setup to generate a PRD from your codebase.
+For existing projects, run `/coco:prd audit` after setup to generate a PRD from your codebase. For satellite repos in a multi-repo project, run `/coco:prd derive /path/to/primary/docs/prd.md` to create a platform-specific PRD.
 
 ### Project Structure
 
 ```
 coco-workflow/                          # This repo (git submodule)
   plugin.json                           # Claude Code plugin manifest
-  commands/                             # 12 slash commands
+  commands/                             # 13 slash commands
   skills/                               # 5 AI-selected skills (design, tasks, import, hotfix, execute)
   agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
   hooks/                                # Claude Code hooks (quality, session memory)
@@ -258,6 +260,7 @@ discovery:
   prd_path: "docs/prd.md"
   analysis_dir: "docs/analysis"
   roadmap_dir: "docs/roadmap"
+  source_prd: ""               # Path to source PRD (for derived/satellite repos)
 
 issue_tracker:
   provider: "none"                # linear | github | none

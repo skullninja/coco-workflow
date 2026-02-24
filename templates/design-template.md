@@ -140,6 +140,17 @@ ios/ or android/
 **Response**: [Response schema]
 **Errors**: [Error codes and meanings]
 
+## Cross-Repo Context *(include if feature depends on other repos)*
+
+<!--
+  Reference APIs, services, or designs from other repositories that this feature depends on.
+  Only include this section for features in satellite/derived repos.
+-->
+
+| Dependency | Source Repo | Reference | Notes |
+|-----------|-------------|-----------|-------|
+| [API/service] | [repo] | [path to design or API doc] | [version/status] |
+
 ## Research & Decisions
 
 <!--

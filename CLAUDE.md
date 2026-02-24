@@ -7,7 +7,7 @@ Coco is a Claude Code plugin that provides autonomous spec-driven development. I
 ## Architecture
 
 Five layers:
-- **Discovery**: `/coco:prd` and `/coco:roadmap` produce PRD, analysis, and roadmap artifacts
+- **Discovery**: `/coco:prd` and `/coco:roadmap` produce PRD, analysis, and roadmap artifacts. Supports multi-repo via derived PRDs (`/coco:prd derive`)
 - **Planning**: Skills (`design`, `tasks`, `import`) produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
@@ -20,7 +20,7 @@ Five layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 13 slash commands (prd, roadmap, phase, loop, execute, dashboard, standup, etc.) |
+| `commands/` | 13 slash commands (prd [greenfield/audit/derive], roadmap, phase, loop, execute, dashboard, standup, etc.) |
 | `skills/design/SKILL.md` | Feature design: spec + implementation plan (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
 | `skills/import/SKILL.md` | Tracker + issue tracker import (AI-selected) |
@@ -90,7 +90,7 @@ Projects configure behavior in `.coco/config.yaml`. The schema with defaults is 
 
 Key sections:
 - `project` -- name, specs directory
-- `discovery` -- PRD path, analysis directory, roadmap directory
+- `discovery` -- PRD path, analysis directory, roadmap directory, source PRD (for derived/satellite repos)
 - `quality` -- lint command, typecheck command, auto-fix (used by PostToolUse hook)
 - `issue_tracker` -- provider (linear/github/none), status mappings, team/labels, GitHub Projects V2 config
 - `commit` -- title format, exempt patterns
@@ -159,7 +159,9 @@ Cache file structure (`.coco/state/gh-projects.json`):
 
 Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) `design` skill -> `tasks` skill -> `import` skill -> `/coco:loop`
 
-- `/coco:prd` creates or audits the Product Requirements Document
+For multi-repo projects, satellite repos use `/coco:prd derive /path/to/source/prd.md` to create a platform-specific PRD from a primary repo's PRD, then run the standard pipeline independently.
+
+- `/coco:prd` creates, audits, or derives the Product Requirements Document
 - `/coco:roadmap` synthesizes PRD + analysis docs into a prioritized, phased roadmap
 - `/coco:phase` reads the roadmap and orchestrates multiple features in a phase (invoking skills for each step)
 - `/coco:loop` runs autonomously with circuit breaker and PR workflow
