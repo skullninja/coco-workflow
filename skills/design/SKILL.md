@@ -1,17 +1,17 @@
 ---
-name: spec
-description: Generate a feature specification (spec.md) in specs/{feature}/ with user stories, acceptance criteria, and clarification of ambiguities.
+name: design
+description: Generate a feature design (design.md) in specs/{feature}/ with user stories, acceptance criteria, technical approach, API contracts, and research decisions.
 ---
 
-# Coco Spec Skill
+# Coco Design Skill
 
-Generate a feature specification from a natural language description, with optional ambiguity resolution.
+Generate a feature design from a natural language description, combining specification (what to build) and implementation planning (how to build it) into a single artifact.
 
 ## When to Use
 
-- Creating a new feature specification as part of the coco pipeline
+- Creating a feature design as part of the coco pipeline
 - Called by `/coco:phase` (Step A) or `/planning-session tactical`
-- When a spec.md is needed in `specs/{feature}/` before planning can begin
+- When a design.md is needed in `specs/{feature}/` before task generation
 
 For single-issue fixes, use the `hotfix` skill instead.
 
@@ -23,6 +23,8 @@ For single-issue fixes, use the `hotfix` skill instead.
    - If on a `feature/*` git branch, extract the feature name from the branch
    - If a spec directory was recently discussed, use that
    - If none of the above, ask the user for a feature description
+3. Load `.coco/memory/constitution.md` if it exists.
+4. Load the design template from `.coco/templates/design-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/design-template.md`.
 
 ## Execution
 
@@ -39,58 +41,76 @@ Read `pr.branch.feature_prefix` from `.coco/config.yaml` (default: `feature`).
 
 ```bash
 git checkout -b {feature_prefix}/{feature-name}
-mkdir -p {specs_dir}/{feature-name}/checklists
+mkdir -p {specs_dir}/{feature-name}
 ```
 
 The branch is `feature/{feature-name}` (e.g., `feature/user-auth`). The spec directory is `{specs_dir}/{feature-name}/` (without the prefix).
 
-### 3. Generate Specification
+### 3. Generate Design Document
 
-Load the spec template from `.coco/templates/spec-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/spec-template.md`.
+Fill the design template following this workflow:
 
-Follow this workflow:
+**Specification phase** (WHAT and WHY):
 
 1. Parse user description, extract key concepts (actors, actions, data, constraints)
 2. For unclear aspects:
    - Make informed guesses based on context and industry standards
    - Only mark with `[NEEDS CLARIFICATION: specific question]` if the choice significantly impacts scope or UX and no reasonable default exists
    - **Maximum 3 markers total**, prioritized by: scope > security > UX > technical
-3. Fill User Scenarios & Testing section with prioritized, independently testable user stories
+3. Fill User Stories section with prioritized, independently testable user stories with BDD acceptance scenarios
 4. Generate testable Functional Requirements (use reasonable defaults; document assumptions)
 5. Define measurable, technology-agnostic Success Criteria
 6. Identify Key Entities (if data involved)
 
-Write the specification to `{specs_dir}/{feature-name}/spec.md`.
+**Technical planning phase** (HOW):
 
-### 4. Validate Specification
+7. Fill Technical Approach section (language, dependencies, storage, testing, platform, project type, performance, constraints)
+8. For each "NEEDS CLARIFICATION" in Technical Approach:
+   - Research the unknown using web search or codebase exploration
+   - Document findings in the Research & Decisions table (decision, rationale, alternatives)
+9. Fill Project Structure section with the concrete source layout
+10. Generate API Contracts section (if feature exposes APIs) -- inline endpoint contracts
+11. Fill Constitution Check section from constitution (if exists)
+    - Evaluate gates -- ERROR if violations are unjustified
+    - Document any justified violations in the Complexity Tracking table
 
-Create a checklist at `{specs_dir}/{feature-name}/checklists/requirements.md`:
+Write the design document to `{specs_dir}/{feature-name}/design.md`.
 
-```markdown
-# Specification Quality Checklist: [FEATURE NAME]
+### 4. Generate Data Model (Conditional)
 
-**Created**: [DATE] | **Feature**: [Link to spec.md]
+Only generate `data-model.md` if the feature involves significant data modeling (3+ entities with relationships, state transitions, or complex validation rules). Skip for UI-only features or simple CRUD.
 
-## Content Quality
-- [ ] No implementation details (languages, frameworks, APIs)
+If generated, extract from design.md Key Entities:
+- Entity name, fields, relationships
+- Validation rules from requirements
+- State transitions if applicable
+
+Write to `{specs_dir}/{feature-name}/data-model.md`.
+
+### 5. Validate Design
+
+Run inline validation against these criteria (no separate checklist file):
+
+**Specification quality:**
+- [ ] No implementation details leak into User Stories or Functional Requirements
 - [ ] Focused on user value and business needs
 - [ ] All mandatory sections completed
-
-## Requirement Completeness
-- [ ] No [NEEDS CLARIFICATION] markers remain (or max 3 critical ones presented to user)
+- [ ] No unresolved `[NEEDS CLARIFICATION]` markers remain (or max 3 critical ones)
 - [ ] Requirements are testable and unambiguous
 - [ ] Success criteria are measurable and technology-agnostic
 - [ ] Edge cases identified
-- [ ] Scope clearly bounded
-```
 
-Run validation against each item. Fix issues (max 3 iterations).
+**Technical quality:**
+- [ ] Technical Approach fields are all resolved (no remaining NEEDS CLARIFICATION)
+- [ ] Project Structure matches the chosen project type
+- [ ] API Contracts are complete (if applicable)
+- [ ] Constitution gates pass (if constitution exists)
 
-If `[NEEDS CLARIFICATION]` markers remain (max 3), present them to the user as a table with options and implications. Wait for responses, then update the spec.
+Fix issues (max 3 iterations). If `[NEEDS CLARIFICATION]` markers remain (max 3), present them to the user as a table with options and implications. Wait for responses, then update the design.
 
-### 5. Clarification Pass (Optional)
+### 6. Clarification Pass (Optional)
 
-After spec generation, perform a structured ambiguity scan. This step absorbs the logic previously in `/coco:clarify`.
+After design generation, perform a structured ambiguity scan.
 
 **Ambiguity Scan**: Check coverage across these categories, marking each as Clear / Partial / Missing:
 
@@ -116,49 +136,55 @@ After spec generation, perform a structured ambiguity scan. This step absorbs th
 
 **Integrate Answers**: After each accepted answer:
 
-1. Ensure a `## Clarifications` section exists in the spec (create after the overview section if missing)
+1. Ensure a `## Clarifications` section exists in the design (create after the overview section if missing)
 2. Under `### Session YYYY-MM-DD`, append: `- Q: <question> -> A: <answer>`
-3. Apply the clarification to the appropriate spec section:
+3. Apply the clarification to the appropriate design section:
    - Functional -> update Functional Requirements
    - Data -> update Key Entities
+   - Technical -> update Technical Approach or Research & Decisions
    - Non-functional -> add measurable criteria
    - Edge case -> add to Edge Cases
-   - Terminology -> normalize across spec
+   - Terminology -> normalize across design
 4. Replace any invalidated statements (don't leave contradictions)
-5. Save the spec file after each integration
+5. Save the design file after each integration
 
-### 6. Report
+### 7. Report
 
 Output:
 - Branch name
-- Spec file path
-- Checklist results
+- Design file path
+- Data model file path (if generated)
+- Validation results
+- Constitution compliance status (if applicable)
 - Clarification summary (questions asked, sections updated) if clarification pass ran
-- Suggested next step: use the `plan` skill to generate the implementation plan
+- Suggested next step: use the `tasks` skill to generate the task list
 
 ## Light Mode
 
 When invoked for a **Light-tier** feature (1-3 files, single user story, no internal dependencies):
 
-1. **Simplified spec**: Generate a minimal spec containing:
+1. **Simplified design**: Generate a minimal design containing:
    - One-paragraph overview
    - Single user story
    - 3-5 acceptance criteria
-   - No sub-phases, no dependency graph, no key entities section
-2. **Skip clarification pass** (Step 5) entirely
-3. **Skip detailed checklist** -- just verify the acceptance criteria are testable
-4. **Suggest next step**: Use the `import` skill in spec-only mode (skipping plan and tasks)
+   - No Technical Approach, API Contracts, Research & Decisions, Data Model, or Constitution Check sections
+2. **Skip clarification pass** (Step 6) entirely
+3. **Skip detailed validation** -- just verify the acceptance criteria are testable
+4. **Suggest next step**: Use the `import` skill in design-only mode (skipping tasks)
 
 Light mode is triggered by:
 - `/planning-session tactical` routing to Light tier
 - `/coco:phase` classifying the feature as Light tier
-- Explicit request for a "light" or "minimal" spec
+- Explicit request for a "light" or "minimal" design
 
 ## Guidelines
 
-- Focus on **WHAT** users need and **WHY** -- avoid HOW (no tech stack, APIs, code structure)
-- Written for stakeholders, not developers
+- User Stories and Functional Requirements focus on **WHAT** users need and **WHY** -- avoid HOW (no tech stack, APIs, code structure in those sections)
+- Technical Approach, API Contracts, and Project Structure focus on **HOW** -- informed by the spec sections
 - Make informed guesses using industry standards; document assumptions
 - Every requirement must be testable
 - Success criteria: measurable, technology-agnostic, user-focused, verifiable
-- Never modify files except the spec and checklist
+- Use absolute paths throughout
+- ERROR on gate failures or unresolved clarifications in Technical Approach
+- Do NOT generate tasks.md -- that is the `tasks` skill
+- Never modify files outside the feature's spec directory

@@ -12,7 +12,7 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
 
 **Types:**
 - **strategic** -- Roadmap review and prioritization
-- **tactical** -- Plan a specific feature (spec -> plan -> tasks -> import)
+- **tactical** -- Plan a specific feature (design -> tasks -> import)
 - **operational** -- Status check and task prioritization
 - **triage** -- Quick-score a bug, feature request, or feedback item
 
@@ -40,8 +40,8 @@ Before running the pipeline, classify the feature scope:
 | Tier | Signal | Pipeline |
 |------|--------|----------|
 | **Trivial** | User says "small", "quick", "hotfix"; single file mentioned; bug fix | `hotfix` skill (no epic) |
-| **Light** | 1-3 files, single user story, no internal dependencies | `spec` (light mode) -> `import` (spec-only) |
-| **Standard** | Multi-file, multiple stories, dependencies between components | `spec` -> `plan` -> `tasks` -> `import` |
+| **Light** | 1-3 files, single user story, no internal dependencies | `design` (light mode) -> `import` (design-only) |
+| **Standard** | Multi-file, multiple stories, dependencies between components | `design` -> `tasks` -> `import` |
 
 Ask the user using AskUserQuestion: "How complex is this feature?" with options:
 - **Quick fix** -- Single issue, 1 file (routes to Trivial)
@@ -53,8 +53,8 @@ If the user already described the scope clearly, infer the tier without asking.
 **Step 2: Execute Pipeline**
 
 - **Trivial**: Use the `hotfix` skill. Done.
-- **Light**: Use `spec` skill (light mode) -> `import` skill (spec-only mode). Skips plan and tasks generation.
-- **Standard**: Run full pipeline: `spec` -> `plan` -> `tasks` -> `import`
+- **Light**: Use `design` skill (light mode) -> `import` skill (design-only mode). Skips tasks generation.
+- **Standard**: Run full pipeline: `design` -> `tasks` -> `import`
 
 **Step 3: Verify and Save**
 1. Verify import and pre-execution gate

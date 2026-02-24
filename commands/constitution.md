@@ -49,8 +49,7 @@ Replace all placeholder tokens with concrete text:
 ### 3. Consistency Propagation
 
 Check that dependent files align with the new constitution:
-- `.coco/templates/plan-template.md` or `${CLAUDE_PLUGIN_ROOT}/templates/plan-template.md` -- Constitution Check section
-- `.coco/templates/spec-template.md` or `${CLAUDE_PLUGIN_ROOT}/templates/spec-template.md` -- scope alignment
+- `.coco/templates/design-template.md` or `${CLAUDE_PLUGIN_ROOT}/templates/design-template.md` -- Constitution Check section + scope alignment
 - `.coco/templates/tasks-template.md` or `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` -- task categorization
 
 Note: Only modify files in `.coco/templates/` (project overrides). Never modify plugin root templates.

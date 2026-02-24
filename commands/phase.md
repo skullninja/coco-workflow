@@ -1,5 +1,5 @@
 ---
-description: Orchestrate a full roadmap phase. Plans specs, imports to tracker, creates issues, then executes.
+description: Orchestrate a full roadmap phase. Designs features, imports to tracker, creates issues, then executes.
 ---
 
 ## User Input
@@ -59,16 +59,16 @@ Based on `issue_tracker.provider`, search for existing projects/issues.
 **e. Determine scope and complexity tier** for each feature:
 
 Scope:
-- **Already complete** -- spec exists, code merged, tests pass -> skip
-- **Partially built** -- some code exists -> reduced spec
-- **Greenfield** -- nothing exists -> full spec workflow
+- **Already complete** -- design exists, code merged, tests pass -> skip
+- **Partially built** -- some code exists -> reduced design
+- **Greenfield** -- nothing exists -> full design workflow
 
 Complexity tier (determines pipeline depth):
 
 | Tier | Signal | Pipeline |
 |------|--------|----------|
-| **Light** | 1-3 files/components mentioned, single user story, no internal dependencies | `spec` (light mode) -> `import` (spec-only) |
-| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `spec` -> `plan` -> `tasks` -> `import` |
+| **Light** | 1-3 files/components mentioned, single user story, no internal dependencies | `design` (light mode) -> `import` (design-only) |
+| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `design` -> `tasks` -> `import` |
 
 Classify based on: number of files/components mentioned in the roadmap, feature description complexity, and whether the feature has internal dependencies.
 
@@ -91,35 +91,31 @@ Proceed?
 
 Wait for user confirmation using AskUserQuestion.
 
-### 4. Execute Per-Spec Pipeline
+### 4. Execute Per-Feature Pipeline
 
-For each spec in the approved order:
+For each feature in the approved order:
 
-**Step A: Interview/Specify (if spec doesn't exist)**
-- For **Light** tier: Use the `spec` skill in light mode (minimal spec, skip clarification)
-- For **Standard** tier: Use `/interview` or the `spec` skill for full specification
+**Step A: Design (if design.md doesn't exist)**
+- For **Light** tier: Use the `design` skill in light mode (minimal design, skip clarification)
+- For **Standard** tier: Use `/interview` or the `design` skill for full design
 - Wait for completion before proceeding
 
-**Step B: Plan (if plan doesn't exist) -- Standard tier only**
-- Use the `plan` skill to generate the implementation plan
-- **Skip for Light tier** -- go directly to Step D
-
-**Step C: Generate tasks (if tasks don't exist) -- Standard tier only**
+**Step B: Generate tasks (if tasks don't exist) -- Standard tier only**
 - Use the `tasks` skill to generate the task list
-- **Skip for Light tier** -- go directly to Step D
+- **Skip for Light tier** -- go directly to Step C
 
-**Step D: Import to tracker (if epic doesn't exist)**
-- For **Light** tier: Use the `import` skill in spec-only mode (generates single-task epic from spec)
+**Step C: Import to tracker (if epic doesn't exist)**
+- For **Light** tier: Use the `import` skill in design-only mode (generates single-task epic from design)
 - For **Standard** tier: Use the `import` skill for full import from tasks.md
 - This includes the full import workflow with issue tracker bridge
 
-**Step E: Verify Pre-Execution Gate**
+**Step D: Verify Pre-Execution Gate**
 ```bash
 coco_tracker epic-status {epic-id}
 ```
 Confirm tracker tasks exist with dependencies and issue keys.
 
-**Step F: Create feature branch**
+**Step E: Create feature branch**
 
 Read `pr.branch.feature_prefix` from config (default: `feature`):
 
@@ -130,10 +126,10 @@ git checkout -b "$FEATURE_BRANCH"
 git push -u origin "$FEATURE_BRANCH"
 ```
 
-**Step G: Execute**
+**Step F: Execute**
 Use `/coco:loop` (autonomous) or `/coco:execute` (manual) to run the TDD execution loop for all sub-phases. Each task creates an issue branch, PR, and AI review when `pr.enabled` is true.
 
-**Step H: Feature PR to main**
+**Step G: Feature PR to main**
 
 If `pr.enabled`:
 
@@ -158,7 +154,7 @@ If `pr.enabled` is false (backward compatible):
 git checkout main && git pull && git merge "$FEATURE_BRANCH" && git push
 ```
 
-### 5. Repeat for Next Spec
+### 5. Repeat for Next Feature
 
 Loop back to Step 4 for the next feature in the phase.
 

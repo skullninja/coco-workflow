@@ -8,7 +8,7 @@ Coco is a Claude Code plugin that provides autonomous spec-driven development. I
 
 Five layers:
 - **Discovery**: `/coco:prd` and `/coco:roadmap` produce PRD, analysis, and roadmap artifacts
-- **Planning**: Skills (`spec`, `plan`, `tasks`, `import`) produce spec artifacts in `specs/{feature}/`
+- **Planning**: Skills (`design`, `tasks`, `import`) produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
 - **Visibility**: Issue tracker bridge (Linear MCP, GitHub CLI, or none) mirrors status
@@ -21,8 +21,7 @@ Five layers:
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
 | `commands/` | 13 slash commands (prd, roadmap, phase, loop, execute, dashboard, standup, etc.) |
-| `skills/spec/SKILL.md` | Feature specification with clarification (AI-selected) |
-| `skills/plan/SKILL.md` | Implementation plan generation (AI-selected) |
+| `skills/design/SKILL.md` | Feature design: spec + implementation plan (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
 | `skills/import/SKILL.md` | Tracker + issue tracker import (AI-selected) |
 | `skills/execute/SKILL.md` | Execution skill (delegates to `/coco:execute` command) |
@@ -36,7 +35,7 @@ Five layers:
 | `git-hooks/commit-msg.sh` | Commit message validation (reads config) |
 | `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
 | `GUIDE.md` | Comprehensive workflow guide with deep-dives and quick reference |
-| `templates/` | Default templates for PRD, analysis, roadmap, spec, plan, tasks, constitution |
+| `templates/` | Default templates for PRD, analysis, roadmap, design, tasks, constitution |
 | `workflows/` | Reference documentation for workflows |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
@@ -158,7 +157,7 @@ Cache file structure (`.coco/state/gh-projects.json`):
 
 ## Pipeline
 
-Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) `spec` skill -> `plan` skill -> `tasks` skill -> `import` skill -> `/coco:loop`
+Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) `design` skill -> `tasks` skill -> `import` skill -> `/coco:loop`
 
 - `/coco:prd` creates or audits the Product Requirements Document
 - `/coco:roadmap` synthesizes PRD + analysis docs into a prioritized, phased roadmap
@@ -166,7 +165,7 @@ Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) 
 - `/coco:loop` runs autonomously with circuit breaker and PR workflow
 - `/coco:execute` runs one task at a time for manual review
 
-The pipeline steps (spec, plan, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests.
+The pipeline steps (design, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests.
 
 ## Adaptive Complexity Routing
 
@@ -175,10 +174,10 @@ The pipeline steps (spec, plan, tasks, import) are skills -- AI-selected and inv
 | Tier | Pipeline |
 |------|----------|
 | **Trivial** | `hotfix` skill (no epic overhead) |
-| **Light** | `spec` (light mode) -> `import` (spec-only mode) |
-| **Standard** | Full: `spec` -> `plan` -> `tasks` -> `import` |
+| **Light** | `design` (light mode) -> `import` (design-only mode) |
+| **Standard** | Full: `design` -> `tasks` -> `import` |
 
-Light mode: `spec` generates a minimal spec (single user story, 3-5 acceptance criteria, no clarification pass). `import` creates a single-task epic directly from the spec without requiring plan.md or tasks.md.
+Light mode: `design` generates a minimal design (single user story, 3-5 acceptance criteria, no technical approach or clarification pass). `import` creates a single-task epic directly from the design without requiring tasks.md.
 
 ## Hooks
 

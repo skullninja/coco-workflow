@@ -40,11 +40,10 @@ Structured planning processes for different cadences and scopes.
 - Starting a new feature from the roadmap
 
 ### Process
-1. **Specify** -- `spec` skill to create spec.md (includes optional clarification)
-2. **Plan** -- `plan` skill to create plan.md
-3. **Tasks** -- `tasks` skill to create tasks.md (includes consistency analysis)
-4. **Import** -- `import` skill to create tracker epic + issues
-6. **Document** -- Save session notes
+1. **Design** -- `design` skill to create design.md (includes optional clarification)
+2. **Tasks** -- `tasks` skill to create tasks.md (includes consistency analysis)
+3. **Import** -- `import` skill to create tracker epic + issues
+4. **Document** -- Save session notes
 
 ### Output
 - Complete spec artifacts in `specs/{feature}/`

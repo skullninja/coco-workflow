@@ -11,7 +11,7 @@ Use the Discovery Phase when:
 - Needing to align stakeholders on priorities before writing specs
 
 Skip it when:
-- Working on a single known feature (start with the `spec` skill)
+- Working on a single known feature (start with the `design` skill)
 - Applying a hotfix (use the hotfix skill)
 - The roadmap already exists and is current
 
@@ -101,7 +101,7 @@ If an issue tracker is configured, it also creates:
 /coco:phase "Phase 1: Foundation"
 ```
 
-`/coco:phase` reads the roadmap table directly, extracting features with their slugs, priorities, and dependencies. It then orchestrates the full per-feature pipeline (spec -> plan -> tasks -> import -> execute).
+`/coco:phase` reads the roadmap table directly, extracting features with their slugs, priorities, and dependencies. It then orchestrates the full per-feature pipeline (design -> tasks -> import -> execute).
 
 ## Roadmap Sync
 
@@ -126,8 +126,7 @@ Discovery Phase (NEW)
 
 Planning Phase (existing -- now uses skills)
   /coco:phase            Reads roadmap, orchestrates features
-  spec skill        Per-feature specification
-  plan skill        Implementation plan
+  design skill      Per-feature design (spec + plan)
   tasks skill       Task decomposition
 
 Execution Phase (existing)

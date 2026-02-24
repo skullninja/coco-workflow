@@ -39,7 +39,7 @@ Glob `{discovery.analysis_dir}/*.md` and read all found documents. Extract:
 Read `.coco/memory/constitution.md` if it exists. Use project principles to inform prioritization.
 
 **Existing specs** (optional):
-Glob `{specs_dir}/*/spec.md`. These represent features already specified -- they should appear in the roadmap as already-scoped items.
+Glob `{specs_dir}/*/design.md` (with `{specs_dir}/*/spec.md` as legacy fallback). These represent features already designed -- they should appear in the roadmap as already-scoped items.
 
 **Existing roadmap** (update mode only):
 Load `{roadmap_dir}/{release}.md`. Preserve Change Log and completed feature statuses.

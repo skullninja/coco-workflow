@@ -73,7 +73,7 @@ Read `issue_key` from task metadata. Based on `issue_tracker.provider`:
 
 Read the sub-phase tasks from `specs/{feature}/tasks.md` and implement:
 
-**a. Write Tests First** (if TDD requested in spec)
+**a. Write Tests First** (if TDD requested in design)
 - Create test files, verify they fail (RED)
 
 **b. Implement Code**

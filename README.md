@@ -26,17 +26,17 @@ Most Claude Code workflows handle one slice of the problem. A spec generator her
 Coco is the whole pipeline in one plugin:
 
 ```
- Describe        Specify        Plan         Decompose       Execute        Review        Ship
-───────── ──▶ ─────────── ──▶ ──────── ──▶ ─────────── ──▶ ─────────── ──▶ ──────── ──▶ ──────
- "I need       spec.md        plan.md      tasks.md        TDD loop       AI code      PR merged,
- user auth"    + criteria     + design     + deps graph    + commits      review       issues closed
+ Describe        Design          Decompose       Execute        Review        Ship
+───────── ──▶ ─────────── ──▶ ─────────── ──▶ ─────────── ──▶ ──────── ──▶ ──────
+ "I need       design.md       tasks.md        TDD loop       AI code      PR merged,
+ user auth"    + criteria      + deps graph    + commits      review       issues closed
 ```
 
 **Zero dependencies** beyond bash and jq. No daemon. No database. No node_modules. Add it as a git submodule and go.
 
 ## What You Get
 
-- **Discovery to delivery** -- PRD, roadmap, spec, plan, tasks, implementation, review, merge. One plugin.
+- **Discovery to delivery** -- PRD, roadmap, design, tasks, implementation, review, merge. One plugin.
 - **Dependency-aware execution** -- Built-in tracker with topological sort. `ready` always returns the next unblocked task.
 - **Autonomous loop** -- Circuit breaker, progress detection, configurable safety limits. Runs until done or stuck. Supports worktree-based parallel execution.
 - **AI code review** -- Every PR reviewed before merge. Critical findings auto-fixed. Up to 3 review iterations.
@@ -64,7 +64,7 @@ The setup script registers the plugin with Claude Code, walks you through key se
 /coco:phase "Phase 1: Foundation"        # Orchestrate all features
 
 # Single feature
-/planning-session tactical               # Spec -> plan -> tasks -> import
+/planning-session tactical               # Design -> tasks -> import
 /coco:loop                               # Autonomous execution until done
 
 # Quick fix
@@ -85,7 +85,7 @@ The setup script registers the plugin with Claude Code, walks you through key se
 | Layer | What | How |
 |-------|------|-----|
 | **Discovery** | PRD, analysis, roadmap | `/coco:prd`, `/coco:roadmap` |
-| **Planning** | Spec, plan, task decomposition | AI-selected skills (`spec`, `plan`, `tasks`) |
+| **Planning** | Design, task decomposition | AI-selected skills (`design`, `tasks`) |
 | **Execution** | Dependency resolution, TDD loop | Built-in tracker + `/coco:loop` |
 | **Review** | AI code review on every PR | `code-reviewer` agent |
 | **Visibility** | Issue tracker sync | Linear MCP, GitHub CLI, or none |
@@ -97,8 +97,8 @@ Not every change needs the full pipeline. `/planning-session tactical` and `/coc
 | Tier | Signal | What Runs |
 |------|--------|-----------|
 | **Trivial** | Single file, bug fix, "quick" | `hotfix` -- no epic, no ceremony |
-| **Light** | 1-3 files, single story | Spec + import -- skip plan and task decomposition |
-| **Standard** | Multi-file, dependencies | Full pipeline -- spec, plan, tasks, import |
+| **Light** | 1-3 files, single story | Design + import -- skip task decomposition |
+| **Standard** | Multi-file, dependencies | Full pipeline -- design, tasks, import |
 
 ### Autonomous Loop
 
@@ -180,11 +180,11 @@ AI-selected workflow steps. These run automatically as part of the pipeline -- y
 
 | Skill | Purpose |
 |-------|---------|
-| `spec` | Feature specification with optional clarification (supports light mode) |
-| `plan` | Implementation plan with design artifacts |
+| `design` | Feature design (spec + plan) with optional clarification (supports light mode) |
 | `tasks` | Dependency-ordered task list with 6-pass consistency analysis |
-| `import` | Import to tracker + issue tracker (supports spec-only mode) |
+| `import` | Import to tracker + issue tracker (supports design-only mode) |
 | `hotfix` | Single-issue fix -- no epic, no ceremony |
+| `execute` | Delegates to /coco:execute command |
 
 ## Issue Tracker Integration
 
@@ -224,7 +224,7 @@ For existing projects, run `/coco:prd audit` after setup to generate a PRD from 
 coco-workflow/                          # This repo (git submodule)
   plugin.json                           # Claude Code plugin manifest
   commands/                             # 12 slash commands
-  skills/                               # 5 AI-selected skills
+  skills/                               # 5 AI-selected skills (design, tasks, import, hotfix, execute)
   agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
   hooks/                                # Claude Code hooks (quality, session memory)
   git-hooks/                            # Git hooks (commit-msg, pre-commit)

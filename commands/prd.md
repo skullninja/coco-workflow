@@ -106,8 +106,8 @@ Gather information from all available sources:
 - Read `.coco/config.yaml` (if exists)
 
 **Existing specifications:**
-- Glob `{specs_dir}/*/spec.md` and read each
-- Summarize features already specified
+- Glob `{specs_dir}/*/design.md` (with `{specs_dir}/*/spec.md` as legacy fallback) and read each
+- Summarize features already designed
 
 **Source code structure:**
 - Glob for key patterns (e.g., `src/**`, `app/**`, `lib/**`)

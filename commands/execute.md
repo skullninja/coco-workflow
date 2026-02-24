@@ -93,7 +93,7 @@ If `issue_key` is missing and provider is configured, STOP and fix metadata.
 
 Read the sub-phase tasks from `specs/{feature}/tasks.md` and implement:
 
-**a. Write Tests First** (if TDD requested in spec)
+**a. Write Tests First** (if TDD requested in design)
 - Create test files, verify they fail (RED)
 
 **b. Implement Code**

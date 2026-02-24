@@ -97,8 +97,7 @@ This constitution supersedes all other development practices. When conflicts ari
 ### Compliance Review
 
 **Constitution compliance MUST be verified**:
-- At specification creation (spec.md)
-- At planning phase (plan.md Constitution Check section)
+- At design creation (design.md Constitution Check section)
 - At code review (PR checklist)
 
 ### Versioning Policy

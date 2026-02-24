@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: Generate a dependency-ordered task list (tasks.md) with sub-phases and cross-artifact consistency analysis from spec.md and plan.md in specs/{feature}/.
+description: Generate a dependency-ordered task list (tasks.md) with sub-phases and cross-artifact consistency analysis from design.md in specs/{feature}/.
 ---
 
 # Coco Tasks Skill
@@ -10,10 +10,12 @@ Generate an actionable, dependency-ordered tasks.md for the feature based on ava
 ## When to Use
 
 - Generating a task list as part of the coco pipeline
-- Called by `/coco:phase` (Step C) or `/planning-session tactical`
+- Called by `/coco:phase` (Step B) or `/planning-session tactical`
 - When a tasks.md is needed in `specs/{feature}/` before tracker import
 
-Prerequisites: `plan.md` and `spec.md` must exist. If missing, use the `plan` skill first.
+Prerequisites: `design.md` must exist. If missing, use the `design` skill first.
+
+**Legacy fallback**: If `design.md` doesn't exist, check for `spec.md` + `plan.md` as legacy artifacts and load both.
 
 ## Setup
 
@@ -23,19 +25,22 @@ Prerequisites: `plan.md` and `spec.md` must exist. If missing, use the `plan` sk
    - Looking for the matching directory in `{specs_dir}/{branch-name}/`
    - Or from conversation context if a feature was recently discussed
 3. Load design documents from `{specs_dir}/{feature}/`:
-   - **Required**: plan.md (tech stack, structure), spec.md (user stories with priorities)
-   - **Optional**: data-model.md (entities), contracts/ (API endpoints), research.md (decisions), quickstart.md (test scenarios)
+   - **Required**: design.md (user stories, tech stack, structure, API contracts, research decisions)
+   - **Optional**: data-model.md (entities, if generated separately)
+   - **Legacy fallback**: If `design.md` doesn't exist, load `spec.md` + `plan.md` + `data-model.md` + `contracts/` + `research.md` as legacy artifacts
 4. Load the tasks template from `.coco/templates/tasks-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md`.
 
 ## Execution
 
 ### 1. Extract Context
 
-- From plan.md: tech stack, libraries, project structure
-- From spec.md: user stories with priorities (P1, P2, P3...)
+- From design.md: tech stack, libraries, project structure, user stories with priorities (P1, P2, P3...), API contracts, research decisions
 - From data-model.md (if exists): entities, map to user stories
-- From contracts/ (if exists): endpoints, map to user stories
-- From research.md (if exists): decisions for setup tasks
+
+**Legacy mode** (if loading spec.md + plan.md instead):
+- From plan.md: tech stack, libraries, project structure
+- From spec.md: user stories with priorities
+- From data-model.md, contracts/, research.md (if exist): entities, endpoints, decisions
 
 ### 2. Generate Tasks
 
@@ -57,7 +62,7 @@ Organize tasks by user story. Every task MUST use this format:
 - **Sub-Phase 2: Foundational** - Blocking prerequisites (MUST complete before user stories)
 - **Sub-Phase 3+: User Stories** - One sub-phase per story in priority order (P1, P2, P3...)
   - Each includes: goal, independent test criteria, acceptance criteria (min 3), implementation tasks
-  - Tests are OPTIONAL (include only if spec requests TDD)
+  - Tests are OPTIONAL (include only if design requests TDD)
   - Order within story: Tests -> Models -> Services -> Endpoints -> Integration
 - **Final Sub-Phase: Polish** - Cross-cutting concerns
 
@@ -72,14 +77,14 @@ Generate:
 
 **File Ownership (`owns_files`) Annotations:**
 
-If `plan.md` contains file-level implementation details, extract file ownership per sub-phase. For each user story sub-phase, identify the files/directories it exclusively modifies:
+If `design.md` contains file-level implementation details (in the Project Structure or Technical Approach sections), extract file ownership per sub-phase. For each user story sub-phase, identify the files/directories it exclusively modifies:
 
 ```markdown
 ### Sub-Phase 3: User Authentication
 **owns_files**: `src/auth/**`, `tests/auth/**`
 ```
 
-These annotations are consumed by the `import` skill to populate task metadata, enabling worktree-based parallel execution. Only include `owns_files` when file paths are determinable from the plan -- omit for sub-phases with unclear file boundaries.
+These annotations are consumed by the `import` skill to populate task metadata, enabling worktree-based parallel execution. Only include `owns_files` when file paths are determinable from the design -- omit for sub-phases with unclear file boundaries.
 
 ### 5. Write tasks.md
 
@@ -92,9 +97,9 @@ After generating tasks.md, automatically run the full consistency analysis. This
 **STRICTLY READ-ONLY**: Do not modify any files during analysis. Output findings inline.
 
 Load from `{specs_dir}/{feature}/`:
-- spec.md (required)
-- plan.md (required)
+- design.md (required; or spec.md + plan.md in legacy mode)
 - tasks.md (just generated)
+- data-model.md (if exists)
 - `.coco/memory/constitution.md` if it exists
 
 #### Detection Passes (limit 50 findings total)
@@ -110,7 +115,7 @@ Load from `{specs_dir}/{feature}/`:
 **C. Underspecification**
 - Requirements with verbs but missing object or measurable outcome
 - User stories missing acceptance criteria alignment
-- Tasks referencing files or components not defined in spec/plan
+- Tasks referencing files or components not defined in design
 
 **D. Constitution Alignment**
 - Any requirement or plan element conflicting with a constitution MUST principle
@@ -124,7 +129,7 @@ Load from `{specs_dir}/{feature}/`:
 
 **F. Inconsistency**
 - Terminology drift (same concept named differently across files)
-- Data entities in plan but absent in spec (or vice versa)
+- Data entities in data-model.md but absent in design (or vice versa)
 - Task ordering contradictions
 - Conflicting requirements
 

@@ -10,7 +10,7 @@ Spec-driven features follow a structured process from specification to merged co
 
 | Layer | Tool | Role |
 |-------|------|------|
-| **Planning** | Coco skills | Produces `specs/{feature}/` with spec, plan, tasks |
+| **Planning** | Coco skills | Produces `specs/{feature}/` with design, tasks |
 | **Execution** | Coco tracker | Manages dependencies, session memory, task ordering |
 | **Review** | PRs + code-reviewer agent | AI code review on every PR before merge |
 | **Visibility** | Issue tracker | Mirrors task status for human tracking (optional) |
@@ -32,16 +32,13 @@ main
 
 ### 1. Feature Specification
 
-Create spec artifacts in `specs/{feature}/`:
+Create design artifacts in `specs/{feature}/`:
 
-- **spec.md** -- Feature specification with user stories and acceptance criteria (`spec` skill)
-- **plan.md** -- Technical implementation plan (`plan` skill)
+- **design.md** -- Feature design with user stories, technical approach, API contracts, and research decisions (`design` skill)
 - **tasks.md** -- Dependency-ordered task list (`tasks` skill)
-- **data-model.md** -- Data structures and relationships (if applicable)
-- **contracts/** -- Service/protocol interfaces (if applicable)
-- **research.md** -- Technical research and decisions (if applicable)
+- **data-model.md** -- Data structures and relationships (optional, data-heavy features only)
 
-The `spec` skill creates the feature branch (`feature/{name}`) automatically.
+The `design` skill creates the feature branch (`feature/{name}`) automatically.
 
 ### 2. Import to Tracker
 
