@@ -129,13 +129,18 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
    ```
    Capture the project number from output.
 
-2. Resolve Status field and option IDs:
+2. Link the project to the repository:
+   ```bash
+   gh project link {project_number} --owner {github.owner} --repo {github.repo}
+   ```
+
+3. Resolve Status field and option IDs:
    ```bash
    gh project field-list {project_number} --owner {github.owner} --format json
    ```
    Find the "Status" field. Extract `field_id` and option IDs for each status value (Todo, In Progress, In Review, Done).
 
-3. Cache project metadata to `.coco/state/gh-projects.json`:
+4. Cache project metadata to `.coco/state/gh-projects.json`:
    ```json
    {
      "features": {
@@ -153,7 +158,7 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
    ```
    Ensure `.coco/state/` directory exists. If `gh-projects.json` already exists, merge into the `features` key.
 
-4. Create issues and add to project:
+5. Create issues and add to project:
    ```bash
    # Create issue
    gh issue create --title "Sub-Phase {N}: {title}" --body "{description}" --label {labels}
@@ -170,7 +175,7 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
      --single-select-option-id {status_options["Todo"]}
    ```
 
-5. Store issue numbers AND project item IDs in tracker metadata:
+6. Store issue numbers AND project item IDs in tracker metadata:
    ```bash
    coco_tracker update {task-id} --metadata '{"issue_key": "#{N}", "gh_project_item_id": "{item_id}", "gh_project_number": {project_number}}'
    ```

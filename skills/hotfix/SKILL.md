@@ -109,6 +109,13 @@ EOF
 )"
 ```
 
+If `github.use_projects` is true and the issue was added to a project, add the PR to the project board:
+
+```bash
+PR_URL=$(gh pr view --json url -q .url)
+gh project item-add {project_number} --owner {github.owner} --url "$PR_URL"
+```
+
 If `pr.review.enabled`:
 - Invoke `code-reviewer` agent on the PR
 - If CHANGES REQUESTED: fix critical findings, push, re-review (same loop as `/coco:execute`)

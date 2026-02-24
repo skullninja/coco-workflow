@@ -209,6 +209,18 @@ EOF
 )"
 ```
 
+Add the feature PR to the project board (if GitHub Projects V2 enabled):
+
+```bash
+PR_URL=$(gh pr view --json url -q .url)
+```
+
+Read `.coco/state/gh-projects.json` for the feature's `project_number`:
+
+```bash
+gh project item-add {project_number} --owner {github.owner} --url "$PR_URL"
+```
+
 Then trigger a **full-feature AI code review**:
 1. Invoke `code-reviewer` agent on the feature PR (reviews the full diff against main)
 2. If CHANGES REQUESTED: enter review-fix loop (fixes committed directly to feature branch)

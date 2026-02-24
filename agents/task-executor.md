@@ -161,6 +161,13 @@ EOF
 - For GitHub issues: `Closes #{N}`
 - For no provider: `Ref {task-id}`
 
+Add PR to the project board (if GitHub Projects V2 enabled and task has `gh_project_number` in metadata):
+
+```bash
+PR_URL=$(gh pr view --json url -q .url)
+gh project item-add {gh_project_number} --owner {github.owner} --url "$PR_URL"
+```
+
 ### 8. Update Issue Tracker (In Review)
 
 **If "github"** with Projects V2 enabled:

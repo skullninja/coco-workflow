@@ -182,6 +182,10 @@ Based on `issue_tracker.provider`:
   ```bash
   gh project create --owner {github.owner} --title "Phase N: {name}" --format "BOARD"
   ```
+  Link the project to the repository:
+  ```bash
+  gh project link {project_number} --owner {github.owner} --repo {github.repo}
+  ```
   Cache phase project metadata in `.coco/state/gh-projects.json` under the `phases` key:
   ```json
   {

@@ -191,6 +191,13 @@ EOF
 - For GitHub issues: `Closes #{N}` (e.g., `Closes #7`)
 - For no provider: `Ref {task-id}`
 
+Add PR to the project board (if GitHub Projects V2 enabled and task has `gh_project_number` in metadata):
+
+```bash
+PR_URL=$(gh pr view --json url -q .url)
+gh project item-add {gh_project_number} --owner {github.owner} --url "$PR_URL"
+```
+
 Update issue tracker status to "In Review":
 
 **If "linear"**: Update issue state to `status_map.in_review` using `mcp__plugin_linear_linear__update_issue`
