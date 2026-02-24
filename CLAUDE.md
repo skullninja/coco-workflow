@@ -20,7 +20,7 @@ Five layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 12 slash commands (prd, roadmap, phase, loop, execute, standup, etc.) |
+| `commands/` | 13 slash commands (prd, roadmap, phase, loop, execute, dashboard, standup, etc.) |
 | `skills/spec/SKILL.md` | Feature specification with clarification (AI-selected) |
 | `skills/plan/SKILL.md` | Implementation plan generation (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |

@@ -76,7 +76,8 @@ specs/{feature}/
 | `/coco:execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco:loop` | Autonomous execution loop with circuit breaker |
 | `/coco:sync` | Reconcile tracker and issue tracker state |
-| `/coco:status` | Show execution status and parallel opportunities |
+| `/coco:dashboard` | Compact visual progress dashboard with progress bar and dependency graph |
+| `/coco:status` | Show detailed execution status and parallel opportunities |
 | `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
 
 ## Coco Tracker
@@ -352,7 +353,8 @@ git push
 | `/coco:loop` | Autonomous loop with circuit breaker |
 | `/coco:execute` | TDD + PR + AI review loop with issue tracker bridge |
 | `/coco:constitution` | Create/update project constitution |
-| `/coco:status` | Show execution state and opportunities |
+| `/coco:dashboard` | Compact visual progress dashboard |
+| `/coco:status` | Show detailed execution state and opportunities |
 | `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco:sync` | Reconcile tracker and issue tracker state |
 | `/planning-session` | Start a planning session |
