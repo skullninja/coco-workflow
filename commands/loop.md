@@ -189,7 +189,7 @@ gh pr create \
   --base main \
   --head "$FEATURE_BRANCH" \
   --title "{feature-name}: {epic description}" \
-  --body "$(cat <<'EOF'
+  --body-file - <<'EOF'
 ## Feature Summary
 
 {comprehensive summary of the full feature}
@@ -206,7 +206,6 @@ gh pr create \
 
 {links to all issues in the epic with their keys}
 EOF
-)"
 ```
 
 Add the feature PR to the project board (if GitHub Projects V2 enabled):

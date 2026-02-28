@@ -133,7 +133,7 @@ gh pr create \
   --base "$FEATURE_BRANCH" \
   --head "$ISSUE_BRANCH" \
   --title "{issue_key}: {task title}" \
-  --body "$(cat <<'EOF'
+  --body-file - <<'EOF'
 ## Summary
 
 {implementation summary}
@@ -153,7 +153,6 @@ Resolves {issue_key}
 
 {test output summary}
 EOF
-)"
 ```
 
 **Issue ID in PR body is MANDATORY:**

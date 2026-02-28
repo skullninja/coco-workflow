@@ -80,7 +80,7 @@ When in doubt, classify as **warning**. Only flag as critical when you are confi
 Post your review as a comment on the PR:
 
 ```bash
-gh pr comment {pr-number} --body "$(cat <<'REVIEW'
+gh pr comment {pr-number} --body-file - <<'REVIEW'
 ## AI Code Review
 
 **PR**: #{pr-number} -- {title}
@@ -112,7 +112,6 @@ gh pr comment {pr-number} --body "$(cat <<'REVIEW'
 - **Warnings**: {count}
 - **Verdict**: {APPROVED | CHANGES REQUESTED}
 REVIEW
-)"
 ```
 
 **Verdict rules:**

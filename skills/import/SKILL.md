@@ -155,7 +155,9 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
 5. Create issues and add to project:
    ```bash
    # Create issue
-   gh issue create --title "Sub-Phase {N}: {title}" --body "{description}" --label {labels}
+   gh issue create --title "Sub-Phase {N}: {title}" --label {labels} --body-file - <<'EOF'
+   {description}
+   EOF
 
    # Add issue to project
    gh project item-add {project_number} --owner {github.owner} --url {issue_url}
@@ -178,7 +180,9 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
 
 1. Create issues using `gh`:
    ```bash
-   gh issue create --title "Sub-Phase {N}: {title}" --body "{description}" --label {labels}
+   gh issue create --title "Sub-Phase {N}: {title}" --label {labels} --body-file - <<'EOF'
+   {description}
+   EOF
    ```
 
 2. Store issue numbers in tracker metadata:

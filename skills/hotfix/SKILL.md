@@ -95,7 +95,7 @@ gh pr create \
   --base main \
   --head fix/{short-name} \
   --title "{issue_key}: {fix description}" \
-  --body "$(cat <<'EOF'
+  --body-file - <<'EOF'
 ## Fix Summary
 
 {What was wrong and how it was fixed}
@@ -106,7 +106,6 @@ Resolves {issue_key}
 
 {test output summary}
 EOF
-)"
 ```
 
 If `github.use_projects` is true and the issue was added to a project, add the PR to the project board:
