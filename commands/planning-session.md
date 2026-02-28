@@ -12,7 +12,7 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
 
 **Types:**
 - **strategic** -- Roadmap review and prioritization
-- **tactical** -- Plan a specific feature (design -> tasks -> import)
+- **tactical** -- Plan a specific feature (interview -> design -> tasks -> import)
 - **operational** -- Status check and task prioritization
 - **triage** -- Quick-score a bug, feature request, or feedback item
 
@@ -22,9 +22,10 @@ $ARGUMENTS may specify the type. If not, ask using AskUserQuestion.
 1. Review project goals and metrics
 2. Audit existing roadmap/feature list
 3. Prioritize features by impact
-4. Update roadmap and issue tracker projects
-5. Save notes to `docs/planning-sessions/YYYY-QN.md`
-6. For each analysis topic discussed, offer to save it as a standalone analysis doc:
+4. For topics needing deep investigation before creating analysis docs, offer to use the `interview` skill to gather structured context. This produces a discovery brief that can inform the analysis.
+5. Update roadmap and issue tracker projects
+6. Save notes to `docs/planning-sessions/YYYY-QN.md`
+7. For each analysis topic discussed, offer to save it as a standalone analysis doc:
    - Read `discovery.analysis_dir` from `.coco/config.yaml` (default: `docs/analysis`)
    - Load analysis template from `.coco/templates/analysis-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/analysis-template.md`
    - Fill in findings, implications, and recommendations from the session discussion
@@ -41,7 +42,7 @@ Before running the pipeline, classify the feature scope:
 |------|--------|----------|
 | **Trivial** | User says "small", "quick", "hotfix"; single file mentioned; bug fix | `hotfix` skill (no epic) |
 | **Light** | 1-3 files, single user story, no internal dependencies | `design` (light mode) -> `import` (design-only) |
-| **Standard** | Multi-file, multiple stories, dependencies between components | `design` -> `tasks` -> `import` |
+| **Standard** | Multi-file, multiple stories, dependencies between components | `interview` -> `design` -> `tasks` -> `import` |
 
 Ask the user using AskUserQuestion: "How complex is this feature?" with options:
 - **Quick fix** -- Single issue, 1 file (routes to Trivial)
@@ -53,28 +54,30 @@ If the user already described the scope clearly, infer the tier without asking.
 **Step 2: Execute Pipeline**
 
 - **Trivial**: Use the `hotfix` skill. Done.
-- **Light**: Use `design` skill (light mode) -> `import` skill (design-only mode). Skips tasks generation.
-- **Standard**: Run full pipeline: `design` -> `tasks` -> `import`
+- **Light**: Use `design` skill (light mode) -> `import` skill (design-only mode). Skips interview and tasks generation.
+- **Standard**: Use the `interview` skill first (pre-design discovery), then run full pipeline: `design` -> `tasks` -> `import`. If the user's description is already very detailed (covers problem, scope, users, and functional requirements), offer to skip the interview.
 
 **Step 3: Verify and Save**
 1. Verify import and pre-execution gate
 2. Save notes to `docs/planning-sessions/YYYY-MM-DD-{feature}.md`
 
 ### Operational
-1. Check current tracker state:
+1. When blockers are identified, offer to use the `interview` skill to gather structured context about the blocker. This produces a focused discovery brief that can inform the resolution approach.
+2. Check current tracker state:
    ```bash
    source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
    coco_tracker epic-status
    ```
-2. Run `/coco:sync` to reconcile with issue tracker
-3. Reprioritize and unblock tasks
-4. Plan the week's work
+3. Run `/coco:sync` to reconcile with issue tracker
+4. Reprioritize and unblock tasks
+5. Plan the week's work
 
 ### Triage
-1. Score the item using the impact framework (see `/planning-triage`)
+1. Score the item using the impact framework (see `/coco:planning-triage`)
 2. Disposition based on score (immediate/backlog/defer)
-3. Create issue if appropriate
-4. Save notes
+3. For items scoring >= 3.0 (immediate), offer to use the `interview` skill for deeper requirements gathering before routing to a tactical session
+4. Create issue if appropriate
+5. Save notes
 
 ## Output
 

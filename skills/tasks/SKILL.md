@@ -10,7 +10,7 @@ Generate an actionable, dependency-ordered tasks.md for the feature based on ava
 ## When to Use
 
 - Generating a task list as part of the coco pipeline
-- Called by `/coco:phase` (Step B) or `/planning-session tactical`
+- Called by `/coco:phase` (Step B) or `/coco:planning-session tactical`
 - When a tasks.md is needed in `specs/{feature}/` before tracker import
 
 Prerequisites: `design.md` must exist. If missing, use the `design` skill first.

@@ -2,13 +2,13 @@
 
 ## Project Overview
 
-Coco is a Claude Code plugin that provides autonomous spec-driven development. It unifies planning (slash commands), execution (built-in task tracker), PR workflow with AI code review, and visibility (configurable issue tracker) into a single plugin deliverable as a git submodule.
+Coco is a Claude Code plugin that provides autonomous spec-driven development. It unifies planning (slash commands), execution (built-in task tracker), PR workflow with AI code review, and visibility (configurable issue tracker) into a single plugin distributed via the Claude Code marketplace (or as a git submodule).
 
 ## Architecture
 
 Five layers:
 - **Discovery**: `/coco:prd` and `/coco:roadmap` produce PRD, analysis, and roadmap artifacts. Supports multi-repo via derived PRDs (`/coco:prd derive`)
-- **Planning**: Skills (`design`, `tasks`, `import`) produce spec artifacts in `specs/{feature}/`
+- **Planning**: Skills (`interview`, `design`, `tasks`, `import`) produce spec artifacts in `specs/{feature}/`
 - **Execution**: `lib/tracker.sh` (bash + jq) manages task state, dependencies, sessions
 - **Review**: Two-tier PR workflow with AI code review (`agents/code-reviewer.md`)
 - **Visibility**: Issue tracker bridge (Linear MCP, GitHub CLI, or none) mirrors status
@@ -20,7 +20,9 @@ Five layers:
 | `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
-| `commands/` | 13 slash commands (prd [greenfield/audit/derive], roadmap, phase, loop, execute, dashboard, standup, etc.) |
+| `commands/setup.md` | `/coco:setup` -- project initialization (config wizard, git hooks, permissions) |
+| `commands/` | 13 slash commands (setup, prd [greenfield/audit/derive], roadmap, phase, loop, execute, dashboard, standup, etc.) |
+| `skills/interview/SKILL.md` | Pre-design discovery interview (AI-selected) |
 | `skills/design/SKILL.md` | Feature design: spec + implementation plan (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
 | `skills/import/SKILL.md` | Tracker + issue tracker import (AI-selected) |
@@ -35,11 +37,11 @@ Five layers:
 | `git-hooks/commit-msg.sh` | Commit message validation (reads config) |
 | `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
 | `GUIDE.md` | Comprehensive workflow guide with deep-dives and quick reference |
-| `templates/` | Default templates for PRD, analysis, roadmap, design, tasks, constitution |
+| `templates/` | Default templates for PRD, analysis, roadmap, discovery, design, tasks, constitution |
 | `workflows/` | Reference documentation for workflows |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
-| `tests/test-tracker.sh` | 28 tests for tracker.sh |
+| `tests/test-tracker.sh` | 46 tests for tracker.sh |
 
 ## Tracker (`lib/tracker.sh`)
 
@@ -157,7 +159,7 @@ Cache file structure (`.coco/state/gh-projects.json`):
 
 ## Pipeline
 
-Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) `design` skill -> `tasks` skill -> `import` skill -> `/coco:loop`
+Full pipeline: `/coco:prd` -> `/coco:roadmap` -> `/coco:phase` -> (per feature) `interview` skill -> `design` skill -> `tasks` skill -> `import` skill -> `/coco:loop`
 
 For multi-repo projects, satellite repos use `/coco:prd derive /path/to/source/prd.md` to create a platform-specific PRD from a primary repo's PRD, then run the standard pipeline independently.
 
@@ -167,17 +169,17 @@ For multi-repo projects, satellite repos use `/coco:prd derive /path/to/source/p
 - `/coco:loop` runs autonomously with circuit breaker and PR workflow
 - `/coco:execute` runs one task at a time for manual review
 
-The pipeline steps (design, tasks, import) are **skills, not commands**. They are AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests. **NEVER suggest `/coco:tasks`, `/coco:import`, or `/coco:design` to users** -- these do not exist as slash commands. Instead, tell users to ask Claude in natural language (e.g., "generate tasks", "import into tracker").
+The pipeline steps (interview, design, tasks, import) are **skills, not commands**. They are AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/coco:planning-session tactical`, or natural language requests. **NEVER suggest `/coco:tasks`, `/coco:import`, `/coco:design`, or `/coco:interview` to users** -- these do not exist as slash commands. Instead, tell users to ask Claude in natural language (e.g., "interview me about this feature", "generate tasks", "import into tracker").
 
 ## Adaptive Complexity Routing
 
-`/planning-session tactical` and `/coco:phase` classify features by complexity tier:
+`/coco:planning-session tactical` and `/coco:phase` classify features by complexity tier:
 
 | Tier | Pipeline |
 |------|----------|
 | **Trivial** | `hotfix` skill (no epic overhead) |
 | **Light** | `design` (light mode) -> `import` (design-only mode) |
-| **Standard** | Full: `design` -> `tasks` -> `import` |
+| **Standard** | Full: `interview` -> `design` -> `tasks` -> `import` |
 
 Light mode: `design` generates a minimal design (single user story, 3-5 acceptance criteria, no technical approach or clarification pass). `import` creates a single-task epic directly from the design without requiring tasks.md.
 
@@ -219,13 +221,30 @@ loop:
 
 See `workflows/parallel-execution.md` for full details.
 
+## Installation
+
+Two installation paths, both produce the same result:
+
+**Marketplace (recommended):**
+```
+/plugin marketplace add skullninja/coco-workflow
+/plugin install coco@coco-workflow
+/coco:setup
+```
+
+**Git submodule (legacy):**
+```bash
+git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
+bash coco-workflow/scripts/setup.sh
+```
+
 ## Testing
 
 ```bash
 bash tests/test-tracker.sh
 ```
 
-Runs 28 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata.
+Runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata.
 
 ## Development Notes
 

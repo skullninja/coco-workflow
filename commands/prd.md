@@ -248,7 +248,7 @@ Fill the PRD template with:
 
 Update `.coco/config.yaml` to set `discovery.source_prd` to the source PRD path (for future re-derive).
 
-If `.coco/config.yaml` doesn't exist yet, note the path for the user to configure after running `setup.sh`.
+If `.coco/config.yaml` doesn't exist yet, note the path for the user to configure after running `/coco:setup` (or `setup.sh` for submodule installs).
 
 ### 10. Write PRD
 

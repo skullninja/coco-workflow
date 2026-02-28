@@ -10,7 +10,7 @@ Generate a feature design from a natural language description, combining specifi
 ## When to Use
 
 - Creating a feature design as part of the coco pipeline
-- Called by `/coco:phase` (Step A) or `/planning-session tactical`
+- Called by `/coco:phase` (Step A) or `/coco:planning-session tactical`
 - When a design.md is needed in `specs/{feature}/` before task generation
 
 For single-issue fixes, use the `hotfix` skill instead.
@@ -25,6 +25,7 @@ For single-issue fixes, use the `hotfix` skill instead.
    - If none of the above, ask the user for a feature description
 3. Load `.coco/memory/constitution.md` if it exists.
 4. Load the design template from `.coco/templates/design-template.md` if it exists, otherwise use `${CLAUDE_PLUGIN_ROOT}/templates/design-template.md`.
+5. Load `{specs_dir}/{feature-name}/discovery.md` if it exists. When present, this discovery brief provides pre-validated user intent, scope decisions, and constraints gathered via the `interview` skill.
 
 ## Execution
 
@@ -52,12 +53,12 @@ Fill the design template following this workflow:
 
 **Specification phase** (WHAT and WHY):
 
-1. Parse user description, extract key concepts (actors, actions, data, constraints)
+1. Parse user description, extract key concepts (actors, actions, data, constraints). **When `discovery.md` exists**, use it as the primary source for actors, goals, scope, and constraints -- treat the discovery brief as pre-validated input.
 2. For unclear aspects:
    - Make informed guesses based on context and industry standards
    - Only mark with `[NEEDS CLARIFICATION: specific question]` if the choice significantly impacts scope or UX and no reasonable default exists
-   - **Maximum 3 markers total**, prioritized by: scope > security > UX > technical
-3. Fill User Stories section with prioritized, independently testable user stories with BDD acceptance scenarios
+   - **Maximum 3 markers total** (or **maximum 1 marker** when `discovery.md` exists, since most ambiguities should already be resolved), prioritized by: scope > security > UX > technical
+3. Fill User Stories section with prioritized, independently testable user stories with BDD acceptance scenarios. **When `discovery.md` exists**, derive user stories from the User Intent and Scope sections.
 4. Generate testable Functional Requirements (use reasonable defaults; document assumptions)
 5. Define measurable, technology-agnostic Success Criteria
 6. Identify Key Entities (if data involved)
@@ -110,7 +111,7 @@ Fix issues (max 3 iterations). If `[NEEDS CLARIFICATION]` markers remain (max 3)
 
 ### 6. Clarification Pass (Optional)
 
-After design generation, perform a structured ambiguity scan.
+After design generation, perform a structured ambiguity scan. **When `discovery.md` exists**, narrow the scan to categories NOT already covered in the discovery brief -- skip categories where the discovery brief provides clear, validated answers.
 
 **Ambiguity Scan**: Check coverage across these categories, marking each as Clear / Partial / Missing:
 
@@ -173,7 +174,7 @@ When invoked for a **Light-tier** feature (1-3 files, single user story, no inte
 4. **Suggest next step**: Tell the user to ask Claude to "import the design into the tracker" (this triggers the `import` skill automatically -- skills are NOT slash commands, so never suggest `/coco:import`)
 
 Light mode is triggered by:
-- `/planning-session tactical` routing to Light tier
+- `/coco:planning-session tactical` routing to Light tier
 - `/coco:phase` classifying the feature as Light tier
 - Explicit request for a "light" or "minimal" design
 

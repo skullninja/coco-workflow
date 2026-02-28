@@ -68,7 +68,7 @@ Complexity tier (determines pipeline depth):
 | Tier | Signal | Pipeline |
 |------|--------|----------|
 | **Light** | 1-3 files/components mentioned, single user story, no internal dependencies | `design` (light mode) -> `import` (design-only) |
-| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `design` -> `tasks` -> `import` |
+| **Standard** | Multi-file, multiple stories, cross-component dependencies | Full: `interview` -> `design` -> `tasks` -> `import` |
 
 Classify based on: number of files/components mentioned in the roadmap, feature description complexity, and whether the feature has internal dependencies.
 
@@ -97,7 +97,7 @@ For each feature in the approved order:
 
 **Step A: Design (if design.md doesn't exist)**
 - For **Light** tier: Use the `design` skill in light mode (minimal design, skip clarification)
-- For **Standard** tier: Use `/interview` or the `design` skill for full design
+- For **Standard** tier: If `discovery.md` doesn't exist in the feature's spec directory, use the `interview` skill first to gather pre-design context. Then use the `design` skill for full design (which will consume `discovery.md` as input).
 - Wait for completion before proceeding
 
 **Step B: Generate tasks (if tasks don't exist) -- Standard tier only**

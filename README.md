@@ -32,7 +32,7 @@ Coco is the whole pipeline in one plugin:
  user auth"    + criteria      + deps graph    + commits      review       issues closed
 ```
 
-**Zero dependencies** beyond bash and jq. No daemon. No database. No node_modules. Add it as a git submodule and go.
+**Zero dependencies** beyond bash and jq. No daemon. No database. No node_modules. Install from the marketplace and go.
 
 ## What You Get
 
@@ -49,12 +49,29 @@ Coco is the whole pipeline in one plugin:
 
 ### Install
 
+**From the marketplace (recommended):**
+
+In Claude Code, run:
+
+```
+/plugin marketplace add skullninja/coco-workflow
+/plugin install coco@coco-workflow
+```
+
+Then in your project:
+
+```
+/coco:setup
+```
+
+The setup command creates the `.coco/` directory, walks you through key settings (project name, issue tracker, parallel execution), installs git hooks, and configures permissions.
+
+**As a git submodule (alternative):**
+
 ```bash
 git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
 bash coco-workflow/scripts/setup.sh
 ```
-
-The setup script registers the plugin with Claude Code, walks you through key settings (project name, issue tracker, parallel execution), and installs git hooks. Restart Claude Code after setup to load the plugin.
 
 ### Build something
 
@@ -65,7 +82,7 @@ The setup script registers the plugin with Claude Code, walks you through key se
 /coco:phase "Phase 1: Foundation"        # Orchestrate all features
 
 # Single feature
-/planning-session tactical               # Design -> tasks -> import
+/coco:planning-session tactical               # Interview -> design -> tasks -> import
 /coco:loop                               # Autonomous execution until done
 
 # Quick fix
@@ -86,20 +103,20 @@ The setup script registers the plugin with Claude Code, walks you through key se
 | Layer | What | How |
 |-------|------|-----|
 | **Discovery** | PRD, analysis, roadmap, multi-repo derive | `/coco:prd`, `/coco:roadmap` |
-| **Planning** | Design, task decomposition | AI-selected skills (`design`, `tasks`) |
+| **Planning** | Discovery, design, task decomposition | AI-selected skills (`interview`, `design`, `tasks`) |
 | **Execution** | Dependency resolution, TDD loop | Built-in tracker + `/coco:loop` |
 | **Review** | AI code review on every PR | `code-reviewer` agent |
 | **Visibility** | Issue tracker sync | Linear MCP, GitHub CLI, or none |
 
 ### Adaptive Complexity Routing
 
-Not every change needs the full pipeline. `/planning-session tactical` and `/coco:phase` automatically right-size the workflow:
+Not every change needs the full pipeline. `/coco:planning-session tactical` and `/coco:phase` automatically right-size the workflow:
 
 | Tier | Signal | What Runs |
 |------|--------|-----------|
 | **Trivial** | Single file, bug fix, "quick" | `hotfix` -- no epic, no ceremony |
 | **Light** | 1-3 files, single story | Design + import -- skip task decomposition |
-| **Standard** | Multi-file, dependencies | Full pipeline -- design, tasks, import |
+| **Standard** | Multi-file, dependencies | Full pipeline -- interview, design, tasks, import |
 
 ### Autonomous Loop
 
@@ -162,6 +179,7 @@ Human-facing entry points. These show up in `/` autocomplete.
 
 | Command | Purpose |
 |---------|---------|
+| `/coco:setup` | Initialize Coco in the current project (config, hooks, permissions) |
 | `/coco:prd` | Create, audit, or derive Product Requirements Document |
 | `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
@@ -172,16 +190,16 @@ Human-facing entry points. These show up in `/` autocomplete.
 | `/coco:status` | Execution state and parallel opportunities |
 | `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco:sync` | Reconcile tracker with issue tracker |
-| `/planning-session` | Guided planning (strategic / tactical / operational) |
-| `/planning-triage` | Score and disposition bugs, features, feedback |
-| `/interview` | In-depth user interview for feature specification |
+| `/coco:planning-session` | Guided planning (strategic / tactical / operational) |
+| `/coco:planning-triage` | Score and disposition bugs, features, feedback |
 
-### Skills (5)
+### Skills (6)
 
 AI-selected workflow steps. These run automatically as part of the pipeline -- you don't invoke them directly.
 
 | Skill | Purpose |
 |-------|---------|
+| `interview` | Pre-design discovery interview producing structured brief |
 | `design` | Feature design (spec + plan) with optional clarification (supports light mode) |
 | `tasks` | Dependency-ordered task list with 6-pass consistency analysis |
 | `import` | Import to tracker + issue tracker (supports design-only mode) |
@@ -211,22 +229,41 @@ All config-driven. Status mappings, team names, labels, issue key formats -- eve
 
 ### Setup
 
+**From the marketplace (recommended):**
+
+In Claude Code, run:
+
+```
+/plugin marketplace add skullninja/coco-workflow
+/plugin install coco@coco-workflow
+```
+
+Then in your project:
+
+```
+/coco:setup
+```
+
+Follow the interactive config wizard for project name, issue tracker, and parallel execution settings.
+
+**As a git submodule (alternative):**
+
 ```bash
 git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
 bash coco-workflow/scripts/setup.sh
 ```
 
-This registers the plugin with Claude Code, creates the `.coco/` directory structure, walks through key configuration (project name, issue tracker, parallel execution), and installs git hooks. Restart Claude Code after setup.
+Both paths create the `.coco/` directory structure, walk through key configuration, and install git hooks. Restart Claude Code after submodule setup.
 
 For existing projects, run `/coco:prd audit` after setup to generate a PRD from your codebase. For satellite repos in a multi-repo project, run `/coco:prd derive /path/to/primary/docs/prd.md` to create a platform-specific PRD.
 
 ### Project Structure
 
 ```
-coco-workflow/                          # This repo (git submodule)
+coco-workflow/                          # This repo (marketplace plugin or git submodule)
   plugin.json                           # Claude Code plugin manifest
   commands/                             # 13 slash commands
-  skills/                               # 5 AI-selected skills (design, tasks, import, hotfix, execute)
+  skills/                               # 6 AI-selected skills (interview, design, tasks, import, hotfix, execute)
   agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
   hooks/                                # Claude Code hooks (quality, session memory)
   git-hooks/                            # Git hooks (commit-msg, pre-commit)

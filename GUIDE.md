@@ -15,7 +15,7 @@ This workflow uses a unified pipeline to take features from description to merge
 | Layer | Tool | Role |
 |-------|------|------|
 | **Discovery** | `/coco:prd`, `/coco:roadmap` | Produces PRD, analysis docs, and per-release roadmaps |
-| **Planning** | Coco skills (`design`, `tasks`) | Produces `specs/{feature}/` artifacts: design.md, tasks.md |
+| **Planning** | Coco skills (`interview`, `design`, `tasks`) | Produces `specs/{feature}/` artifacts: discovery.md, design.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
 
@@ -30,7 +30,7 @@ This workflow uses a unified pipeline to take features from description to merge
 
 The Discovery Phase is optional -- projects can start directly with the `design` skill for individual features. Use it when starting a new product or major release to establish priorities before writing feature designs.
 
-**Workflow**: `/coco:prd` -> analysis docs (via `/planning-session strategic`) -> `/coco:roadmap` -> `/coco:phase`
+**Workflow**: `/coco:prd` -> analysis docs (via `/coco:planning-session strategic`) -> `/coco:roadmap` -> `/coco:phase`
 
 See `workflows/discovery-workflow.md` for full details.
 
@@ -78,11 +78,12 @@ When the source PRD is updated (new features, changed priorities), re-run `/coco
 
 ## Planning Skills
 
-Planning steps are AI-selected skills (invisible in `/` autocomplete). They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests.
+Planning steps are AI-selected skills (invisible in `/` autocomplete). They are invoked automatically by `/coco:phase`, `/coco:planning-session tactical`, or natural language requests.
 
 | Skill | Purpose | Input | Output |
 |-------|---------|-------|--------|
-| `design` | Create feature design (spec + implementation plan) with optional clarification | Feature description | `design.md`, `data-model.md` (optional) |
+| `interview` | Pre-design discovery interview | Feature description | `discovery.md` (structured brief) |
+| `design` | Create feature design (spec + implementation plan) with optional clarification | Feature description, `discovery.md` (optional) | `design.md`, `data-model.md` (optional) |
 | `tasks` | Generate task list with consistency analysis | `design.md` | `tasks.md` with sub-phases + analysis report |
 | `import` | Import tasks to tracker + issue tracker | `tasks.md` | Tracker epic + issues |
 
@@ -96,6 +97,7 @@ Planning steps are AI-selected skills (invisible in `/` autocomplete). They are 
 
 ```
 specs/{feature}/
+  discovery.md     # Pre-design context from interview (optional, Standard tier)
   design.md        # What to build, why, and how (merged spec + plan)
   tasks.md         # Ordered task list with sub-phases
   data-model.md    # Entity definitions and relationships (optional, data-heavy features only)
@@ -182,7 +184,7 @@ Present audit results to the user. This is the **last required human interaction
 
 **Phase 3: Per-Feature Pipeline (Steps A-F)**
 
-- **Step A -- Design**: If no `design.md`, run `/interview` or the `design` skill
+- **Step A -- Design**: If no `design.md`, run the `interview` skill (Standard tier, if no `discovery.md`) then the `design` skill
 - **Step B -- Generate tasks**: If no `tasks.md`, run the `tasks` skill
 - **Step C -- Import**: Run the `import` skill (tracker epic + dependencies + issue tracker)
 - **Step D -- Create branch**: `git checkout -b {feature-name}`
@@ -335,10 +337,10 @@ loop:
 
 | Type | Cadence | Purpose | Command |
 |------|---------|---------|---------|
-| **Strategic** | Quarterly | Roadmap review, prioritization | `/planning-session strategic` |
-| **Tactical** | Per-feature | Full design -> import pipeline | `/planning-session tactical` |
-| **Operational** | Weekly | Status sync, reprioritize | `/planning-session operational` |
-| **Triage** | Ad-hoc | Score bugs/features/feedback | `/planning-triage` |
+| **Strategic** | Quarterly | Roadmap review, prioritization | `/coco:planning-session strategic` |
+| **Tactical** | Per-feature | Full design -> import pipeline | `/coco:planning-session tactical` |
+| **Operational** | Weekly | Status sync, reprioritize | `/coco:planning-session operational` |
+| **Triage** | Ad-hoc | Score bugs/features/feedback | `/coco:planning-triage` |
 
 **Triage scoring:** `Score = (Impact + Urgency) / Effort`
 - Score >= 3.0: Immediate
@@ -376,10 +378,11 @@ git push
 
 ## Quick Reference
 
-### Command Table (12 commands)
+### Command Table (13 commands)
 
 | Command | Purpose |
 |---------|---------|
+| `/coco:setup` | Initialize Coco in the current project (config, hooks, permissions) |
 | `/coco:prd` | Create, audit, or derive Product Requirements Document |
 | `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco:phase` | Orchestrate full pipeline for a phase |
@@ -390,14 +393,14 @@ git push
 | `/coco:status` | Show detailed execution state and opportunities |
 | `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco:sync` | Reconcile tracker and issue tracker state |
-| `/planning-session` | Start a planning session |
-| `/planning-triage` | Score and disposition an item |
-| `/interview` | In-depth interview to create feature design |
+| `/coco:planning-session` | Start a planning session |
+| `/coco:planning-triage` | Score and disposition an item |
 
-### Skill Table (5 skills, AI-selected)
+### Skill Table (6 skills, AI-selected)
 
 | Skill | Purpose |
 |-------|---------|
+| `interview` | Pre-design discovery interview producing discovery.md |
 | `design` | Create design.md (spec + plan) with optional clarification |
 | `tasks` | Generate tasks.md with sub-phases + consistency analysis |
 | `import` | Import tasks.md -> tracker + issue tracker |
@@ -409,7 +412,7 @@ git push
 **Full product (discovery to delivery):**
 ```
 /coco:prd {description}         -->  Product Requirements Document
-/planning-session strategic      -->  analysis docs for open questions
+/coco:planning-session strategic      -->  analysis docs for open questions
 /coco:roadmap v1.0               -->  prioritized, phased roadmap
 /coco:phase "Phase 1: ..."       -->  autonomous pipeline per phase
 ```
@@ -421,13 +424,13 @@ git push
 
 **Single feature (automated pipeline):**
 ```
-/planning-session tactical   -->  runs design -> tasks -> import
+/coco:planning-session tactical   -->  runs interview -> design -> tasks -> import
 /coco:loop                   -->  autonomous until epic complete
 ```
 
 **Single feature (manual step-by-step):**
 ```
-/planning-session tactical   -->  runs skills for design, tasks, import
+/coco:planning-session tactical   -->  runs skills for interview, design, tasks, import
 /coco:execute                -->  one task at a time
 ```
 

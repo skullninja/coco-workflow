@@ -10,7 +10,7 @@ Import a tasks.md into the coco tracker and optionally create matching issues in
 ## When to Use
 
 - Importing tasks as part of the coco pipeline
-- Called by `/coco:phase` (Step D) or `/planning-session tactical`
+- Called by `/coco:phase` (Step D) or `/coco:planning-session tactical`
 - When tasks.md exists in `specs/{feature}/` and needs to be loaded into the tracker
 
 Prerequisites: `tasks.md` must exist. If missing, use the `tasks` skill first.
@@ -229,7 +229,7 @@ When `tasks.md` doesn't exist but `design.md` does (light-tier feature):
 5. Run verification (Step 6) and report (Step 7) as normal
 
 Design-only mode is triggered by:
-- `/planning-session tactical` routing to Light tier
+- `/coco:planning-session tactical` routing to Light tier
 - `/coco:phase` classifying the feature as Light tier
 - Explicit request when tasks.md is missing and design.md exists
 

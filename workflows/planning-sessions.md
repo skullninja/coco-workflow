@@ -40,10 +40,11 @@ Structured planning processes for different cadences and scopes.
 - Starting a new feature from the roadmap
 
 ### Process
-1. **Design** -- `design` skill to create design.md (includes optional clarification)
-2. **Tasks** -- `tasks` skill to create tasks.md (includes consistency analysis)
-3. **Import** -- `import` skill to create tracker epic + issues
-4. **Document** -- Save session notes
+1. **Interview** -- `interview` skill for pre-design discovery (Standard tier; skip for Light/Trivial)
+2. **Design** -- `design` skill to create design.md (consumes discovery.md if available)
+3. **Tasks** -- `tasks` skill to create tasks.md (includes consistency analysis)
+4. **Import** -- `import` skill to create tracker epic + issues
+5. **Document** -- Save session notes
 
 ### Output
 - Complete spec artifacts in `specs/{feature}/`
@@ -82,7 +83,7 @@ Structured planning processes for different cadences and scopes.
 
 ### Process
 
-Use `/planning-triage` to score and disposition the item:
+Use `/coco:planning-triage` to score and disposition the item:
 
 ```
 Score = (Impact + Urgency) / Effort

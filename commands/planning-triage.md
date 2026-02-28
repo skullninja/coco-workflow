@@ -55,7 +55,7 @@ Score = (Impact + Urgency) / Effort
 
 **If IMMEDIATE (>= 3.0):**
 - Create issue with High/Urgent priority (based on issue_tracker.provider in config)
-- If feature: recommend `/planning-session tactical`
+- If feature: recommend `/coco:planning-session tactical`
 - If bug: recommend creating hotfix branch
 
 **If BACKLOG (1.5-3.0):**

@@ -70,7 +70,7 @@ Use `AskUserQuestion` to confirm the list:
 
 ### 3. Batch Triage
 
-Score each feature using the Impact/Urgency/Effort framework (from `/planning-triage`):
+Score each feature using the Impact/Urgency/Effort framework (from `/coco:planning-triage`):
 
 ```
 Score = (Impact + Urgency) / Effort

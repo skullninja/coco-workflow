@@ -154,7 +154,7 @@ Then render the **status lines** (omit any line where the category is empty):
 
 ### Edge Cases
 
-- **No epics**: Output "No active epics. Start with `/coco:phase` or `/planning-session tactical`."
+- **No epics**: Output "No active epics. Start with `/coco:phase` or `/coco:planning-session tactical`."
 - **Zero tasks**: Show epic header + "No tasks imported. Run the `import` skill."
 - **All done**: Show 100% progress bar. Omit Active/Blocked/Next lines. Add: "All tasks complete. Merge feature branch or run `/coco:status` for details."
 - **`gh` unavailable**: PR column shows `--` for all rows.

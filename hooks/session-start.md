@@ -2,9 +2,16 @@
 event: SessionStart
 ---
 
-On session start, check for saved coco-workflow session memory and restore context.
+On session start, check if Coco is initialized, then restore session context if available.
 
 ## Steps
+
+0. **First-run detection**: Check if `.coco/config.yaml` exists.
+   - If it does NOT exist: output the following message and **stop** (do not continue to step 1):
+     ```
+     Coco plugin detected but not initialized. Run /coco:setup to get started.
+     ```
+   - If it exists: continue to step 1.
 
 1. Check if `.coco/state/session-memory.md` exists. If not, do nothing.
 

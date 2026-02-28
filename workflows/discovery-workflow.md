@@ -64,7 +64,7 @@ For each open question or topic that needs investigation, create an analysis doc
 
 **Via planning session** (recommended for complex topics):
 ```
-/planning-session strategic
+/coco:planning-session strategic
 ```
 Strategic sessions now offer to save analysis topics as standalone docs in `docs/analysis/`.
 
@@ -101,7 +101,7 @@ If an issue tracker is configured, it also creates:
 /coco:phase "Phase 1: Foundation"
 ```
 
-`/coco:phase` reads the roadmap table directly, extracting features with their slugs, priorities, and dependencies. It then orchestrates the full per-feature pipeline (design -> tasks -> import -> execute).
+`/coco:phase` reads the roadmap table directly, extracting features with their slugs, priorities, and dependencies. It then orchestrates the full per-feature pipeline (interview -> design -> tasks -> import -> execute).
 
 ## Roadmap Sync
 
@@ -121,7 +121,7 @@ The Discovery Phase sits before the existing planning pipeline:
 ```
 Discovery Phase (NEW)
   /coco:prd              Create/audit Product Requirements Document
-  /planning-session      Analysis docs via strategic sessions
+  /coco:planning-session      Analysis docs via strategic sessions
   /coco:roadmap          Synthesize PRD + analysis into per-release roadmap
 
 Planning Phase (existing -- now uses skills)
