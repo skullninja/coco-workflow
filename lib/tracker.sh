@@ -610,7 +610,7 @@ EOF
     esac
 }
 
-# Allow sourcing or direct execution
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+# Allow sourcing or direct execution (compatible with both bash and zsh)
+if [ -n "${BASH_VERSION:-}" ] && [ "${BASH_SOURCE[0]}" = "$0" ]; then
     coco_tracker "$@"
 fi
