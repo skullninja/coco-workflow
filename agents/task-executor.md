@@ -59,11 +59,7 @@ Read `issue_key` from task metadata. Based on `issue_tracker.provider`:
 - If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
   Read `.coco/state/gh-projects.json` for field IDs, then:
   ```bash
-  gh project item-edit \
-    --project-id {project_id} \
-    --id {gh_project_item_id} \
-    --field-id {status_field_id} \
-    --single-select-option-id {status_options["In Progress"]}
+  gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options["In Progress"]}
   ```
 - Otherwise: `gh issue edit {issue_number} --add-label "in-progress"`
 
@@ -129,11 +125,7 @@ git push -u origin "$ISSUE_BRANCH"
 Create the PR targeting the feature branch:
 
 ```bash
-gh pr create \
-  --base "$FEATURE_BRANCH" \
-  --head "$ISSUE_BRANCH" \
-  --title "{issue_key}: {task title}" \
-  --body-file - <<'EOF'
+gh pr create --base "$FEATURE_BRANCH" --head "$ISSUE_BRANCH" --title "{issue_key}: {task title}" --body-file - <<'EOF'
 ## Summary
 
 {implementation summary}
@@ -171,11 +163,7 @@ gh project item-add {gh_project_number} --owner {github.owner} --url "$PR_URL"
 
 **If "github"** with Projects V2 enabled:
 ```bash
-gh project item-edit \
-  --project-id {project_id} \
-  --id {gh_project_item_id} \
-  --field-id {status_field_id} \
-  --single-select-option-id {status_options["In Review"]}
+gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options["In Review"]}
 ```
 
 **If "github"** without Projects V2: `gh issue edit {issue_number} --add-label "in-review"`

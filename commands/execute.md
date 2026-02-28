@@ -77,11 +77,7 @@ Read `issue_key` from task metadata. Based on `issue_tracker.provider` in config
 - If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
   Read `.coco/state/gh-projects.json` for field IDs, then:
   ```bash
-  gh project item-edit \
-    --project-id {project_id} \
-    --id {gh_project_item_id} \
-    --field-id {status_field_id} \
-    --single-select-option-id {status_options[status_map.in_progress]}
+  gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options[status_map.in_progress]}
   ```
 - Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "in-progress"`
 
@@ -159,11 +155,7 @@ git push -u origin "$ISSUE_BRANCH"
 Create the PR with the issue ID in the body:
 
 ```bash
-gh pr create \
-  --base "$FEATURE_BRANCH" \
-  --head "$ISSUE_BRANCH" \
-  --title "{issue_key}: {task title}" \
-  --body-file - <<'EOF'
+gh pr create --base "$FEATURE_BRANCH" --head "$ISSUE_BRANCH" --title "{issue_key}: {task title}" --body-file - <<'EOF'
 ## Summary
 
 {implementation summary from commit message body}
@@ -204,11 +196,7 @@ Update issue tracker status to "In Review":
 **If "github"**:
 - If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
   ```bash
-  gh project item-edit \
-    --project-id {project_id} \
-    --id {gh_project_item_id} \
-    --field-id {status_field_id} \
-    --single-select-option-id {status_options[status_map.in_review]}
+  gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options[status_map.in_review]}
   ```
 - Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "in-review"`
 
@@ -305,11 +293,7 @@ Based on `issue_tracker.provider`:
 **If "github"**:
 - If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
   ```bash
-  gh project item-edit \
-    --project-id {project_id} \
-    --id {gh_project_item_id} \
-    --field-id {status_field_id} \
-    --single-select-option-id {status_options[status_map.completed]}
+  gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options[status_map.completed]}
   ```
 - Add comment with summary
 - Close issue (the `Closes #N` in PR body may auto-close it)

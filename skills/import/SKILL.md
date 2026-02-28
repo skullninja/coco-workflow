@@ -152,29 +152,31 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
    ```
    Ensure `.coco/state/` directory exists. If `gh-projects.json` already exists, merge into the `features` key.
 
-5. Create issues and add to project:
+5. Create issues and add to project. **Run each sub-phase as separate Bash tool calls** (no loops):
+
+   a. Create the issue:
    ```bash
-   # Create issue
    gh issue create --title "Sub-Phase {N}: {title}" --label {labels} --body-file - <<'EOF'
    {description}
    EOF
-
-   # Add issue to project
-   gh project item-add {project_number} --owner {github.owner} --url {issue_url}
-   # Capture the item ID from output
-
-   # Set initial status to "Todo"
-   gh project item-edit \
-     --project-id {project_id} \
-     --id {item_id} \
-     --field-id {status_field_id} \
-     --single-select-option-id {status_options["Todo"]}
    ```
 
-6. Store issue numbers AND project item IDs in tracker metadata:
+   b. Add issue to project (capture the item ID from output):
+   ```bash
+   gh project item-add {project_number} --owner {github.owner} --url {issue_url}
+   ```
+
+   c. Set initial status to "Todo":
+   ```bash
+   gh project item-edit --project-id {project_id} --id {item_id} --field-id {status_field_id} --single-select-option-id {status_options["Todo"]}
+   ```
+
+   d. Store issue number and project item ID in tracker metadata:
    ```bash
    coco_tracker update {task-id} --metadata '{"issue_key": "#{N}", "gh_project_item_id": "{item_id}", "gh_project_number": {project_number}}'
    ```
+
+   Repeat steps a-d for each sub-phase. Steps a-d for a single sub-phase depend on each other (run sequentially), but separate sub-phases are independent.
 
 **If Projects V2 disabled** (`use_projects: false`):
 

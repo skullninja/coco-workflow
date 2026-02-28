@@ -137,9 +137,7 @@ After all sub-phases complete, `/coco:loop` will have already created the featur
 
 1. Create feature PR:
    ```bash
-   gh pr create --base main --head "$FEATURE_BRANCH" \
-     --title "{feature-name}: {description}" \
-     --body "{feature summary, list of issue PRs merged, test results}"
+   gh pr create --base main --head "$FEATURE_BRANCH" --title "{feature-name}: {description}" --body "{feature summary, list of issue PRs merged, test results}"
    ```
 2. Invoke `code-reviewer` agent for full-feature review
 3. Address critical findings via review-fix loop

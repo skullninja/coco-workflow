@@ -185,11 +185,7 @@ git checkout "$FEATURE_BRANCH"
 git pull origin "$FEATURE_BRANCH"
 
 # Create feature PR to main
-gh pr create \
-  --base main \
-  --head "$FEATURE_BRANCH" \
-  --title "{feature-name}: {epic description}" \
-  --body-file - <<'EOF'
+gh pr create --base main --head "$FEATURE_BRANCH" --title "{feature-name}: {epic description}" --body-file - <<'EOF'
 ## Feature Summary
 
 {comprehensive summary of the full feature}
