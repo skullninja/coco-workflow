@@ -243,6 +243,18 @@ EOF
     echo "  Created .gitignore with .claude/worktrees/"
 fi
 
+# --- Configure permissions ---
+
+echo "  Configuring permissions in .claude/settings.json..."
+PERMS='["Bash(source:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"]'
+
+if [[ -f "$CLAUDE_SETTINGS" ]]; then
+    jq --argjson perms "$PERMS" '.permissions.allow = ((.permissions.allow // []) + $perms | unique)' "$CLAUDE_SETTINGS" > "${CLAUDE_SETTINGS}.tmp" && mv "${CLAUDE_SETTINGS}.tmp" "$CLAUDE_SETTINGS"
+else
+    echo "{\"permissions\":{\"allow\":$PERMS}}" | jq '.' > "$CLAUDE_SETTINGS"
+fi
+echo "  Permissions configured"
+
 echo ""
 echo "Setup complete. Next steps:"
 echo "  1. Restart Claude Code to load the Coco plugin"
