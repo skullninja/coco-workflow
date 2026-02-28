@@ -15,7 +15,7 @@ This workflow uses a unified pipeline to take features from description to merge
 | Layer | Tool | Role |
 |-------|------|------|
 | **Discovery** | `/coco:prd`, `/coco:roadmap` | Produces PRD, analysis docs, and per-release roadmaps |
-| **Planning** | Coco skills (`interview`, `design`, `tasks`) | Produces `specs/{feature}/` artifacts: discovery.md, design.md, tasks.md |
+| **Planning** | Coco skills (`interview`, `design`, `tasks`, `import`) | Produces `specs/{feature}/` artifacts: discovery.md, design.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
 

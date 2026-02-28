@@ -103,7 +103,7 @@ bash coco-workflow/scripts/setup.sh
 | Layer | What | How |
 |-------|------|-----|
 | **Discovery** | PRD, analysis, roadmap, multi-repo derive | `/coco:prd`, `/coco:roadmap` |
-| **Planning** | Discovery, design, task decomposition | AI-selected skills (`interview`, `design`, `tasks`) |
+| **Planning** | Discovery, design, task decomposition | AI-selected skills (`interview`, `design`, `tasks`, `import`) |
 | **Execution** | Dependency resolution, TDD loop | Built-in tracker + `/coco:loop` |
 | **Review** | AI code review on every PR | `code-reviewer` agent |
 | **Visibility** | Issue tracker sync | Linear MCP, GitHub CLI, or none |
