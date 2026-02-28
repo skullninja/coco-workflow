@@ -138,6 +138,10 @@ _cmd_epic_create() {
         return 1
     fi
 
+    # Sanitize: replace literal newlines with spaces to prevent JSONL corruption
+    title="${title//$'\n'/ }"
+    description="${description//$'\n'/ }"
+
     _coco_ensure_dirs
     local id
     id=$(_coco_next_id "epic-")
@@ -228,6 +232,10 @@ _cmd_create() {
         return 1
     fi
 
+    # Sanitize: replace literal newlines with spaces to prevent JSONL corruption
+    title="${title//$'\n'/ }"
+    description="${description//$'\n'/ }"
+
     _coco_ensure_dirs
 
     # Generate ID: if epic provided, use epic prefix
@@ -307,11 +315,13 @@ _cmd_update() {
                 shift 2
                 ;;
             --title)
-                record=$(echo "$record" | jq -c --arg t "$2" --arg now "$now" '.title = $t | .updated_at = $now')
+                local _t="${2//$'\n'/ }"
+                record=$(echo "$record" | jq -c --arg t "$_t" --arg now "$now" '.title = $t | .updated_at = $now')
                 shift 2
                 ;;
             --description)
-                record=$(echo "$record" | jq -c --arg d "$2" --arg now "$now" '.description = $d | .updated_at = $now')
+                local _d="${2//$'\n'/ }"
+                record=$(echo "$record" | jq -c --arg d "$_d" --arg now "$now" '.description = $d | .updated_at = $now')
                 shift 2
                 ;;
             --priority)
@@ -365,11 +375,11 @@ _cmd_show() {
 }
 
 _cmd_list() {
-    local status="" epic="" json=false
+    local status_val="" epic="" json=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --status) status="$2"; shift 2 ;;
+            --status) status_val="$2"; shift 2 ;;
             --epic) epic="$2"; shift 2 ;;
             --json) json=true; shift ;;
             *) echo "ERROR: unknown list option: $1" >&2; return 1 ;;
@@ -382,8 +392,8 @@ _cmd_list() {
     fi
 
     local filter="select(.type == \"task\")"
-    if [[ -n "$status" ]]; then
-        filter="$filter | select(.status == \"$status\")"
+    if [[ -n "$status_val" ]]; then
+        filter="$filter | select(.status == \"$status_val\")"
     fi
     if [[ -n "$epic" ]]; then
         filter="$filter | select(.epic_id == \"$epic\")"

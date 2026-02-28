@@ -167,7 +167,7 @@ For multi-repo projects, satellite repos use `/coco:prd derive /path/to/source/p
 - `/coco:loop` runs autonomously with circuit breaker and PR workflow
 - `/coco:execute` runs one task at a time for manual review
 
-The pipeline steps (design, tasks, import) are skills -- AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests.
+The pipeline steps (design, tasks, import) are **skills, not commands**. They are AI-selected and invisible in the `/` autocomplete menu. They are invoked automatically by `/coco:phase`, `/planning-session tactical`, or natural language requests. **NEVER suggest `/coco:tasks`, `/coco:import`, or `/coco:design` to users** -- these do not exist as slash commands. Instead, tell users to ask Claude in natural language (e.g., "generate tasks", "import into tracker").
 
 ## Adaptive Complexity Routing
 
@@ -235,3 +235,12 @@ Runs 28 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and
 - Host project state lives in `.coco/` (never inside the plugin directory)
 - Git hooks read config from `.coco/config.yaml` using jq-based YAML parsing
 - Commit formats: `Completes {KEY}` for implementation, `Ref {KEY}` for review fixes
+
+## Bash Command Guidelines
+
+To minimize Claude Code permission prompts, follow these rules when generating bash commands:
+
+- **No `$()` in echo/printf**: Don't add `echo "Created: $(git branch --show-current)"` confirmations. Git commands already print useful output. If you need a variable, assign it on a separate line first.
+- **No multiline strings**: Keep all `--description`, `--title`, `--metadata` values on a single line. Use semicolons to separate items.
+- **No `\` line continuations**: Write each command on one line. Long lines are fine.
+- **Minimize command chaining**: Prefer separate Bash tool calls over `&&`-chained commands when the commands are independent. This gives clearer output and avoids prompts about multi-command execution.

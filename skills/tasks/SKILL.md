@@ -171,7 +171,7 @@ Output:
 - Independent test criteria for each story
 - Suggested MVP scope (typically User Story 1)
 - Analysis findings (from consistency analysis step)
-- Suggested next step: use the `import` skill to load tasks into the tracker
+- Suggested next step: tell the user to ask Claude to "import tasks into the tracker" (this triggers the `import` skill automatically -- skills are NOT slash commands, so never suggest `/coco:import`)
 
 ## Rules
 

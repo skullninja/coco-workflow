@@ -50,24 +50,18 @@ coco_tracker epic-create "{feature-name}"
 
 ### Step 3: Create Tracker Tasks (one per sub-phase)
 
+**IMPORTANT**: All `coco_tracker create` arguments MUST be single-line. Never put literal newlines inside `--description`, `--title`, or `--metadata` values. Use semicolons or commas to separate items within a description. Put each command on one line (no `\` continuations).
+
 For each sub-phase:
 
 ```bash
-coco_tracker create --epic "{epic-id}" \
-  --title "Sub-Phase {N}: {title}" \
-  --description "{sub-phase purpose + task list}" \
-  --priority {priority} \
-  --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}"}'
+coco_tracker create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}"}'
 ```
 
 If tasks.md includes `owns_files` annotations (file ownership per sub-phase), include them in metadata:
 
 ```bash
-coco_tracker create --epic "{epic-id}" \
-  --title "Sub-Phase {N}: {title}" \
-  --description "{sub-phase purpose + task list}" \
-  --priority {priority} \
-  --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"]}'
+coco_tracker create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"]}'
 ```
 
 ### Step 4: Set Dependencies
@@ -216,7 +210,9 @@ Output:
 - Dependency graph summary
 - Issue tracker project/issues (if applicable)
 - First available task: `coco_tracker ready --json --epic {epic-id}`
-- Suggested next step: `/coco:execute` or `/coco:loop`
+- Suggested next step (explain both options to the user):
+  - **`/coco:execute`** -- Runs **one task at a time**, pausing after each for you to review. Best when you want to stay hands-on, inspect changes between tasks, or are working on something unfamiliar.
+  - **`/coco:loop`** -- Runs **all tasks autonomously** in sequence with circuit-breaker protection (stops after repeated failures). Best when you're confident in the design and want to let Claude work through the epic unattended.
 
 ## Design-Only Mode (Light Tier)
 
@@ -226,10 +222,7 @@ When `tasks.md` doesn't exist but `design.md` does (light-tier feature):
 2. Create a single-task epic directly from the design:
    ```bash
    coco_tracker epic-create "{feature-name}"
-   coco_tracker create --epic "{epic-id}" \
-     --title "{feature-name}: {design overview}" \
-     --description "{acceptance criteria from design}" \
-     --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true}'
+   coco_tracker create --epic "{epic-id}" --title "{feature-name}: {design overview}" --description "{single-line acceptance criteria}" --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true}'
    ```
 3. No dependencies to set (single task)
 4. Run issue tracker bridge (Step 5) as normal -- creates one issue

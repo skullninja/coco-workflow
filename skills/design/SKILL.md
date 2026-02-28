@@ -157,7 +157,7 @@ Output:
 - Validation results
 - Constitution compliance status (if applicable)
 - Clarification summary (questions asked, sections updated) if clarification pass ran
-- Suggested next step: use the `tasks` skill to generate the task list
+- Suggested next step: tell the user to ask Claude to "generate the task list" (this triggers the `tasks` skill automatically -- skills are NOT slash commands, so never suggest `/coco:tasks`)
 
 ## Light Mode
 
@@ -170,7 +170,7 @@ When invoked for a **Light-tier** feature (1-3 files, single user story, no inte
    - No Technical Approach, API Contracts, Research & Decisions, Data Model, or Constitution Check sections
 2. **Skip clarification pass** (Step 6) entirely
 3. **Skip detailed validation** -- just verify the acceptance criteria are testable
-4. **Suggest next step**: Use the `import` skill in design-only mode (skipping tasks)
+4. **Suggest next step**: Tell the user to ask Claude to "import the design into the tracker" (this triggers the `import` skill automatically -- skills are NOT slash commands, so never suggest `/coco:import`)
 
 Light mode is triggered by:
 - `/planning-session tactical` routing to Light tier
