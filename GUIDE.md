@@ -28,11 +28,50 @@ This workflow uses a unified pipeline to take features from description to merge
 | `/coco:prd` | Create, audit, or derive PRD | Product description, "audit", or "derive /path" | `docs/prd.md` |
 | `/coco:roadmap` | Build prioritized roadmap | Release name (e.g., "v1.0") | `docs/roadmap/{release}.md` |
 
-The Discovery Phase is optional -- projects can start directly with the `design` skill for individual features. Use it when starting a new product or major release to establish priorities before writing feature designs.
+The Discovery Phase is optional -- projects can start directly with the `design` skill for individual features.
+
+**When to use**: Starting a new product or major release, onboarding an existing project into coco-workflow, transitioning from ad-hoc development to structured roadmap execution, or aligning stakeholders on priorities before writing specs.
+
+**Skip it when**: Working on a single known feature (start with the `design` skill), applying a hotfix (use the `hotfix` skill), or the roadmap already exists and is current.
 
 **Workflow**: `/coco:prd` -> analysis docs (via `/coco:planning-session strategic`) -> `/coco:roadmap` -> `/coco:phase`
 
-See `workflows/discovery-workflow.md` for full details.
+### Artifact Structure
+
+```
+docs/
+  prd.md                              # Product Requirements Document
+  analysis/                           # Analysis docs (one per topic)
+    market-analysis.md
+    technical-feasibility.md
+    ...
+  roadmap/                            # Per-release roadmap docs
+    v1.0.md
+    v1.1.md
+    ...
+```
+
+All paths are configurable via the `discovery:` section in `.coco/config.yaml`:
+
+```yaml
+discovery:
+  prd_path: "docs/prd.md"
+  analysis_dir: "docs/analysis"
+  roadmap_dir: "docs/roadmap"
+```
+
+### Roadmap Sync
+
+The roadmap is automatically updated as work progresses:
+
+| Event | Update |
+|-------|--------|
+| Feature completed (`/coco:loop` epic done) | Feature row Status -> "Complete", Spec column filled |
+| Phase completed (`/coco:phase` all features merged) | Phase Status -> "Complete", Change Log entry added |
+
+### Multiple Releases
+
+Each release gets its own roadmap file (e.g., `docs/roadmap/v1.0.md`, `docs/roadmap/v1.1.md`). This supports parallel release planning, deferring features to future releases, and tracking completion across releases independently.
 
 ---
 

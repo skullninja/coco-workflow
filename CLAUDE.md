@@ -38,7 +38,6 @@ Five layers:
 | `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
 | `GUIDE.md` | Comprehensive workflow guide with deep-dives and quick reference |
 | `templates/` | Default templates for PRD, analysis, roadmap, discovery, design, tasks, constitution |
-| `workflows/` | Reference documentation for workflows |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
 | `tests/test-tracker.sh` | 46 tests for tracker.sh |
@@ -229,8 +228,6 @@ loop:
     enabled: false      # Enable worktree-based parallel execution
     max_agents: 3       # Max concurrent task-executor agents
 ```
-
-See `workflows/parallel-execution.md` for full details.
 
 ## Installation
 
