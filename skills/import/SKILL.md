@@ -29,7 +29,7 @@ Prerequisites: `tasks.md` must exist. If missing, use the `tasks` skill first.
    - Looking for the matching directory in `{specs_dir}/{stripped-name}/`
    - Or from conversation context if a feature was recently discussed
 3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to use the `tasks` skill first.
-4. Use `coco_tracker` shorthand for tracker operations (see CLAUDE.md Key Commands).
+4. Each tracker command is a separate Bash tool call: `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command> [args]`
 
 ## Execution
 
@@ -44,39 +44,37 @@ Extract:
 ### Step 2: Create Tracker Epic
 
 ```bash
-coco_tracker epic-create "{feature-name}"
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-create "{feature-name}"
 ```
 
 ### Step 3: Create Tracker Tasks (one per sub-phase)
 
-**IMPORTANT**: All `coco_tracker create` arguments MUST be single-line. Never put literal newlines inside `--description`, `--title`, or `--metadata` values. Use semicolons or commas to separate items within a description. Put each command on one line (no `\` continuations).
+**IMPORTANT**: All `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" create` arguments MUST be single-line. Never put literal newlines inside `--description`, `--title`, or `--metadata` values. Use semicolons or commas to separate items within a description. Put each command on one line (no `\` continuations).
 
 For each sub-phase:
 
 ```bash
-coco_tracker create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}"}'
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}"}'
 ```
 
 If tasks.md includes `owns_files` annotations (file ownership per sub-phase), include them in metadata:
 
 ```bash
-coco_tracker create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"]}'
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"]}'
 ```
 
 ### Step 4: Set Dependencies
 
+For each dependency (one Bash tool call per dep-add):
+
 ```bash
-# Setup blocks Foundational
-coco_tracker dep-add {phase-1-id} --blocks {phase-2-id}
-
-# Foundational blocks all user stories
-coco_tracker dep-add {phase-2-id} --blocks {phase-3-id}
-# ... etc
-
-# All user stories block Polish
-coco_tracker dep-add {phase-3-id} --blocks {polish-id}
-# ... etc
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" dep-add {phase-1-id} --blocks {phase-2-id}
 ```
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" dep-add {phase-2-id} --blocks {phase-3-id}
+```
+
+Repeat for all user stories blocking Polish, etc.
 
 ### Step 5: Issue Tracker Bridge
 
@@ -107,7 +105,7 @@ Read `.coco/config.yaml` `issue_tracker.provider`:
 
 3. Store issue keys in tracker metadata:
    ```bash
-   coco_tracker update {task-id} --metadata '{"issue_key": "{ISSUE-KEY}"}'
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update {task-id} --metadata '{"issue_key": "{ISSUE-KEY}"}'
    ```
 
 **If "github"**:
@@ -118,7 +116,7 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
 
 1. Create a GitHub Project for the feature:
    ```bash
-   gh project create --owner {github.owner} --title "{feature-name}" --format "BOARD"
+   gh project create --owner {github.owner} --title "{feature-name}" --format json
    ```
    Capture the project number from output.
 
@@ -151,7 +149,11 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
    ```
    Ensure `.coco/state/` directory exists. If `gh-projects.json` already exists, merge into the `features` key.
 
-5. Create issues and add to project. **Run each sub-phase as separate Bash tool calls** (no loops):
+5. Create issues and add to project. **Run each sub-phase as separate Bash tool calls** (no loops).
+
+   **IMPORTANT `gh issue create` rules:**
+   - Use `--body-file - <<'EOF'` for issue bodies (NOT `--body "$(cat <<'EOF'...)"` which triggers permission prompts)
+   - Do NOT include `--repo` — `gh` detects the repo automatically when run from within it
 
    a. Create the issue:
    ```bash
@@ -172,7 +174,7 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
 
    d. Store issue number and project item ID in tracker metadata:
    ```bash
-   coco_tracker update {task-id} --metadata '{"issue_key": "#{N}", "gh_project_item_id": "{item_id}", "gh_project_number": {project_number}}'
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update {task-id} --metadata '{"issue_key": "#{N}", "gh_project_item_id": "{item_id}", "gh_project_number": {project_number}}'
    ```
 
    Repeat steps a-d for each sub-phase. Steps a-d for a single sub-phase depend on each other (run sequentially), but separate sub-phases are independent.
@@ -188,7 +190,7 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
 
 2. Store issue numbers in tracker metadata:
    ```bash
-   coco_tracker update {task-id} --metadata '{"issue_key": "#{N}"}'
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update {task-id} --metadata '{"issue_key": "#{N}"}'
    ```
 
 **If "none"**:
@@ -198,8 +200,10 @@ Skip issue creation. Log "Issue tracker bridge skipped."
 ### Step 6: Verify (GATE)
 
 ```bash
-coco_tracker epic-status {epic-id}
-coco_tracker list --json --epic {epic-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+```
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json --epic {epic-id}
 ```
 
 **All must pass:**
@@ -214,7 +218,7 @@ Output:
 - Number of tasks created
 - Dependency graph summary
 - Issue tracker project/issues (if applicable)
-- First available task: `coco_tracker ready --json --epic {epic-id}`
+- First available task: `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}`
 - Suggested next step (explain both options to the user):
   - **`/coco:execute`** -- Runs **one task at a time**, pausing after each for you to review. Best when you want to stay hands-on, inspect changes between tasks, or are working on something unfamiliar.
   - **`/coco:loop`** -- Runs **all tasks autonomously** in sequence with circuit-breaker protection (stops after repeated failures). Best when you're confident in the design and want to let Claude work through the epic unattended.
@@ -226,8 +230,10 @@ When `tasks.md` doesn't exist but `design.md` does (light-tier feature):
 1. Read the design from `{specs_dir}/{feature}/design.md` (legacy fallback: `spec.md`)
 2. Create a single-task epic directly from the design:
    ```bash
-   coco_tracker epic-create "{feature-name}"
-   coco_tracker create --epic "{epic-id}" --title "{feature-name}: {design overview}" --description "{single-line acceptance criteria}" --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true}'
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-create "{feature-name}"
+   ```
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" create --epic "{epic-id}" --title "{feature-name}: {design overview}" --description "{single-line acceptance criteria}" --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true}'
    ```
 3. No dependencies to set (single task)
 4. Run issue tracker bridge (Step 5) as normal -- creates one issue

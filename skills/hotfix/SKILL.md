@@ -71,6 +71,9 @@ Check `pre_commit.ui_patterns` from config against staged files. If matches foun
 
 ```bash
 git add {specific-files}
+```
+
+```bash
 git commit -m "$(cat <<'EOF'
 {fix description}. Completes {issue_key}
 
@@ -108,8 +111,13 @@ EOF
 If `github.use_projects` is true and the issue was added to a project, add the PR to the project board:
 
 ```bash
-PR_URL=$(gh pr view --json url -q .url)
-gh project item-add {project_number} --owner {github.owner} --url "$PR_URL"
+gh pr view --json url -q .url
+```
+
+Use the URL from the output:
+
+```bash
+gh project item-add {project_number} --owner {github.owner} --url "{PR_URL}"
 ```
 
 If `pr.review.enabled`:

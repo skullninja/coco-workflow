@@ -12,7 +12,7 @@ $ARGUMENTS
 
 1. If `$ARGUMENTS` contains an epic ID, use it. Otherwise, find the most recent open epic:
    ```bash
-   coco_tracker epic-status
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status
    ```
    Pick the most recent non-closed epic from the output.
 
@@ -21,8 +21,10 @@ $ARGUMENTS
 ### 1. Get Epic State
 
 ```bash
-coco_tracker epic-status {epic-id}
-coco_tracker list --json --epic {epic-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+```
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json --epic {epic-id}
 ```
 
 ### 2. Categorize Tasks

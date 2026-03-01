@@ -20,7 +20,7 @@ $ARGUMENTS
 
 Get all epics and tasks:
 ```bash
-coco_tracker list --json
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json
 ```
 
 If `$ARGUMENTS` specifies an epic, filter to that epic. Otherwise, include all non-closed epics.

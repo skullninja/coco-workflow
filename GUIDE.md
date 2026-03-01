@@ -171,7 +171,7 @@ The built-in tracker (`lib/tracker.sh`) provides persistent task state using JSO
 | Sync | `sync` | Commit tracker state via git |
 
 **Key patterns:**
-- Always use `coco_tracker ready` to find the next task (respects dependency order)
+- Always use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready` to find the next task (respects dependency order)
 - Tasks store `issue_key` metadata linking to issue tracker entries
 - File ownership metadata (`owns_files`) prevents parallel agent conflicts
 
@@ -245,7 +245,7 @@ The `/coco:loop` command wraps `/coco:execute` in an autonomous loop that runs u
 /coco:loop {epic-id}
 
   while tasks remain:
-    1. coco_tracker ready -> next unblocked task(s)
+    1. bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready -> next unblocked task(s)
     2. If parallel enabled + multiple ready tasks with non-overlapping owns_files:
        -> Dispatch task-executor agents in parallel (worktree isolation)
        -> Review and merge PRs after all agents complete
@@ -284,8 +284,8 @@ Configure in `.coco/config.yaml` under `loop:`.
 
 15 steps per sub-phase (steps 3, 8-11 gated on `pr.enabled`):
 
-1. **Find next task**: `coco_tracker ready --json` returns next unblocked task
-2. **Claim task**: `coco_tracker update <id> --status in_progress`
+1. **Find next task**: `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json` returns next unblocked task
+2. **Claim task**: `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update <id> --status in_progress`
 3. **Create issue branch**: `git checkout -b feature/{name}/{ISSUE-KEY}` (if PRs enabled)
 4. **Bridge to issue tracker (start)**: Update issue to "In Progress"
 5. **TDD implementation**: Write tests (RED) -> implement (GREEN) -> verify
@@ -295,7 +295,7 @@ Configure in `.coco/config.yaml` under `loop:`.
 9. **AI code review**: `code-reviewer` agent reviews PR diff, posts findings
 10. **Review-fix loop**: Auto-fix critical findings, push, re-review (max 3 iterations)
 11. **Merge PR**: `gh pr merge`; switch back to feature branch
-12. **Close task**: `coco_tracker close <id>`
+12. **Close task**: `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" close <id>`
 13. **Bridge to issue tracker (complete)**: Issue moves to "Done" (at PR merge)
 14. **Verify acceptance criteria**: Check all criteria from tasks.md
 15. **Check next**: Loop back to step 2 or report completion
@@ -393,22 +393,22 @@ loop:
 ### Starting a Session
 
 ```bash
-coco_tracker session-start "Working on {feature-name}"
-coco_tracker epic-status {epic-id}
-coco_tracker ready --json --epic {epic-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-start "Working on {feature-name}"
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
 ```
 
 ### Resuming Work
 
-- `coco_tracker ready` always returns the correct next task based on dependencies
+- `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready` always returns the correct next task based on dependencies
 - Issue tracker reflects current progress for human visibility
 - `/coco:execute` can be invoked at any point to continue
 
 ### Ending a Session
 
 ```bash
-coco_tracker session-end
-coco_tracker sync
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" sync
 git push
 ```
 

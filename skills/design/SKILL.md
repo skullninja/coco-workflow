@@ -42,6 +42,8 @@ Read `pr.branch.feature_prefix` from `.coco/config.yaml` (default: `feature`).
 
 ```bash
 git checkout -b {feature_prefix}/{feature-name}
+```
+```bash
 mkdir -p {specs_dir}/{feature-name}
 ```
 

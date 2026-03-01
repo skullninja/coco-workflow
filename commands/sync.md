@@ -22,7 +22,7 @@ $ARGUMENTS
 ### 1. Load Tracker State
 
 ```bash
-coco_tracker list --json --epic {epic-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json --epic {epic-id}
 ```
 
 Parse all tasks with their statuses and `issue_key` metadata.

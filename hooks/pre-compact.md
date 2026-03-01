@@ -8,11 +8,21 @@ Before conversation compaction, capture coco-workflow session state so it can be
 
 1. Check if `.coco/config.yaml` exists. If not, do nothing -- this project doesn't use coco-workflow.
 
-2. Gather the following information:
-   - **Active epics**: `coco_tracker list --json | jq -s '[.[] | select(.type == "epic" and .status != "completed")]'`
-   - **In-progress tasks**: `coco_tracker list --json | jq -s '[.[] | select(.type == "task" and .status == "in_progress")]'`
-   - **Current git branch**: `git branch --show-current`
-   - **Next ready task**: `coco_tracker ready --json` (for the most recent open epic)
+2. Gather the following information using separate Bash tool calls:
+
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json
+   ```
+   From the JSONL output, identify **active epics** (type "epic", status not "completed") and **in-progress tasks** (type "task", status "in_progress").
+
+   ```bash
+   git branch --show-current
+   ```
+
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json
+   ```
+   This returns the next ready task for the most recent open epic.
 
 4. Write the state to `.coco/state/session-memory.md`:
 

@@ -48,40 +48,38 @@ The tracker is the execution engine. It uses JSONL files (`.coco/tasks/tasks.jso
 
 ### Key Commands
 
-Each tracker command is a separate Bash tool call:
+Each tracker command is a separate Bash tool call. Do NOT use `source` — it creates compound commands that trigger permission prompts.
 
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command> [args]
 ```
 
-In command/skill/agent markdown files, `coco_tracker <command>` is **shorthand** for the above. Do NOT use `source` — it creates compound commands that trigger permission prompts.
-
 ```bash
 # Task lifecycle
-coco_tracker create --epic ID --title "..." [--depends-on ID,ID] [--metadata '{}']
-coco_tracker update ID [--status STATUS] [--metadata '{}']
-coco_tracker close ID
-coco_tracker show ID                       # Get single task details (JSON)
-coco_tracker list [--status STATUS] [--epic ID] [--json]  # List tasks
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" create --epic ID --title "..." [--depends-on ID,ID] [--metadata '{}']
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update ID [--status STATUS] [--metadata '{}']
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" close ID
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" show ID                       # Get single task details (JSON)
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list [--status STATUS] [--epic ID] [--json]  # List tasks
 
 # Dependency-aware task selection (core value)
-coco_tracker ready [--json] [--epic ID]    # Next unblocked task
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready [--json] [--epic ID]    # Next unblocked task
 
 # Epics
-coco_tracker epic-create "Title"
-coco_tracker epic-status                   # List all epics (no arg)
-coco_tracker epic-status EPIC_ID           # Single epic + task summary
-coco_tracker epic-close EPIC_ID
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-create "Title"
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status                   # List all epics (no arg)
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status EPIC_ID           # Single epic + task summary
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-close EPIC_ID
 
 # Dependencies
-coco_tracker dep-add ID --blocks OTHER_ID
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" dep-add ID --blocks OTHER_ID
 
 # Sessions
-coco_tracker session-start "Description"
-coco_tracker session-end
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-start "Description"
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
 
 # Git sync
-coco_tracker sync
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" sync
 ```
 
 These are the **only valid tracker commands**. Do NOT invent commands like `epic-list` — use `epic-status` (no args) to list epics, or `list --json` to list tasks.
@@ -273,4 +271,4 @@ To minimize Claude Code permission prompts, follow these rules when generating b
 - **Minimize command chaining**: Prefer separate Bash tool calls over `&&`-chained commands when the commands are independent. This gives clearer output and avoids prompts about multi-command execution.
 - **No `for` loops or multiline blocks**: Instead of `for x in ...; do ... done`, use separate Bash tool calls for each iteration. Multiline commands trigger a "Command contains newlines" confirmation prompt.
 - **Use `--body-file -` for `gh` commands**: Instead of `--body "$(cat <<'EOF'...EOF)"`, use `--body-file - <<'EOF'...EOF`. The `$()` pattern triggers a command substitution warning prompt. The heredoc-to-stdin pattern avoids it.
-- **No `source` for tracker**: Use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command>` instead of `source tracker.sh && coco_tracker ...`. Each tracker call should be a separate Bash tool call.
+- **No `source` for tracker**: Use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command>` instead of `source tracker.sh`. Each tracker call should be a separate Bash tool call.

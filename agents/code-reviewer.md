@@ -20,6 +20,8 @@ You will be given a PR number. Gather context:
 
 ```bash
 gh pr view {pr-number} --json title,body,baseRefName,headRefName,files,additions,deletions
+```
+```bash
 gh pr diff {pr-number}
 ```
 

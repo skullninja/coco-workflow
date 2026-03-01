@@ -180,7 +180,7 @@ Based on `issue_tracker.provider`:
 - Set milestone description to the roadmap overview
 - If `github.use_projects` is true: create a GitHub Project per phase:
   ```bash
-  gh project create --owner {github.owner} --title "Phase N: {name}" --format "BOARD"
+  gh project create --owner {github.owner} --title "Phase N: {name}" --format json
   ```
   Link the project to the repository:
   ```bash

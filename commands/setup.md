@@ -125,12 +125,18 @@ If it is a git repo, install hooks. For each hook (`commit-msg`, `pre-commit`):
    - Append to the existing hook:
    ```bash
    echo "" >> .git/hooks/{hook}
+   ```
+   ```bash
    echo "# --- coco-workflow hook ---" >> .git/hooks/{hook}
+   ```
+   ```bash
    cat "${CLAUDE_PLUGIN_ROOT}/git-hooks/{hook}.sh" >> .git/hooks/{hook}
    ```
 3. If the hook file does not exist:
    ```bash
    cp "${CLAUDE_PLUGIN_ROOT}/git-hooks/{hook}.sh" .git/hooks/{hook}
+   ```
+   ```bash
    chmod +x .git/hooks/{hook}
    ```
 
@@ -163,13 +169,13 @@ Check if `.gitignore` exists and contains `.claude/worktrees/`. If not, append:
 
 Merge Coco's required permissions into `.claude/settings.json` so commands run without repeated prompts.
 
-Read `.claude/settings.json` (create if it doesn't exist). Use jq to merge these permissions into the `permissions.allow` array (avoid duplicates):
+Use the Read tool to read `.claude/settings.json` (if it exists). Merge these permissions into the `permissions.allow` array (dedup with existing entries), then use the Write tool to save:
 
-```bash
-jq '. + {"permissions": {"allow": ((.permissions.allow // []) + ["Bash(bash:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"] | unique)}}' .claude/settings.json > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
+```json
+["Bash(bash:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"]
 ```
 
-If `.claude/settings.json` does not exist yet, create it with just the permissions block.
+If `.claude/settings.json` does not exist yet, create it with just the permissions block. Use the Read/Write tools (not bash) to avoid permission prompts on this step.
 
 ## Step 7: Report
 

@@ -21,7 +21,7 @@ You will receive via the Task tool prompt:
 1. Read `.coco/config.yaml` for full project configuration.
 2. Get task details:
    ```bash
-   coco_tracker show {task-id} --json
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" show {task-id} --json
    ```
 3. Read the task's sub-phase details from `specs/{feature}/tasks.md`.
 
@@ -30,7 +30,7 @@ You will receive via the Task tool prompt:
 ### 1. Claim Task
 
 ```bash
-coco_tracker update {task-id} --status in_progress
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update {task-id} --status in_progress
 ```
 
 ### 2. Create Issue Branch
@@ -40,9 +40,7 @@ Read `issue_key` from task metadata. Determine branch name per `pr.branch.issue_
 - `"task_id"`: use the tracker task ID (e.g., `epic-001.3`)
 
 ```bash
-FEATURE_BRANCH="{feature-branch}"
-ISSUE_BRANCH="${FEATURE_BRANCH}/{issue_key}"
-git checkout -b "$ISSUE_BRANCH"
+git checkout -b "{feature-branch}/{issue_key}"
 ```
 
 ### 3. Bridge to Issue Tracker (Start)
@@ -84,8 +82,9 @@ Read the sub-phase tasks from `specs/{feature}/tasks.md` and implement:
 Read `pre_commit.ui_patterns` from `.coco/config.yaml`. Check staged files against patterns:
 
 ```bash
-git diff --cached --name-only | grep -E '{patterns}'
+git diff --cached --name-only
 ```
+Check the output against `{patterns}` to determine if UI-related files are staged.
 
 If matches found and a pre-commit-tester agent is configured, invoke it. Otherwise, run `pre_commit.build_command` if configured.
 
@@ -95,6 +94,9 @@ Read `commit.title_format` from config. Format:
 
 ```bash
 git add {specific-files}
+```
+
+```bash
 git commit -m "$(cat <<'EOF'
 {description}. Completes {issue_key}
 
@@ -151,8 +153,13 @@ EOF
 Add PR to the project board (if GitHub Projects V2 enabled and task has `gh_project_number` in metadata):
 
 ```bash
-PR_URL=$(gh pr view --json url -q .url)
-gh project item-add {gh_project_number} --owner {github.owner} --url "$PR_URL"
+gh pr view --json url -q .url
+```
+
+Use the URL from the output:
+
+```bash
+gh project item-add {gh_project_number} --owner {github.owner} --url "{PR_URL}"
 ```
 
 ### 8. Update Issue Tracker (In Review)
@@ -169,7 +176,7 @@ gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field
 ### 9. Close Tracker Task
 
 ```bash
-coco_tracker close {task-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" close {task-id}
 ```
 
 ## Return Value

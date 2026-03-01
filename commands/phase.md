@@ -39,17 +39,15 @@ Extract all features for the phase. When sourced from a roadmap, preserve the pr
 
 For each feature:
 
-**a. Check for existing spec directory:**
-```bash
-ls {specs_dir}/{feature}/ 2>/dev/null
-```
+**a. Check for existing spec directories** using the Glob tool for each feature: `{specs_dir}/{feature}/*`
 
-**b. Check for existing code** -- search codebase for related files.
+**b. Check for existing code** using Grep and Glob tools to search the codebase for related files (do NOT delegate to subagents for this).
 
 **c. Check for existing tracker epic:**
 ```bash
-coco_tracker list --json | jq 'select(.type == "epic")'
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json
 ```
+From the output, identify records where `type` is `"epic"`.
 
 **d. Check issue tracker** (if configured):
 Based on `issue_tracker.provider`, search for existing projects/issues.
@@ -110,7 +108,7 @@ For each feature in the approved order:
 
 **Step D: Verify Pre-Execution Gate**
 ```bash
-coco_tracker epic-status {epic-id}
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
 ```
 Confirm tracker tasks exist with dependencies and issue keys.
 
@@ -119,10 +117,19 @@ Confirm tracker tasks exist with dependencies and issue keys.
 Read `pr.branch.feature_prefix` from config (default: `feature`):
 
 ```bash
-git checkout main && git pull
-FEATURE_BRANCH="{feature_prefix}/{feature-name}"
-git checkout -b "$FEATURE_BRANCH"
-git push -u origin "$FEATURE_BRANCH"
+git checkout main
+```
+```bash
+git pull
+```
+
+Create the feature branch (`{feature_prefix}` from config, default `feature`):
+
+```bash
+git checkout -b "{feature_prefix}/{feature-name}"
+```
+```bash
+git push -u origin "{feature_prefix}/{feature-name}"
 ```
 
 **Step F: Execute**
@@ -136,7 +143,19 @@ After all sub-phases complete, `/coco:loop` will have already created the featur
 
 1. Create feature PR:
    ```bash
-   gh pr create --base main --head "$FEATURE_BRANCH" --title "{feature-name}: {description}" --body "{feature summary, list of issue PRs merged, test results}"
+   gh pr create --base main --head "$FEATURE_BRANCH" --title "{feature-name}: {description}" --body-file - <<'EOF'
+   ## Feature Summary
+
+   {feature summary}
+
+   ## Issue PRs Merged
+
+   {list of issue PRs merged}
+
+   ## Test Results
+
+   {test results}
+   EOF
    ```
 2. Invoke `code-reviewer` agent for full-feature review
 3. Address critical findings via review-fix loop
@@ -146,9 +165,18 @@ After all sub-phases complete, `/coco:loop` will have already created the featur
    ```
 5. Update all issues in the epic to `status_map.completed` ("Done")
 
-If `pr.enabled` is false (backward compatible):
+If `pr.enabled` is false (backward compatible, each as a separate Bash tool call):
 ```bash
-git checkout main && git pull && git merge "$FEATURE_BRANCH" && git push
+git checkout main
+```
+```bash
+git pull
+```
+```bash
+git merge "$FEATURE_BRANCH"
+```
+```bash
+git push
 ```
 
 ### 5. Repeat for Next Feature

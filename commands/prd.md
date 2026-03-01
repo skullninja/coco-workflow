@@ -77,7 +77,7 @@ Identify unresolved questions that emerged during the interview. These are candi
 Fill the PRD template with all gathered information. Ensure the directory exists:
 
 ```bash
-mkdir -p "$(dirname "{discovery.prd_path}")"
+mkdir -p "{parent directory of discovery.prd_path}"
 ```
 
 Write to `{discovery.prd_path}`.
@@ -120,7 +120,7 @@ Gather information from all available sources:
 
 **Tracker history:**
 ```bash
-coco_tracker list --json 2>/dev/null || true
+bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json 2>/dev/null || true
 ```
 
 **Issue tracker** (if configured):
@@ -152,7 +152,7 @@ Update based on feedback.
 ### 4. Write PRD
 
 ```bash
-mkdir -p "$(dirname "{discovery.prd_path}")"
+mkdir -p "{parent directory of discovery.prd_path}"
 ```
 
 Write to `{discovery.prd_path}`.
@@ -252,7 +252,7 @@ If `.coco/config.yaml` doesn't exist yet, note the path for the user to configur
 ### 10. Write PRD
 
 ```bash
-mkdir -p "$(dirname "{discovery.prd_path}")"
+mkdir -p "{parent directory of discovery.prd_path}"
 ```
 
 Write to `{discovery.prd_path}`.
