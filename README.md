@@ -26,10 +26,10 @@ Most Claude Code workflows handle one slice of the problem. A spec generator her
 Coco is the whole pipeline in one plugin:
 
 ```
- Describe        Design          Decompose       Execute        Review        Ship
+ Discover        Plan            Decompose       Execute        Review        Ship
 ───────── ──▶ ─────────── ──▶ ─────────── ──▶ ─────────── ──▶ ──────── ──▶ ──────
- "I need       design.md       tasks.md        TDD loop       AI code      PR merged,
- user auth"    + criteria      + deps graph    + commits      review       issues closed
+ PRD +          interview →     tasks.md +      TDD loop       AI code      PRs merged,
+ Roadmap        design.md       tracker import  + commits      review       issues closed
 ```
 
 **Zero dependencies** beyond bash and jq. No daemon. No database. No node_modules. Install from the marketplace and go.
@@ -328,6 +328,29 @@ pr:
 ```
 
 See [`config/coco.default.yaml`](config/coco.default.yaml) for all options.
+
+## Pipeline
+
+```mermaid
+flowchart TD
+    prd["/coco:prd<br>PRD + Analysis"] --> roadmap["/coco:roadmap<br>Phased Roadmap"]
+
+    roadmap --> phase["/coco:phase<br>Multi-feature orchestration"]
+    tactical["/coco:planning-session tactical<br>Single feature"] --> route
+    phase --> route
+
+    route{"Complexity<br>Routing"}
+    route -- Trivial --> hotfix["hotfix skill"]
+    route -- Light --> light["design → import<br>minimal spec, single-task epic"]
+    route -- Standard --> standard["interview → design → tasks → import<br>full spec suite, multi-task epic"]
+
+    light --> exec["/coco:loop or /coco:execute<br>TDD + commits"]
+    standard --> exec
+
+    exec --> review["code-reviewer agent<br>AI review, up to 3 rounds"]
+    review --> merge["PRs merged · Issues closed"]
+    hotfix --> merge
+```
 
 ## Acknowledgments
 
