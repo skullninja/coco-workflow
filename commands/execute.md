@@ -13,9 +13,8 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Setup
 
 1. Read `.coco/config.yaml` for project configuration (including `pr` section).
-2. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
-3. Determine the active epic (from `$ARGUMENTS` or most recent open epic).
-4. Determine the feature branch:
+2. Determine the active epic (from `$ARGUMENTS` or most recent open epic).
+3. Determine the feature branch:
    - If on a `feature/*` branch, that is the feature branch
    - Otherwise, read `feature_branch` from the first task's metadata in the epic
 
@@ -317,7 +316,6 @@ If no tasks available, report epic completion.
 
 At session start:
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
 coco_tracker session-start "Continuing {feature-name}"
 coco_tracker epic-status {epic-id}
 coco_tracker ready --json --epic {epic-id}

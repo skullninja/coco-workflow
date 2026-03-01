@@ -15,8 +15,7 @@ $ARGUMENTS
 ## Setup
 
 1. Read `.coco/config.yaml` for `issue_tracker` configuration.
-2. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
-3. If `issue_tracker.provider` is "none", report "No issue tracker configured" and exit.
+2. If `issue_tracker.provider` is "none", report "No issue tracker configured" and exit.
 
 ## Execution
 

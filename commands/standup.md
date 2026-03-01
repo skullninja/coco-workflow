@@ -13,15 +13,10 @@ $ARGUMENTS
 ## Setup
 
 1. Read `.coco/config.yaml` for project configuration.
-2. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
 
 ## Execution
 
 ### 1. Gather Tracker State
-
-```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
-```
 
 Get all epics and tasks:
 ```bash

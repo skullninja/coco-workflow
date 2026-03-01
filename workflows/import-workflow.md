@@ -22,7 +22,6 @@ Read `specs/{feature}/tasks.md` and extract:
 ### Step 2: Create Tracker Epic
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
 coco_tracker epic-create "{feature-name}"
 ```
 

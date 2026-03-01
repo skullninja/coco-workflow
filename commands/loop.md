@@ -13,9 +13,8 @@ $ARGUMENTS
 ## Setup
 
 1. Read `.coco/config.yaml` for project configuration (including `pr` and `loop` sections).
-2. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
-3. Determine the target epic from `$ARGUMENTS` or most recent open epic.
-4. Read loop config (defaults: `max_iterations: 20`, `no_progress_threshold: 3`, `pause_on_error: true`).
+2. Determine the target epic from `$ARGUMENTS` or most recent open epic.
+3. Read loop config (defaults: `max_iterations: 20`, `no_progress_threshold: 3`, `pause_on_error: true`).
 
 ## Pre-Loop Gate
 

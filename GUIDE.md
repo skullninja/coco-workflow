@@ -354,7 +354,6 @@ loop:
 ### Starting a Session
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
 coco_tracker session-start "Working on {feature-name}"
 coco_tracker epic-status {epic-id}
 coco_tracker ready --json --epic {epic-id}

@@ -12,8 +12,7 @@ Optional: epic ID. If omitted, auto-detects from open epics.
 
 ## Setup
 
-1. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
-2. Read `.coco/config.yaml` for:
+1. Read `.coco/config.yaml` for:
    - `issue_tracker.provider` (determines Issue column)
    - `pr.enabled` (determines PR column)
    - `loop.parallel.enabled` (determines worktree info in Active line)
@@ -28,8 +27,6 @@ Optional: epic ID. If omitted, auto-detects from open epics.
 ### 1. Gather Data
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
-
 # Epic metadata
 coco_tracker epic-status {epic-id}
 

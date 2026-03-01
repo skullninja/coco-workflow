@@ -8,13 +8,7 @@ Before conversation compaction, capture coco-workflow session state so it can be
 
 1. Check if `.coco/config.yaml` exists. If not, do nothing -- this project doesn't use coco-workflow.
 
-2. Source the tracker and capture current state:
-
-```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
-```
-
-3. Gather the following information:
+2. Gather the following information:
    - **Active epics**: `coco_tracker list --json | jq -s '[.[] | select(.type == "epic" and .status != "completed")]'`
    - **In-progress tasks**: `coco_tracker list --json | jq -s '[.[] | select(.type == "task" and .status == "in_progress")]'`
    - **Current git branch**: `git branch --show-current`

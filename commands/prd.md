@@ -120,7 +120,6 @@ Gather information from all available sources:
 
 **Tracker history:**
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
 coco_tracker list --json 2>/dev/null || true
 ```
 

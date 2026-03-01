@@ -246,7 +246,7 @@ fi
 # --- Configure permissions ---
 
 echo "  Configuring permissions in .claude/settings.json..."
-PERMS='["Bash(source:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"]'
+PERMS='["Bash(bash:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"]'
 
 if [[ -f "$CLAUDE_SETTINGS" ]]; then
     jq --argjson perms "$PERMS" '.permissions.allow = ((.permissions.allow // []) + $perms | unique)' "$CLAUDE_SETTINGS" > "${CLAUDE_SETTINGS}.tmp" && mv "${CLAUDE_SETTINGS}.tmp" "$CLAUDE_SETTINGS"

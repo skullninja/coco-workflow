@@ -29,7 +29,7 @@ Prerequisites: `tasks.md` must exist. If missing, use the `tasks` skill first.
    - Looking for the matching directory in `{specs_dir}/{stripped-name}/`
    - Or from conversation context if a feature was recently discussed
 3. Read `{specs_dir}/{feature}/tasks.md` (required). If missing, instruct user to use the `tasks` skill first.
-4. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh` for tracker operations.
+4. Use `coco_tracker` shorthand for tracker operations (see CLAUDE.md Key Commands).
 
 ## Execution
 
@@ -44,7 +44,6 @@ Extract:
 ### Step 2: Create Tracker Epic
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
 coco_tracker epic-create "{feature-name}"
 ```
 

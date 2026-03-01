@@ -13,7 +13,6 @@ $ARGUMENTS
 ## Setup
 
 1. Read `.coco/config.yaml` for project configuration.
-2. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
 
 ## Execution
 

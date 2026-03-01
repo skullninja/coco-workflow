@@ -21,7 +21,7 @@
       "Bash(gh project:*)",
       "Bash(bash tests/test-tracker.sh:*)",
       "Bash(bash -n:*)",
-      "Bash(source:*)",
+      "Bash(bash:*)",
       "Read(~/.claude/plugins/cache/**)"
     ]
   }

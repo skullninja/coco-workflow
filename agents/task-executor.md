@@ -18,16 +18,12 @@ You will receive via the Task tool prompt:
 
 ## Setup
 
-1. Source the tracker:
+1. Read `.coco/config.yaml` for full project configuration.
+2. Get task details:
    ```bash
-   source "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"
+   coco_tracker show {task-id} --json
    ```
-2. Read `.coco/config.yaml` for full project configuration.
-3. Get task details:
-   ```bash
-   coco_tracker get {task-id} --json
-   ```
-4. Read the task's sub-phase details from `specs/{feature}/tasks.md`.
+3. Read the task's sub-phase details from `specs/{feature}/tasks.md`.
 
 ## Execution
 

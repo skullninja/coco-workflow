@@ -10,8 +10,11 @@ $ARGUMENTS
 
 ## Setup
 
-1. Source `${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`.
-2. Determine the active epic from `$ARGUMENTS` or most recent open epic.
+1. If `$ARGUMENTS` contains an epic ID, use it. Otherwise, find the most recent open epic:
+   ```bash
+   coco_tracker epic-status
+   ```
+   Pick the most recent non-closed epic from the output.
 
 ## Execution
 

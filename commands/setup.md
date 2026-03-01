@@ -166,7 +166,7 @@ Merge Coco's required permissions into `.claude/settings.json` so commands run w
 Read `.claude/settings.json` (create if it doesn't exist). Use jq to merge these permissions into the `permissions.allow` array (avoid duplicates):
 
 ```bash
-jq '. + {"permissions": {"allow": ((.permissions.allow // []) + ["Bash(source:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"] | unique)}}' .claude/settings.json > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
+jq '. + {"permissions": {"allow": ((.permissions.allow // []) + ["Bash(bash:*)", "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(chmod:*)", "Bash(cat:*)", "Bash(git:*)", "Bash(gh:*)", "Read(~/.claude/plugins/cache/**)"] | unique)}}' .claude/settings.json > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
 ```
 
 If `.claude/settings.json` does not exist yet, create it with just the permissions block.
