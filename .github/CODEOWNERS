@@ -1,0 +1,10 @@
+# Default owner for everything
+* @peckda
+
+# Core engine
+/lib/ @peckda
+/tests/ @peckda
+
+# Plugin manifest and config schema
+plugin.json @peckda
+config/coco.default.yaml @peckda
