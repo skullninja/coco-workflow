@@ -53,7 +53,7 @@ _coco_next_id() {
             max_num="$found"
         fi
     fi
-    printf "%s%03d" "$prefix" $((max_num + 1))
+    printf "%s%03d" "$prefix" $((10#$max_num + 1))
 }
 
 _coco_timestamp() {
