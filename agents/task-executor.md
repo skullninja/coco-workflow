@@ -51,7 +51,7 @@ Read `issue_key` from task metadata. Based on `issue_tracker.provider`:
 
 **If "github"**:
 - If `github.use_projects` is true and task has `gh_project_item_id` in metadata:
-  Read `.coco/state/gh-projects.json` for field IDs, then:
+  Read `.coco/state/gh-projects.json` and find the feature entry where `project_number` matches the task's `gh_project_number` metadata. Extract `project_id`, `status_field_id`, and `status_options` from that entry. Then:
   ```bash
   gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options["In Progress"]}
   ```
@@ -165,6 +165,7 @@ gh project item-add {gh_project_number} --owner {github.owner} --url "{PR_URL}"
 ### 8. Update Issue Tracker (In Review)
 
 **If "github"** with Projects V2 enabled:
+Read `.coco/state/gh-projects.json` and find the feature entry where `project_number` matches the task's `gh_project_number` metadata. Extract `project_id`, `status_field_id`, and `status_options` from that entry. Then:
 ```bash
 gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options["In Review"]}
 ```

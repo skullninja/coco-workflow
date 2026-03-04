@@ -41,7 +41,7 @@ Parameters:
 **If "github"**:
 
 If `github.use_projects` is true:
-1. Read `.coco/state/gh-projects.json` for project metadata.
+1. Read `.coco/state/gh-projects.json` and find the feature entry where `project_number` matches the task's `gh_project_number` metadata. Extract `project_id`, `status_field_id`, and `status_options` from that entry.
 2. Query project board status as source of truth:
    ```bash
    gh project item-list {project_number} --owner {github.owner} --format json

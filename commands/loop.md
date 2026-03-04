@@ -226,7 +226,7 @@ gh pr view --json url -q .url
 
 Use the URL from the output.
 
-Read `.coco/state/gh-projects.json` for the feature's `project_number`:
+Read `.coco/state/gh-projects.json` and find the feature entry where `project_number` matches the `gh_project_number` metadata from any task in the epic. Extract `project_id`, `status_field_id`, `status_options`, and `project_number` from that entry.
 
 ```bash
 gh project item-add {project_number} --owner {github.owner} --url "$PR_URL"
@@ -244,7 +244,7 @@ gh pr merge {feature-pr-number} --{pr.feature_merge_strategy} --delete-branch
 Update all issues in the epic to final status (`status_map.completed`).
 
 **If "github"** with Projects V2 enabled:
-- Iterate all tasks in the epic, set project status to "Done" via `gh project item-edit`
+- Using the feature entry already resolved above (matched by `gh_project_number`), iterate all tasks in the epic and set project status to "Done" via `gh project item-edit` using the entry's `project_id`, `status_field_id`, and `status_options`
 - Close the GitHub Project:
   ```bash
   gh project close {project_number} --owner {github.owner}
