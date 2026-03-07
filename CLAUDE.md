@@ -268,6 +268,7 @@ To minimize Claude Code permission prompts, follow these rules when generating b
 - **No `$()` in echo/printf**: Don't add `echo "Created: $(git branch --show-current)"` confirmations. Git commands already print useful output. If you need a variable, assign it on a separate line first.
 - **No multiline strings**: Keep all `--description`, `--title`, `--metadata` values on a single line. Use semicolons to separate items.
 - **No `\` line continuations**: Write each command on one line. Long lines are fine.
+- **No `cd &&` compounds**: Never combine `cd /path && command` in a single Bash call. Instead, use separate Bash tool calls — one for `cd` (if needed) and one for the command. Compound `cd && git` triggers a "bare repository attack" security prompt.
 - **Minimize command chaining**: Prefer separate Bash tool calls over `&&`-chained commands when the commands are independent. This gives clearer output and avoids prompts about multi-command execution.
 - **No `for` loops or multiline blocks**: Instead of `for x in ...; do ... done`, use separate Bash tool calls for each iteration. Multiline commands trigger a "Command contains newlines" confirmation prompt.
 - **Use `--body-file -` for `gh` commands**: Instead of `--body "$(cat <<'EOF'...EOF)"`, use `--body-file - <<'EOF'...EOF`. The `$()` pattern triggers a command substitution warning prompt. The heredoc-to-stdin pattern avoids it.
