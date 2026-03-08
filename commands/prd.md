@@ -140,7 +140,7 @@ Fill the PRD template using discovered information:
 
 ### 3. Validate with User
 
-Present the synthesized PRD to the user section by section using `AskUserQuestion`:
+**Output the synthesized PRD sections as text**, then use `AskUserQuestion` for each section to confirm:
 - Product vision -- correct?
 - Target users -- missing anyone?
 - Goals -- priorities right?

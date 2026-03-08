@@ -54,7 +54,7 @@ Build a consolidated feature list from all sources:
 | Analysis "Implications for Roadmap" sections | Extract referenced features and adjustments |
 | Existing `specs/` directories | Add as already-specced features |
 
-Deduplicate by name/description similarity. Present the consolidated list to the user:
+Deduplicate by name/description similarity. **Output the consolidated list as text** (do NOT put it inside AskUserQuestion — it must be visible before the prompt):
 
 ```
 Feature Candidates for {release}
@@ -63,7 +63,7 @@ Feature Candidates for {release}
 |---|---------|--------|-----------------|-------|
 ```
 
-Use `AskUserQuestion` to confirm the list:
+Then use `AskUserQuestion` to confirm:
 - Add missing features?
 - Remove any?
 - Correct descriptions?
@@ -87,7 +87,7 @@ Use context from:
 - Analysis findings to adjust Urgency
 - Existing spec complexity and code audit to estimate Effort
 
-Present the scored table to the user via `AskUserQuestion`:
+**Output the scored table as text**, then use `AskUserQuestion` to let the user adjust scores or accept:
 
 ```
 Feature Triage for {release}
@@ -95,8 +95,6 @@ Feature Triage for {release}
 | # | Feature | Impact | Urgency | Effort | Score | Priority |
 |---|---------|--------|---------|--------|-------|----------|
 ```
-
-Allow the user to adjust individual scores or accept the batch.
 
 ### 4. Phase Grouping
 
@@ -112,7 +110,7 @@ Group into phases based on:
 
 **Phase naming convention**: "Phase N: {descriptive name}" (e.g., "Phase 1: Foundation", "Phase 2: Core Features")
 
-Present proposed phase grouping to the user via `AskUserQuestion`:
+**Output the proposed phase grouping as text**, then use `AskUserQuestion` to let the user rearrange:
 
 ```
 Proposed Phases for {release}
@@ -128,8 +126,6 @@ Phase 2: {name}
 Unscheduled:
   - {feature} (Score: {X.X}, reason: deferred)
 ```
-
-Allow the user to rearrange features between phases.
 
 ### 5. Write Roadmap
 
