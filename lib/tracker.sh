@@ -257,6 +257,12 @@ _cmd_create() {
         deps_json=$(echo "$depends_on" | tr ',' '\n' | jq -R . | jq -sc .)
     fi
 
+    # Validate metadata is valid JSON; fall back to {} if not
+    if ! echo "$metadata" | jq empty 2>/dev/null; then
+        echo "WARNING: invalid metadata JSON, using {}" >&2
+        metadata="{}"
+    fi
+
     local now
     now=$(_coco_timestamp)
 
@@ -311,7 +317,12 @@ _cmd_update() {
                 ;;
             --metadata)
                 # Merge metadata (new keys override, existing keys preserved)
-                record=$(echo "$record" | jq -c --argjson m "$2" --arg now "$now" '.metadata = (.metadata // {} | . * $m) | .updated_at = $now')
+                local _m="$2"
+                if ! echo "$_m" | jq empty 2>/dev/null; then
+                    echo "WARNING: invalid metadata JSON, skipping" >&2
+                    shift 2; continue
+                fi
+                record=$(echo "$record" | jq -c --argjson m "$_m" --arg now "$now" '.metadata = (.metadata // {} | . * $m) | .updated_at = $now')
                 shift 2
                 ;;
             --title)
