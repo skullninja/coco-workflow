@@ -65,6 +65,12 @@ Continue while ALL are true:
 
 **1. Verify branch state**
 
+Clean up stale worktree references (from previous parallel agents or crashed sessions):
+
+```bash
+git worktree prune
+```
+
 Ensure we're on the feature branch (previous iteration may have merged an issue PR):
 
 ```bash
@@ -112,6 +118,7 @@ Read `loop.parallel.enabled` from config (default: `false`).
    - Wait for all agents to complete
 
 4. After parallel batch completes:
+   - Run `git worktree prune` to clean up finished agent worktrees
    - Pull the feature branch to get any remote changes
    - For each successful agent:
      a. Run AI code review on its PR (invoke `code-reviewer` agent)

@@ -19,6 +19,22 @@ $ARGUMENTS
 
 ## Execution
 
+### 0. Clean Up Stale Worktrees
+
+Remove stale git worktree references left by crashed or completed agents:
+
+```bash
+git worktree prune
+```
+
+If `.claude/worktrees/` contains directories with no corresponding git worktree, remove them:
+
+```bash
+git worktree list --porcelain
+```
+
+Compare against directories in `.claude/worktrees/`. Remove any orphaned directories.
+
 ### 1. Load Tracker State
 
 ```bash
