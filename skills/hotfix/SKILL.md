@@ -29,14 +29,14 @@ If `$ARGUMENTS` contains an issue key/ID, load it. Otherwise, create a new issue
 Use: mcp__plugin_linear_linear__create_issue
 Parameters:
   title: "{fix description}"
-  team: {from config}
-  labels: {from config}
+  team: {from config issue_tracker.linear.team}
+  labels: {from config issue_tracker.linear.labels}
   state: "In Progress"
 ```
 
 **If "github"**:
 ```bash
-gh issue create --title "{fix description}" --label {labels}
+gh issue create --title "{fix description}" --label "{comma-separated labels from issue_tracker.github.labels in config}"
 ```
 
 If `github.use_projects` is true: check `.coco/state/gh-projects.json` for an active feature project. If one exists, add the issue to it and set status to "In Progress":

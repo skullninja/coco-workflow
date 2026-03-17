@@ -55,7 +55,7 @@ Read `issue_key` from task metadata. Based on `issue_tracker.provider`:
   ```bash
   gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options["In Progress"]}
   ```
-- Otherwise: `gh issue edit {issue_number} --add-label "in-progress"`
+- Otherwise: `gh issue edit {issue_number} --add-label "{status_map.in_progress from config, lowercase with hyphens}"` (label must exist in repo)
 
 **If "none"**: Skip
 
@@ -170,7 +170,7 @@ Read `.coco/state/gh-projects.json` and find the feature entry where `project_nu
 gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options["In Review"]}
 ```
 
-**If "github"** without Projects V2: `gh issue edit {issue_number} --add-label "in-review"`
+**If "github"** without Projects V2: `gh issue edit {issue_number} --add-label "{status_map.in_review from config, lowercase with hyphens}"` (label must exist in repo)
 
 **If "linear"**: Update issue state to `status_map.in_review`
 

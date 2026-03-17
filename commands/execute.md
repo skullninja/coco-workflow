@@ -76,7 +76,7 @@ Read `issue_key` from task metadata. Based on `issue_tracker.provider` in config
   ```bash
   gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options[status_map.in_progress]}
   ```
-- Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "in-progress"`
+- Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "{status_map.in_progress from config, lowercase with hyphens}"` (label must exist in repo)
 
 **If "none"**: Skip
 
@@ -205,7 +205,7 @@ Update issue tracker status to "In Review":
   ```bash
   gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field-id {status_field_id} --single-select-option-id {status_options[status_map.in_review]}
   ```
-- Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "in-review"`
+- Otherwise (legacy fallback): `gh issue edit {issue_number} --add-label "{status_map.in_review from config, lowercase with hyphens}"` (label must exist in repo)
 
 **If "none"**: Skip
 

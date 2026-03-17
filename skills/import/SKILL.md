@@ -97,10 +97,10 @@ Read `.coco/config.yaml` `issue_tracker.provider`:
    Use: mcp__plugin_linear_linear__create_issue
    Parameters:
      title: "Sub-Phase {N}: {title}"
-     description: "{purpose}\n\n## Tasks\n{checkbox list}"
-     team: {from config}
-     project: "{project-id}"
-     labels: {from config}
+     description: "{purpose}\n\n## Tasks\n- [ ] {task_1}\n- [ ] {task_2}"
+     team: {from config issue_tracker.linear.team}
+     project: "{project-id from step 1}"
+     labels: {from config issue_tracker.linear.labels}
    ```
 
 3. Store issue keys in tracker metadata:
@@ -154,17 +154,18 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
    **IMPORTANT `gh issue create` rules:**
    - Use `--body-file - <<'EOF'` for issue bodies (NOT `--body "$(cat <<'EOF'...)"` which triggers permission prompts)
    - Do NOT include `--repo` — `gh` detects the repo automatically when run from within it
+   - `--label` takes comma-separated values: `--label "spec-driven,enhancement"`. Read label names from `issue_tracker.github.labels` in config. Do NOT invent labels — only use labels that exist in the repo.
 
-   a. Create the issue:
+   a. Create the issue (capture the URL from output):
    ```bash
-   gh issue create --title "Sub-Phase {N}: {title}" --label {labels} --body-file - <<'EOF'
+   gh issue create --title "Sub-Phase {N}: {title}" --label "{comma-separated labels from issue_tracker.github.labels in config}" --body-file - <<'EOF'
    {description}
    EOF
    ```
 
-   b. Add issue to project (capture the item ID from output):
+   b. Add issue to project using the URL printed by `gh issue create`:
    ```bash
-   gh project item-add {project_number} --owner {github.owner} --url {issue_url}
+   gh project item-add {project_number} --owner {github.owner} --url {issue_url from step a}
    ```
 
    c. Set initial status to "Todo":
@@ -181,9 +182,9 @@ Read `issue_tracker.github.use_projects` from config (default: `true`).
 
 **If Projects V2 disabled** (`use_projects: false`):
 
-1. Create issues using `gh`:
+1. Create issues using `gh` (use labels from `issue_tracker.github.labels` in config):
    ```bash
-   gh issue create --title "Sub-Phase {N}: {title}" --label {labels} --body-file - <<'EOF'
+   gh issue create --title "Sub-Phase {N}: {title}" --label "{comma-separated labels from issue_tracker.github.labels in config}" --body-file - <<'EOF'
    {description}
    EOF
    ```
