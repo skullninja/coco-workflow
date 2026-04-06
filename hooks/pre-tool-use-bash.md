@@ -3,13 +3,17 @@ event: PreToolUse
 match_tool: Bash
 ---
 
-Check the proposed Bash command for patterns that trigger Claude Code permission prompts. If ANY pattern matches, **do not run the command** — instead, rewrite it as described.
+**STOP. Do not run the command if ANY pattern below matches.** Rewrite it as shown, then run the rewritten version instead.
 
 ## Blocked Patterns
 
-**`cd && ...` compounds**: Never combine `cd /path && command`. Use separate Bash tool calls — one for `cd`, one for the command. This triggers a "bare repository attack" security prompt.
+**`cd && ...` compounds**: `cd /path && command` triggers a "bare repository attack" security prompt. REWRITE: drop the `cd` entirely — the working directory is already correct. If you genuinely need a different directory, use one Bash tool call for `cd` and a separate one for the command.
+- BLOCKED: `cd /Users/dave/Projects/foo && git log --oneline`
+- REWRITE: `git log --oneline`
 
-**Chained commands with `&&` or `||`**: Never combine commands with `&&` or `||` (e.g., `git fetch && git checkout`, `VAR="..." && gh ...`). Use separate Bash tool calls for each command. Chaining breaks permission pattern matching — `Bash(gh:*)` won't match `VAR="..." && gh project ...` because the command doesn't start with `gh`.
+**Chained commands with `&&` or `||`**: Chaining breaks permission pattern matching — `Bash(gh:*)` won't match `VAR="..." && gh project ...`. REWRITE: split into separate Bash tool calls, one per command.
+- BLOCKED: `git fetch && git checkout feature/foo`
+- REWRITE: two separate Bash tool calls: `git fetch` then `git checkout feature/foo`
 
 **`$()` in echo/printf**: Don't add `echo "Created: $(git branch --show-current)"` confirmations. Git commands already print useful output. If you need a variable, assign it on a separate line first.
 
