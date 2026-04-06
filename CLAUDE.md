@@ -275,3 +275,6 @@ To minimize Claude Code permission prompts, follow these rules when generating b
 - **No `for` loops or multiline blocks**: Instead of `for x in ...; do ... done`, use separate Bash tool calls for each iteration. Multiline commands trigger a "Command contains newlines" confirmation prompt.
 - **Use `--body-file -` for `gh` commands**: Instead of `--body "$(cat <<'EOF'...EOF)"`, use `--body-file - <<'EOF'...EOF`. The `$()` pattern triggers a command substitution warning prompt. The heredoc-to-stdin pattern avoids it.
 - **No `source` for tracker**: Use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command>` instead of `source tracker.sh`. Each tracker call should be a separate Bash tool call.
+- **No variable assignment of tracker path**: Never do `TRACKER="bash .../tracker.sh"` then `$TRACKER create ...`. The shell treats the unquoted variable as a single token, causing "no such file or directory" errors. Always write the full command directly.
+- **No hardcoded paths to tracker.sh**: Always use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`. Never use absolute paths like `bash /Users/.../lib/tracker.sh`.
+- **One tracker call per Bash tool invocation**: Never put multiple `tracker.sh` calls in a single Bash command (via newlines, semicolons, or any other means). Each call must be a separate Bash tool call.

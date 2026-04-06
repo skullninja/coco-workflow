@@ -613,6 +613,11 @@ Sync:
   sync                             # Stage + commit task state to git
 EOF
             ;;
+        dep|epic)
+            echo "ERROR: unknown command: $cmd $1" >&2
+            echo "Hint: use '${cmd}-${1}' (hyphenated). Example: dep-add, epic-create, epic-status, epic-close" >&2
+            return 1
+            ;;
         *)
             echo "ERROR: unknown command: $cmd" >&2
             echo "Run 'coco_tracker help' for usage." >&2
