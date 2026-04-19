@@ -27,8 +27,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Before conversation compaction, capture coco-workflow session state so it can be restored after compaction.\n\nContext:\n$ARGUMENTS\n\n## Steps\n\n1. Check if `.coco/config.yaml` exists. If not, do nothing — this project doesn't use coco-workflow.\n\n2. Gather the following information using separate Bash tool calls:\n   - `bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\" list --json` — identify active epics (type \"epic\", status not \"completed\") and in-progress tasks (type \"task\", status \"in_progress\").\n   - `git branch --show-current`\n   - `bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\" ready --json` — next ready task for the most recent open epic.\n\n3. Write the state to `.coco/state/session-memory.md` with sections for Active Epics, In-Progress Tasks, Next Ready Task, and Context Notes (conversation-specific decisions, blockers, execution step).\n\n4. Confirm the file was written.\n\n## Important\n\n- Keep the memory file concise — it will be read back on session start.\n- Context Notes should capture conversation-specific context the tracker doesn't store.\n- Do NOT capture code content — only references and state."
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-compact.sh"
           }
         ]
       }
@@ -37,8 +37,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "On session start, check if Coco is initialized, then restore session context if available.\n\nContext:\n$ARGUMENTS\n\n## Steps\n\n0. **First-run detection**: Check if `.coco/config.yaml` exists.\n   - If it does NOT exist: output `Coco plugin detected but not initialized. Run /coco:setup to get started.` and stop.\n   - If it exists: continue.\n\n1. Check if `.coco/state/session-memory.md` exists. If not, do nothing.\n\n2. Read `.coco/state/session-memory.md` and present a brief summary: branch, active epic and progress, in-progress task, next ready task.\n\n3. If there are in-progress tasks, suggest verifying state with `bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\" epic-status {epic-id}` and continuing with `/coco:execute` or `/coco:loop`.\n\n4. If session memory is older than 24 hours, note this and suggest `/coco:sync`.\n\n## Important\n\n- Keep output brief — just enough to orient the agent.\n- Do NOT automatically start executing tasks.\n- The session memory file is informational — the tracker is the source of truth."
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"
           }
         ]
       }
