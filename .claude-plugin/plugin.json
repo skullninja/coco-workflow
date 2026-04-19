@@ -1,6 +1,6 @@
 {
   "name": "coco",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Autonomous spec-driven development for Claude Code. Describe a feature, get merged, tested, reviewed code.",
   "author": {
     "name": "skullninja"
