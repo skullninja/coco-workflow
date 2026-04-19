@@ -2,8 +2,7 @@
   "name": "coco",
   "version": "0.2.0",
   "description": "Autonomous spec-driven development for Claude Code. Describe a feature, get merged, tested, reviewed code.",
-  "commands": "commands",
-  "skills": "skills",
-  "agents": "agents",
-  "hooks": "hooks"
+  "author": {
+    "name": "skullninja"
+  }
 }
