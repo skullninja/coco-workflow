@@ -17,7 +17,8 @@ Five layers:
 
 | Path | Purpose |
 |------|---------|
-| `plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
+| `.claude-plugin/plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
+| `hooks/hooks.json` | Claude Code hook definitions (PreToolUse, PostToolUse, PreCompact, SessionStart) |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
 | `config/coco.default.yaml` | Default configuration schema |
 | `commands/setup.md` | `/coco:setup` -- project initialization (config wizard, git hooks, permissions) |
@@ -196,10 +197,11 @@ Light mode: `design` generates a minimal design (single user story, 3-5 acceptan
 ## Hooks
 
 Two types of hooks in separate directories:
-- **Claude Code hooks** (`hooks/`): Prompt-based `.md` files auto-discovered by Claude Code via `plugin.json`
-  - `post-tool-use.md` -- Runs quality checks (lint, typecheck) after Write/Edit
-  - `pre-compact.md` -- Captures session state to `.coco/state/session-memory.md`
-  - `session-start.md` -- Restores context from session memory
+- **Claude Code hooks** (`hooks/hooks.json`): JSON config with `prompt`-type handlers. Events defined:
+  - `PreToolUse` (matcher `Bash`) -- Blocks bad bash patterns (cd && compounds, chained commands, tracker misuse, etc.)
+  - `PostToolUse` (matcher `Write|Edit`) -- Runs quality checks (lint, typecheck)
+  - `PreCompact` -- Captures session state to `.coco/state/session-memory.md`
+  - `SessionStart` -- Restores context from session memory
 - **Git hooks** (`git-hooks/`): Shell scripts installed to `.git/hooks/` by `setup.sh`
   - `commit-msg.sh` -- Commit message validation
   - `pre-commit.sh` -- Build check + UI change detection

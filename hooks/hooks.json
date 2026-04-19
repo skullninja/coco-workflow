@@ -1,0 +1,47 @@
+{
+  "description": "Coco workflow hooks: quality checks, session memory, and bash command guardrails",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are validating a proposed Bash command against a list of blocked patterns. If ANY pattern matches, respond with BLOCK and explain the rewrite. Otherwise respond with ALLOW.\n\nProposed command and tool context:\n$ARGUMENTS\n\n## Blocked Patterns\n\n**cd && compounds**: `cd /path && command` triggers a 'bare repository attack' security prompt. REWRITE: drop the cd — the working directory is already correct. If a different directory is genuinely needed, use separate Bash tool calls.\n\n**Chained commands with && or ||**: Chaining breaks permission pattern matching. REWRITE: split into separate Bash tool calls.\n\n**$() in echo/printf**: Don't add echo \"Created: $(git branch --show-current)\" confirmations. Git commands already print useful output.\n\n**Multiline strings in tracker args**: Keep --description, --title, --metadata values on a single line. Use semicolons to separate items.\n\n**for loops or multiline blocks**: Use separate Bash tool calls for each iteration.\n\n**Piping tracker output to Python**: Use jq for all JSON processing of tracker output.\n\n**Variable assignment of tracker path**: Never do TRACKER=\"bash .../tracker.sh\" then $TRACKER create. The shell treats the variable value as a single token. Always write the full command directly.\n\n**Hardcoded paths to tracker.sh**: Always use bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\". Never absolute paths.\n\n**Multiple tracker calls in one command**: Each tracker.sh invocation must be a separate Bash tool call.\n\n**source of tracker.sh**: Never use source or . to load tracker.sh. Run it as a standalone bash command.\n\n**Space-separated tracker subcommands**: Subcommands are hyphenated. Use dep-add, epic-create, epic-status, epic-close, session-start, session-end."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A file was just written or edited. If coco-workflow quality commands are configured, run them against the modified file.\n\nTool context:\n$ARGUMENTS\n\n## Steps\n\n1. Check if `.coco/config.yaml` exists. If not, do nothing.\n2. Read the `quality` section from `.coco/config.yaml`.\n3. If `quality.lint_command` is empty AND `quality.typecheck_command` is empty, do nothing.\n4. Determine the file path that was just modified from the tool context.\n5. If the file matches any pattern in `pr.review.exclude_patterns` (e.g., `*.lock`, `*.generated.*`, `vendor/**`, `node_modules/**`), skip quality checks.\n\n### Run lint command\n\nIf `quality.lint_command` is configured, run `{lint_command with {file} replaced by the actual file path}`. If lint fails and `quality.auto_fix` is true, run `{lint_command} --fix {file}`. Report lint issues to the agent.\n\n### Run typecheck command\n\nIf `quality.typecheck_command` is configured, run `{typecheck_command with {file} replaced by the actual file path}`. Report typecheck issues to the agent.\n\n## Important\n\n- Do NOT block the agent. Report issues as informational feedback.\n- If neither quality command is configured, exit silently with no output.\n- Only check the file that was just modified, not the entire project."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before conversation compaction, capture coco-workflow session state so it can be restored after compaction.\n\nContext:\n$ARGUMENTS\n\n## Steps\n\n1. Check if `.coco/config.yaml` exists. If not, do nothing — this project doesn't use coco-workflow.\n\n2. Gather the following information using separate Bash tool calls:\n   - `bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\" list --json` — identify active epics (type \"epic\", status not \"completed\") and in-progress tasks (type \"task\", status \"in_progress\").\n   - `git branch --show-current`\n   - `bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\" ready --json` — next ready task for the most recent open epic.\n\n3. Write the state to `.coco/state/session-memory.md` with sections for Active Epics, In-Progress Tasks, Next Ready Task, and Context Notes (conversation-specific decisions, blockers, execution step).\n\n4. Confirm the file was written.\n\n## Important\n\n- Keep the memory file concise — it will be read back on session start.\n- Context Notes should capture conversation-specific context the tracker doesn't store.\n- Do NOT capture code content — only references and state."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "On session start, check if Coco is initialized, then restore session context if available.\n\nContext:\n$ARGUMENTS\n\n## Steps\n\n0. **First-run detection**: Check if `.coco/config.yaml` exists.\n   - If it does NOT exist: output `Coco plugin detected but not initialized. Run /coco:setup to get started.` and stop.\n   - If it exists: continue.\n\n1. Check if `.coco/state/session-memory.md` exists. If not, do nothing.\n\n2. Read `.coco/state/session-memory.md` and present a brief summary: branch, active epic and progress, in-progress task, next ready task.\n\n3. If there are in-progress tasks, suggest verifying state with `bash \"${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh\" epic-status {epic-id}` and continuing with `/coco:execute` or `/coco:loop`.\n\n4. If session memory is older than 24 hours, note this and suggest `/coco:sync`.\n\n## Important\n\n- Keep output brief — just enough to orient the agent.\n- Do NOT automatically start executing tasks.\n- The session memory file is informational — the tracker is the source of truth."
+          }
+        ]
+      }
+    ]
+  }
+}

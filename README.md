@@ -49,29 +49,20 @@ Coco is the whole pipeline in one plugin:
 
 ### Install
 
-**From the marketplace (recommended):**
-
-In Claude Code, run:
+In Claude Code, add the marketplace and install the plugin:
 
 ```
 /plugin marketplace add skullninja/coco-workflow
 /plugin install coco@coco-workflow
 ```
 
-Then in your project:
+Then, in your project:
 
 ```
 /coco:setup
 ```
 
 The setup command creates the `.coco/` directory, walks you through key settings (project name, issue tracker, parallel execution), installs git hooks, and configures permissions.
-
-**As a git submodule (alternative):**
-
-```bash
-git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
-bash coco-workflow/scripts/setup.sh
-```
 
 ### Build something
 
@@ -229,43 +220,33 @@ All config-driven. Status mappings, team names, labels, issue key formats -- eve
 
 ### Setup
 
-**From the marketplace (recommended):**
-
-In Claude Code, run:
+In Claude Code:
 
 ```
 /plugin marketplace add skullninja/coco-workflow
 /plugin install coco@coco-workflow
 ```
 
-Then in your project:
+In your project:
 
 ```
 /coco:setup
 ```
 
-Follow the interactive config wizard for project name, issue tracker, and parallel execution settings.
-
-**As a git submodule (alternative):**
-
-```bash
-git submodule add https://github.com/skullninja/coco-workflow.git coco-workflow
-bash coco-workflow/scripts/setup.sh
-```
-
-Both paths create the `.coco/` directory structure, walk through key configuration, and install git hooks. Restart Claude Code after submodule setup.
+The setup wizard walks through project name, issue tracker, and parallel execution settings, creates the `.coco/` directory, and installs git hooks.
 
 For existing projects, run `/coco:prd audit` after setup to generate a PRD from your codebase. For satellite repos in a multi-repo project, run `/coco:prd derive /path/to/primary/docs/prd.md` to create a platform-specific PRD.
 
 ### Project Structure
 
 ```
-coco-workflow/                          # This repo (marketplace plugin or git submodule)
-  plugin.json                           # Claude Code plugin manifest
+coco-workflow/                          # This repo (Claude Code plugin)
+  .claude-plugin/plugin.json            # Plugin manifest
+  .claude-plugin/marketplace.json       # Marketplace manifest
   commands/                             # 13 slash commands
   skills/                               # 6 AI-selected skills (interview, design, tasks, import, hotfix, execute)
   agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
-  hooks/                                # Claude Code hooks (quality, session memory)
+  hooks/hooks.json                      # Claude Code hooks (quality, session memory, bash guards)
   git-hooks/                            # Git hooks (commit-msg, pre-commit)
   lib/tracker.sh                        # Built-in task tracker
   templates/                            # Default templates
