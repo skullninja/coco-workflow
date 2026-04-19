@@ -17,8 +17,8 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "A file was just written or edited. If coco-workflow quality commands are configured, run them against the modified file.\n\nTool context:\n$ARGUMENTS\n\n## Steps\n\n1. Check if `.coco/config.yaml` exists. If not, do nothing.\n2. Read the `quality` section from `.coco/config.yaml`.\n3. If `quality.lint_command` is empty AND `quality.typecheck_command` is empty, do nothing.\n4. Determine the file path that was just modified from the tool context.\n5. If the file matches any pattern in `pr.review.exclude_patterns` (e.g., `*.lock`, `*.generated.*`, `vendor/**`, `node_modules/**`), skip quality checks.\n\n### Run lint command\n\nIf `quality.lint_command` is configured, run `{lint_command with {file} replaced by the actual file path}`. If lint fails and `quality.auto_fix` is true, run `{lint_command} --fix {file}`. Report lint issues to the agent.\n\n### Run typecheck command\n\nIf `quality.typecheck_command` is configured, run `{typecheck_command with {file} replaced by the actual file path}`. Report typecheck issues to the agent.\n\n## Important\n\n- Do NOT block the agent. Report issues as informational feedback.\n- If neither quality command is configured, exit silently with no output.\n- Only check the file that was just modified, not the entire project."
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-tool-use-quality.sh"
           }
         ]
       }
