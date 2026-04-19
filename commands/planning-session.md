@@ -65,7 +65,7 @@ If the user already described the scope clearly, infer the tier without asking.
 1. When blockers are identified, offer to use the `interview` skill to gather structured context about the blocker. This produces a focused discovery brief that can inform the resolution approach.
 2. Check current tracker state:
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status
+   coco-tracker epic-status
    ```
 3. Run `/coco:sync` to reconcile with issue tracker
 4. Reprioritize and unblock tasks

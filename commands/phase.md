@@ -45,7 +45,7 @@ For each feature:
 
 **c. Check for existing tracker epic:**
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json
+coco-tracker list --json
 ```
 From the output, identify records where `type` is `"epic"`.
 
@@ -108,7 +108,7 @@ For each feature in the approved order:
 
 **Step D: Verify Pre-Execution Gate**
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+coco-tracker epic-status {epic-id}
 ```
 Confirm tracker tasks exist with dependencies and issue keys.
 

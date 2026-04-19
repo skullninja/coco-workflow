@@ -21,7 +21,7 @@ $ARGUMENTS
 Verify the epic is ready for autonomous execution:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+coco-tracker epic-status {epic-id}
 ```
 
 **Check ALL before entering the loop:**
@@ -44,7 +44,7 @@ git branch --show-current
 Record the output as the feature branch name for later use.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-start "Autonomous loop for {epic-id}"
+coco-tracker session-start "Autonomous loop for {epic-id}"
 ```
 
 Set counters:
@@ -83,7 +83,7 @@ git pull origin "$FEATURE_BRANCH"
 **2. Check for next task**
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
+coco-tracker ready --json --epic {epic-id}
 ```
 
 If no task is ready but incomplete tasks exist, tasks are blocked. Report and exit:
@@ -101,13 +101,13 @@ Read `loop.parallel.enabled` from config (default: `false`).
 
 1. Check if multiple tasks are ready:
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
+   coco-tracker ready --json --epic {epic-id}
    ```
    If only one task is ready, fall through to serial execution (step 4).
 
 2. If 2+ tasks are ready, check `owns_files` metadata for overlap:
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json --epic {epic-id}
+   coco-tracker list --json --epic {epic-id}
    ```
    Parse `owns_files` from each ready task's metadata. Two tasks overlap if any glob pattern from one matches files that the other also claims.
 
@@ -175,7 +175,7 @@ If `post_commit_count == pre_commit_count`:
 **7. Check epic status**
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+coco-tracker epic-status {epic-id}
 ```
 
 If all tasks are closed: break loop (success).
@@ -191,7 +191,7 @@ If all tasks are closed: break loop (success).
 All tasks closed. Create the feature PR to main (if `pr.enabled`):
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+coco-tracker session-end
 ```
 
 **If `pr.enabled`:**
@@ -295,7 +295,7 @@ Total commits: {final_count - initial_count}
 ```
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" sync
+coco-tracker sync
 ```
 
 ### Circuit Breaker: No Progress
@@ -303,7 +303,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" sync
 `consecutive_no_progress >= no_progress_threshold`. The loop is stuck.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+coco-tracker session-end
 ```
 
 ```
@@ -320,7 +320,7 @@ To debug: /coco:status {epic-id}
 `iteration >= max_iterations`. May need more iterations or tasks are too large.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+coco-tracker session-end
 ```
 
 ```
@@ -336,7 +336,7 @@ To resume: /coco:loop {epic-id}
 If `pause_on_error` is true and a task fails (tests fail repeatedly, build broken):
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+coco-tracker session-end
 ```
 
 ```

@@ -18,7 +18,7 @@ Optional: epic ID. If omitted, auto-detects from open epics.
    - `loop.parallel.enabled` (determines worktree info in Active line)
 3. Determine epic:
    - If `$ARGUMENTS` contains an epic ID, use it
-   - Otherwise, list all open epics via `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status`
+   - Otherwise, list all open epics via `coco-tracker epic-status`
    - If exactly one open epic, use it automatically
    - If multiple, render the **Multi-Epic Summary** and stop
 
@@ -27,13 +27,13 @@ Optional: epic ID. If omitted, auto-detects from open epics.
 ### 1. Gather Data
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+coco-tracker epic-status {epic-id}
 ```
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json --epic {epic-id}
+coco-tracker list --json --epic {epic-id}
 ```
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
+coco-tracker ready --json --epic {epic-id}
 ```
 
 If `loop.parallel.enabled` is true:

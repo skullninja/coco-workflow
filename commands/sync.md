@@ -38,7 +38,7 @@ Compare against directories in `.claude/worktrees/`. Remove any orphaned directo
 ### 1. Load Tracker State
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list --json --epic {epic-id}
+coco-tracker list --json --epic {epic-id}
 ```
 
 Parse all tasks with their statuses and `issue_key` metadata.

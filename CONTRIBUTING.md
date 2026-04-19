@@ -74,7 +74,13 @@ See `CLAUDE.md` for the full list.
 
 ### Tracker
 
-The tracker (`lib/tracker.sh`) is the core engine. Always invoke it as a standalone command:
+The tracker (`lib/tracker.sh`) is the core engine. From within Claude Code (plugin enabled), invoke via the `coco-tracker` wrapper on PATH:
+
+```bash
+coco-tracker <command> [args]
+```
+
+From a shell outside Claude Code (e.g., during development), run the script directly:
 
 ```bash
 bash lib/tracker.sh <command> [args]

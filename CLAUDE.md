@@ -19,7 +19,8 @@ Five layers:
 |------|---------|
 | `.claude-plugin/plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
 | `hooks/hooks.json` | Claude Code hook definitions (PreToolUse, PostToolUse, PreCompact, SessionStart) |
-| `lib/tracker.sh` | Built-in task tracker -- **core of the system** |
+| `bin/coco-tracker` | Tracker wrapper -- on PATH as bare command `coco-tracker` |
+| `lib/tracker.sh` | Built-in task tracker -- **core of the system** (invoked via `coco-tracker`) |
 | `config/coco.default.yaml` | Default configuration schema |
 | `commands/setup.md` | `/coco:setup` -- project initialization (config wizard, git hooks, permissions) |
 | `commands/` | 13 slash commands (setup, prd [greenfield/audit/derive], roadmap, phase, loop, execute, dashboard, standup, etc.) |
@@ -49,38 +50,38 @@ The tracker is the execution engine. It uses JSONL files (`.coco/tasks/tasks.jso
 
 ### Key Commands
 
-Each tracker command is a separate Bash tool call. Do NOT use `source` — it creates compound commands that trigger permission prompts.
+The plugin ships a `coco-tracker` wrapper in `bin/` that Claude Code adds to PATH automatically. Invoke it as a bare command — no `bash` prefix, no path, no `${CLAUDE_PLUGIN_ROOT}`. Each tracker command is a separate Bash tool call. Do NOT use `source` — it creates compound commands that trigger permission prompts.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command> [args]
+coco-tracker <command> [args]
 ```
 
 ```bash
 # Task lifecycle
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" create --epic ID --title "..." [--depends-on ID,ID] [--metadata '{}']
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update ID [--status STATUS] [--metadata '{}']
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" close ID
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" show ID                       # Get single task details (JSON)
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" list [--status STATUS] [--epic ID] [--json]  # List tasks
+coco-tracker create --epic ID --title "..." [--depends-on ID,ID] [--metadata '{}']
+coco-tracker update ID [--status STATUS] [--metadata '{}']
+coco-tracker close ID
+coco-tracker show ID                       # Get single task details (JSON)
+coco-tracker list [--status STATUS] [--epic ID] [--json]  # List tasks
 
 # Dependency-aware task selection (core value)
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready [--json] [--epic ID]    # Next unblocked task
+coco-tracker ready [--json] [--epic ID]    # Next unblocked task
 
 # Epics
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-create "Title"
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status                   # List all epics (no arg)
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status EPIC_ID           # Single epic + task summary
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-close EPIC_ID
+coco-tracker epic-create "Title"
+coco-tracker epic-status                   # List all epics (no arg)
+coco-tracker epic-status EPIC_ID           # Single epic + task summary
+coco-tracker epic-close EPIC_ID
 
 # Dependencies
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" dep-add ID --blocks OTHER_ID
+coco-tracker dep-add ID --blocks OTHER_ID
 
 # Sessions
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-start "Description"
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+coco-tracker session-start "Description"
+coco-tracker session-end
 
 # Git sync
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" sync
+coco-tracker sync
 ```
 
 These are the **only valid tracker commands**. Do NOT invent commands like `epic-list` — use `epic-status` (no args) to list epics, or `list --json` to list tasks.
@@ -276,7 +277,5 @@ To minimize Claude Code permission prompts, follow these rules when generating b
 - **Minimize command chaining**: Prefer separate Bash tool calls over `&&`-chained commands when the commands are independent. This gives clearer output and avoids prompts about multi-command execution.
 - **No `for` loops or multiline blocks**: Instead of `for x in ...; do ... done`, use separate Bash tool calls for each iteration. Multiline commands trigger a "Command contains newlines" confirmation prompt.
 - **Use `--body-file -` for `gh` commands**: Instead of `--body "$(cat <<'EOF'...EOF)"`, use `--body-file - <<'EOF'...EOF`. The `$()` pattern triggers a command substitution warning prompt. The heredoc-to-stdin pattern avoids it.
-- **No `source` for tracker**: Use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <command>` instead of `source tracker.sh`. Each tracker call should be a separate Bash tool call.
-- **No variable assignment of tracker path**: Never do `TRACKER="bash .../tracker.sh"` then `$TRACKER create ...`. The shell treats the unquoted variable as a single token, causing "no such file or directory" errors. Always write the full command directly.
-- **No hardcoded paths to tracker.sh**: Always use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`. Never use absolute paths like `bash /Users/.../lib/tracker.sh`.
-- **One tracker call per Bash tool invocation**: Never put multiple `tracker.sh` calls in a single Bash command (via newlines, semicolons, or any other means). Each call must be a separate Bash tool call.
+- **Always use `coco-tracker`**: The plugin installs a `coco-tracker` executable on PATH. Call it directly — e.g., `coco-tracker ready --json`. Do not use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`, `source`, hardcoded absolute paths, or variable assignment (`TRACKER=...; $TRACKER ...`). These trigger permission prompts, expansion bugs, and path-resolution failures.
+- **One tracker call per Bash tool invocation**: Never put multiple `coco-tracker` calls in a single Bash command (via newlines, semicolons, or any other means). Each call must be a separate Bash tool call.

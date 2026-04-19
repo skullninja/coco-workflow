@@ -3,7 +3,7 @@
 # Replaces the bd CLI with a simple JSONL-based task/dependency tracker.
 # Requires: bash 4+, jq 1.6+
 #
-# Usage: bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" <subcommand> [args]
+# Usage: coco-tracker <subcommand> [args]  (invoked via bin/coco-tracker wrapper on PATH)
 #
 # Data lives in .coco/tasks/tasks.jsonl (one JSON record per line).
 # Two record types: "epic" and "task".

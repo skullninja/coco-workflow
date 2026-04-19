@@ -21,7 +21,7 @@ You will receive via the Task tool prompt:
 1. Read `.coco/config.yaml` for full project configuration.
 2. Get task details:
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" show {task-id} --json
+   coco-tracker show {task-id} --json
    ```
 3. Read the task's sub-phase details from `specs/{feature}/tasks.md`.
 
@@ -30,7 +30,7 @@ You will receive via the Task tool prompt:
 ### 1. Claim Task
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update {task-id} --status in_progress
+coco-tracker update {task-id} --status in_progress
 ```
 
 ### 2. Create Issue Branch
@@ -177,7 +177,7 @@ gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field
 ### 9. Close Tracker Task
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" close {task-id}
+coco-tracker close {task-id}
 ```
 
 ## Return Value

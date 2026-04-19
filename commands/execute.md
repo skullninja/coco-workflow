@@ -23,7 +23,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 Before starting the execution loop, verify the epic was imported correctly:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+coco-tracker epic-status {epic-id}
 ```
 
 **Check ALL before writing any code:**
@@ -40,7 +40,7 @@ If any check fails, STOP and use the `import` skill first.
 ### 1. Find Next Task
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
+coco-tracker ready --json --epic {epic-id}
 ```
 
 Never manually pick tasks -- always use `ready` which respects dependency order.
@@ -48,7 +48,7 @@ Never manually pick tasks -- always use `ready` which respects dependency order.
 ### 2. Claim Task
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" update {task-id} --status in_progress
+coco-tracker update {task-id} --status in_progress
 ```
 
 ### 3. Create Issue Branch
@@ -285,7 +285,7 @@ git pull origin "$FEATURE_BRANCH"
 ### 12. Close Tracker Task
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" close {task-id}
+coco-tracker close {task-id}
 ```
 
 ### 13. Bridge to Issue Tracker (Complete)
@@ -320,7 +320,7 @@ Read the sub-phase's acceptance criteria from tasks.md. Verify each criterion is
 ### 15. Check Next
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
+coco-tracker ready --json --epic {epic-id}
 ```
 
 If another task is available, loop back to step 2.
@@ -330,18 +330,18 @@ If no tasks available, report epic completion.
 
 At session start:
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-start "Continuing {feature-name}"
+coco-tracker session-start "Continuing {feature-name}"
 ```
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" epic-status {epic-id}
+coco-tracker epic-status {epic-id}
 ```
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready --json --epic {epic-id}
+coco-tracker ready --json --epic {epic-id}
 ```
 
 At session end:
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" session-end
+coco-tracker session-end
 ```
 
 ## Error Handling

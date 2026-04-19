@@ -23,7 +23,7 @@ This skill delegates to the `/coco:execute` command, which implements the full 1
 Run the `/coco:execute` command. It handles:
 
 1. Pre-execution gate (tracker + issue tracker verification)
-2. Dependency-aware task selection via `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh" ready`
+2. Dependency-aware task selection via `coco-tracker ready`
 3. Issue branch creation (if `pr.enabled`)
 4. Issue tracker bridge (start: "In Progress")
 5. TDD implementation (RED -> GREEN -> verify)
