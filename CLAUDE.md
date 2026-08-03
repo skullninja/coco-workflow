@@ -255,9 +255,11 @@ Two installation paths, both produce the same result:
 **Marketplace (recommended):**
 ```
 /plugin marketplace add skullninja/coco-workflow
-/plugin install coco@coco-workflow
+/plugin install coco@coco-local
 /coco:setup
 ```
+
+The plugin ID is `coco@coco-local`. The marketplace name comes from the `name` field in `.claude-plugin/marketplace.json`, not from the repo slug used to add it — so adding `skullninja/coco-workflow` registers a marketplace called `coco-local`. `scripts/setup.sh` uses the same name for submodule installs, so both paths resolve to one plugin ID.
 
 **Git submodule (legacy):**
 ```bash
