@@ -4,11 +4,14 @@
 # Silent exit if .coco/config.yaml is missing. Never blocks.
 set -u
 
-CONFIG_FILE=".coco/config.yaml"
-STATE_DIR=".coco/state"
+LIB_DIR="${BASH_SOURCE[0]%/*}"
+# shellcheck source=coco-lib.sh
+. "$LIB_DIR/coco-lib.sh"
+
+ROOT="$(coco_project_root "")" || exit 0
+STATE_DIR="$ROOT/.coco/state"
 MEMORY_FILE="$STATE_DIR/session-memory.md"
 
-[ -f "$CONFIG_FILE" ] || exit 0
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
 [ -f "$CLAUDE_PLUGIN_ROOT/lib/tracker.sh" ] || exit 0
 

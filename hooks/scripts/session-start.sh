@@ -4,15 +4,18 @@
 # Never blocks. Exits 0.
 set -u
 
-CONFIG_FILE=".coco/config.yaml"
-MEMORY_FILE=".coco/state/session-memory.md"
+LIB_DIR="${BASH_SOURCE[0]%/*}"
+# shellcheck source=coco-lib.sh
+. "$LIB_DIR/coco-lib.sh"
 
-if [ ! -f "$CONFIG_FILE" ]; then
+if ! ROOT="$(coco_project_root "")"; then
     if [ -d ".coco" ] || [ -d ".git" ]; then
         echo "Coco plugin detected but not initialized. Run /coco:setup to get started."
     fi
     exit 0
 fi
+
+MEMORY_FILE="$ROOT/.coco/state/session-memory.md"
 
 [ -f "$MEMORY_FILE" ] || exit 0
 

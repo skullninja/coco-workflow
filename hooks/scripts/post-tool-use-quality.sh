@@ -5,13 +5,17 @@
 # Never blocks — always exits 0.
 set -u
 
-CONFIG_FILE=".coco/config.yaml"
-
-[ -f "$CONFIG_FILE" ] || exit 0
+LIB_DIR="${BASH_SOURCE[0]%/*}"
+# shellcheck source=coco-lib.sh
+. "$LIB_DIR/coco-lib.sh"
 
 INPUT="$(cat)"
 FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
 [ -n "$FILE_PATH" ] || exit 0
+
+CWD="$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
+ROOT="$(coco_project_root "$CWD")" || exit 0
+CONFIG_FILE="$ROOT/.coco/config.yaml"
 
 _yaml_value() {
     local key="$1"
