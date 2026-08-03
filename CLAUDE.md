@@ -33,9 +33,11 @@ Five layers:
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/task-executor.md` | Worktree-isolated task executor for parallel execution |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
-| `hooks/post-tool-use.md` | PostToolUse hook -- runs lint/typecheck after file edits |
-| `hooks/pre-compact.md` | PreCompact hook -- captures session state before compaction |
-| `hooks/session-start.md` | SessionStart hook -- restores session context |
+| `hooks/scripts/pre-tool-use-bash.sh` | PreToolUse hook -- denies Bash commands that would actually break |
+| `hooks/scripts/post-tool-use-quality.sh` | PostToolUse hook -- runs lint/typecheck after file edits |
+| `hooks/scripts/pre-compact.sh` | PreCompact hook -- captures session state before compaction |
+| `hooks/scripts/session-start.sh` | SessionStart hook -- restores session context |
+| `hooks/scripts/coco-lib.sh` | Shared hook helpers -- resolves the coco project root by walking up |
 | `git-hooks/commit-msg.sh` | Commit message validation (reads config) |
 | `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
 | `GUIDE.md` | Comprehensive workflow guide with deep-dives and quick reference |
@@ -198,11 +200,25 @@ Light mode: `design` generates a minimal design (single user story, 3-5 acceptan
 ## Hooks
 
 Two types of hooks in separate directories:
-- **Claude Code hooks** (`hooks/hooks.json`): JSON config with `prompt`-type handlers. Events defined:
-  - `PreToolUse` (matcher `Bash`) -- Blocks bad bash patterns (cd && compounds, chained commands, tracker misuse, etc.)
+- **Claude Code hooks** (`hooks/hooks.json`): JSON config pointing at `command`-type scripts in `hooks/scripts/`. Events defined:
+  - `PreToolUse` (matcher `Bash`) -- Denies commands that would actually break (tracker misuse, `cd &&` compounds)
   - `PostToolUse` (matcher `Write|Edit`) -- Runs quality checks (lint, typecheck)
   - `PreCompact` -- Captures session state to `.coco/state/session-memory.md`
   - `SessionStart` -- Restores context from session memory
+
+All four scripts gate on `.coco/config.yaml`, resolved via `coco_project_root` in `hooks/scripts/coco-lib.sh`, which **walks upward** from the hook's cwd (then `$CLAUDE_PROJECT_DIR`, then `$PWD`). Hooks routinely fire with cwd set to a package subdirectory or a parallel-execution worktree, so a bare relative `.coco/config.yaml` check silently no-ops there.
+
+### Why PreToolUse must stay a `command` hook
+
+Never convert it to a `prompt` hook. A prompt hook's sub-model returns `{ok, reason}`, and Claude Code maps `ok: false` to `preventContinuation` -- which **halts the entire turn** ("hook stopped continuation"), not just the one tool call. There is no recoverable-denial path for prompt hooks. A command hook returning:
+
+```json
+{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "..."}}
+```
+
+blocks only that call and hands the reason back to Claude, which rewrites and continues.
+
+Scope is deliberately narrow: the hook denies only things that genuinely fail (tracker misuse, `cd &&`). Broad style rules like `&&` chaining were removed -- they fired constantly on legitimate work for no functional gain.
 - **Git hooks** (`git-hooks/`): Shell scripts installed to `.git/hooks/` by `setup.sh`
   - `commit-msg.sh` -- Commit message validation
   - `pre-commit.sh` -- Build check + UI change detection
@@ -253,9 +269,10 @@ bash coco-workflow/scripts/setup.sh
 
 ```bash
 bash tests/test-tracker.sh
+bash tests/test-hooks.sh
 ```
 
-Runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata.
+`test-tracker.sh` runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. `test-hooks.sh` runs 29 tests covering the PreToolUse guardrail: project-root gating from nested directories, each deny rule, and regression coverage asserting the dropped cosmetic rules stay allowed.
 
 ## Development Notes
 
@@ -268,7 +285,7 @@ Runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and
 
 ## Bash Command Guidelines
 
-To minimize Claude Code permission prompts, follow these rules when generating bash commands:
+To minimize Claude Code permission prompts, follow these rules when generating bash commands. Most are **style guidance** -- prefer them, but they will not block you. Only the tracker rules and `cd &&` compounds are enforced by the PreToolUse hook; those are denied because they genuinely fail.
 
 - **No `$()` in echo/printf**: Don't add `echo "Created: $(git branch --show-current)"` confirmations. Git commands already print useful output. If you need a variable, assign it on a separate line first.
 - **No multiline strings**: Keep all `--description`, `--title`, `--metadata` values on a single line. Use semicolons to separate items.
