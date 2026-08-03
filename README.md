@@ -151,6 +151,7 @@ Event-driven automation via Claude Code hooks:
 
 | Hook | Trigger | What It Does |
 |------|---------|--------------|
+| **pre-tool-use** | Before `Bash` | Blocks the two tracker command forms that fail silently, with a message explaining the rewrite |
 | **post-tool-use** | After `Write`/`Edit` | Runs lint + typecheck against modified file |
 | **pre-compact** | Before compaction | Saves session state so you don't lose context |
 | **session-start** | New session | Restores context from previous session |
@@ -248,7 +249,7 @@ coco-workflow/                          # This repo (Claude Code plugin)
   commands/                             # 13 slash commands
   skills/                               # 6 AI-selected skills (interview, design, tasks, import, hotfix, execute)
   agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
-  hooks/hooks.json                      # Claude Code hooks (quality, session memory, bash guards)
+  hooks/hooks.json                      # Claude Code hooks (quality, session memory, tracker guards)
   git-hooks/                            # Git hooks (commit-msg, pre-commit)
   lib/tracker.sh                        # Built-in task tracker
   templates/                            # Default templates

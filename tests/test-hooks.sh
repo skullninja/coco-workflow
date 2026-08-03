@@ -62,53 +62,60 @@ assert_allowed() {
 
 P="$TEST_DIR/project"
 
+# Gating must be probed with a command that a SURVIVING rule denies. Using a
+# dropped rule here (this group used to use 'cd /tmp && ls') would make every
+# assertion trivially "allowed" and silently stop testing gating at all.
 echo "Gating"
-assert_allowed "no .coco anywhere -> allow" "$TEST_DIR/bare" 'cd /tmp && ls'
-assert_denied  "project root -> active" "$P" 'cd /tmp && ls' "cd"
-assert_denied  "nested pkg dir -> active (walks up)" "$P/pkg" 'cd /tmp && ls' "cd"
-assert_denied  "deeply nested dir -> active" "$P/pkg/deep" 'cd /tmp && ls' "cd"
+assert_allowed "no .coco anywhere -> allow" "$TEST_DIR/bare" 'TRACKER=coco-tracker; $TRACKER list'
+assert_denied  "project root -> active" "$P" 'TRACKER=coco-tracker; $TRACKER list' "variable"
+assert_denied  "nested pkg dir -> active (walks up)" "$P/pkg" 'TRACKER=coco-tracker; $TRACKER list' "variable"
+assert_denied  "deeply nested dir -> active" "$P/pkg/deep" 'TRACKER=coco-tracker; $TRACKER list' "variable"
 
 echo ""
-echo "Tracker invocation form"
-assert_denied "tracker.sh by path" "$P" 'bash ${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh list' "coco-tracker"
-assert_denied "tracker.sh absolute path" "$P" 'bash /Users/dave/x/lib/tracker.sh ready' "coco-tracker"
-assert_denied "sourced tracker.sh" "$P" 'source lib/tracker.sh' "coco-tracker"
+echo "Surviving rule: tracker in a shell variable"
 assert_denied "TRACKER var assignment" "$P" 'TRACKER=coco-tracker; $TRACKER list' "variable"
+assert_denied "lowercase-prefixed tracker var" "$P" 'MY_TRACKER_BIN=coco-tracker; $MY_TRACKER_BIN ready' "variable"
+assert_allowed "unrelated var assignment" "$P" 'EPIC=epic-001; coco-tracker list --epic "$EPIC"'
 
 echo ""
-echo "Space-separated subcommands"
-assert_denied "epic create" "$P" 'coco-tracker epic create "Title"' "hyphenated"
-assert_denied "dep add" "$P" 'coco-tracker dep add task-1 --blocks task-2' "hyphenated"
-assert_denied "session start" "$P" 'coco-tracker session start "work"' "hyphenated"
+echo "Surviving rule: multiline tracker command"
+assert_denied "multiline tracker command" "$P" 'coco-tracker create --epic e1 --title "Sub-Phase 1
+(Cloud)"' "one line"
+assert_denied "multiline tracker metadata" "$P" 'coco-tracker update t1 --metadata '"'"'{"a": 1,
+"b": 2}'"'"'' "one line"
+assert_allowed "single-line tracker call" "$P" 'coco-tracker create --epic e1 --title "Setup (Cloud)"'
+assert_allowed "multiline heredoc, no tracker" "$P" 'python - <<EOF
+print(1)
+EOF'
+
+echo ""
+echo "Dropped rules (must now be allowed)"
+# Permission-prompt avoidance -- redundant under autonomous / skip-permissions.
+assert_allowed "leading cd &&" "$P" 'cd /Users/dave/Projects/Other/Cadence && cp a b'
+assert_allowed "mid-command cd &&" "$P" 'ls; cd /tmp && ls'
+assert_allowed "cd alone" "$P" 'cd /tmp'
+assert_allowed "cd with semicolon" "$P" 'cd /tmp; ls'
+# Cosmetic -- these commands run correctly.
+assert_allowed "two tracker calls, semicolon" "$P" 'coco-tracker ready; coco-tracker list'
+assert_allowed "two tracker calls, &&" "$P" 'coco-tracker ready && coco-tracker list'
+assert_allowed "tracker piped to python" "$P" 'coco-tracker list --json | python3 -c "import sys"'
+assert_allowed "tracker piped to jq" "$P" 'coco-tracker list --json | jq ".[].id"'
+# Fail loudly on their own -- the model sees a real error and recovers.
+assert_allowed "tracker.sh by path" "$P" 'bash ${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh list'
+assert_allowed "tracker.sh absolute path" "$P" 'bash /Users/dave/x/lib/tracker.sh ready'
+assert_allowed "sourced tracker.sh" "$P" 'source lib/tracker.sh'
+assert_allowed "epic create (space-separated)" "$P" 'coco-tracker epic create "Title"'
+assert_allowed "dep add (space-separated)" "$P" 'coco-tracker dep add task-1 --blocks task-2'
+assert_allowed "session start (space-separated)" "$P" 'coco-tracker session start "work"'
 assert_allowed "epic-create is fine" "$P" 'coco-tracker epic-create "Title"'
 assert_allowed "dep-add is fine" "$P" 'coco-tracker dep-add task-1 --blocks task-2'
 
 echo ""
-echo "Tracker call shape"
-assert_denied "two tracker calls, semicolon" "$P" 'coco-tracker ready; coco-tracker list' "own Bash tool call"
-assert_denied "two tracker calls, &&" "$P" 'coco-tracker ready && coco-tracker list' "own Bash tool call"
-assert_denied "multiline tracker command" "$P" 'coco-tracker create --epic e1 --title "Sub-Phase 1
-(Cloud)"' "one line"
-assert_denied "tracker piped to python" "$P" 'coco-tracker list --json | python3 -c "import sys"' "jq"
-assert_allowed "tracker piped to jq" "$P" 'coco-tracker list --json | jq ".[].id"'
-assert_allowed "single tracker call" "$P" 'coco-tracker create --epic e1 --title "Setup (Cloud)"'
-
-echo ""
-echo "cd compounds"
-assert_denied "leading cd &&" "$P" 'cd /Users/dave/Projects/Other/Cadence && cp a b' "cd"
-assert_denied "mid-command cd &&" "$P" 'ls; cd /tmp && ls' "cd"
-assert_allowed "cd alone" "$P" 'cd /tmp'
-assert_allowed "cd with semicolon" "$P" 'cd /tmp; ls'
-
-echo ""
-echo "Dropped cosmetic rules (must now be allowed)"
+echo "Previously dropped cosmetic rules (must stay allowed)"
 assert_allowed "plain && chaining" "$P" 'uv run pytest -q && echo done'
 assert_allowed "|| chaining" "$P" 'make build || make clean'
 assert_allowed "command substitution in echo" "$P" 'echo "Branch: $(git branch --show-current)"'
 assert_allowed "for loop" "$P" 'for f in *.py; do ruff check "$f"; done'
-assert_allowed "multiline heredoc, no tracker" "$P" 'python - <<EOF
-print(1)
-EOF'
 assert_allowed "mutation-test style chain" "$P" 'cp a.py a.py.bak && uv run pytest -q; mv a.py.bak a.py'
 
 echo ""
