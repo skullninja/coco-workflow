@@ -40,6 +40,8 @@ Extract:
 2. **Sub-Phases** -- each `## Sub-Phase N:` section becomes a tracker task
 3. **Parallel markers** -- `[P]` tasks within a sub-phase
 4. **Dependencies** -- parse "Dependencies & Execution Order" section
+5. **`**owns_files**:`** annotations -- file globs per sub-phase (optional)
+6. **`**test_plan**:`** annotations -- `FR-###` IDs and levels per sub-phase (optional; `none` means "no tests, decided")
 
 ### Step 2: Create Tracker Epic
 
@@ -62,6 +64,14 @@ If tasks.md includes `owns_files` annotations (file ownership per sub-phase), in
 ```bash
 coco-tracker create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"]}'
 ```
+
+If tasks.md includes `test_plan` annotations, include them too. This is the sub-phase's test budget -- the executor reads it to decide which tests to write, and the PR body reports the diff against it:
+
+```bash
+coco-tracker create --epic "{epic-id}" --title "Sub-Phase {N}: {title}" --description "{single-line summary; task list}" --priority {priority} --metadata '{"sub_phase": N, "issue_key": null, "feature_branch": "{current-branch-name}", "owns_files": ["src/auth/**", "tests/auth/**"], "test_plan": [{"fr": "FR-001", "level": "unit"}, {"fr": "FR-002", "level": "integration"}]}'
+```
+
+For a sub-phase annotated `**test_plan**: none`, pass `"test_plan": []` -- an empty array records "no tests, decided", while an absent key reads as "not yet determined".
 
 ### Step 4: Set Dependencies
 
@@ -234,8 +244,12 @@ When `tasks.md` doesn't exist but `design.md` does (light-tier feature):
    coco-tracker epic-create "{feature-name}"
    ```
    ```bash
-   coco-tracker create --epic "{epic-id}" --title "{feature-name}: {design overview}" --description "{single-line acceptance criteria}" --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true}'
+   coco-tracker create --epic "{epic-id}" --title "{feature-name}: {design overview}" --description "{single-line acceptance criteria}" --metadata '{"issue_key": null, "feature_branch": "{current-branch-name}", "light_tier": true, "test_strategy": "{single-line TDD verdict and not-worth-testing list}"}'
    ```
+
+   Light-tier designs have no `FR-###` IDs, so there is no `test_plan` array. Carry the design's `## Test Strategy` across as a single-line `test_strategy` string instead -- there is no tasks.md for the executor to read it from. Collapse it to one line (semicolons between items); never embed a literal newline in `--metadata`. Code review reads the design and the PR body directly, not task metadata.
+
+   If the design has no `## Test Strategy` section, omit the key rather than inventing one.
 3. No dependencies to set (single task)
 4. Run issue tracker bridge (Step 5) as normal -- creates one issue
 5. Run verification (Step 6) and report (Step 7) as normal

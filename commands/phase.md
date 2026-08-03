@@ -152,6 +152,10 @@ After all sub-phases complete, `/coco:loop` will have already created the featur
 
    {list of issue PRs merged}
 
+   ## Test Value Summary
+
+   {planned tests written / total planned; count of unplanned tests carried in}
+
    ## Test Results
 
    {test results}

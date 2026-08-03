@@ -166,7 +166,7 @@ quality:
 
 ## Commands and Skills
 
-### Commands (13)
+### Commands (14)
 
 Human-facing entry points. These show up in `/` autocomplete.
 
@@ -183,6 +183,7 @@ Human-facing entry points. These show up in `/` autocomplete.
 | `/coco:status` | Execution state and parallel opportunities |
 | `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco:sync` | Reconcile tracker with issue tracker |
+| `/coco:test-audit` | Score the test suite, report low-value tests |
 | `/coco:planning-session` | Guided planning (strategic / tactical / operational) |
 | `/coco:planning-triage` | Score and disposition bugs, features, feedback |
 
@@ -245,10 +246,10 @@ For existing projects, run `/coco:prd audit` after setup to generate a PRD from 
 coco-workflow/                          # This repo (Claude Code plugin)
   .claude-plugin/plugin.json            # Plugin manifest
   .claude-plugin/marketplace.json       # Marketplace manifest
-  commands/                             # 13 slash commands
+  commands/                             # 14 slash commands
   skills/                               # 6 AI-selected skills (interview, design, tasks, import, hotfix, execute)
-  agents/                               # 3 agents (code-reviewer, task-executor, pre-commit-tester)
-  hooks/hooks.json                      # Claude Code hooks (quality, session memory, tracker guards)
+  agents/                               # 4 agents (code-reviewer, task-executor, pre-commit-tester, test-auditor)
+  hooks/hooks.json                      # Claude Code hooks (quality, session memory)
   git-hooks/                            # Git hooks (commit-msg, pre-commit)
   lib/tracker.sh                        # Built-in task tracker
   templates/                            # Default templates

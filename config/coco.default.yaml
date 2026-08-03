@@ -80,6 +80,24 @@ testing:
   # Test timeout in seconds
   test_timeout: 180
 
+  # How code review treats low-value tests: off | advisory | blocking
+  # blocking  = objectively bad tests (tautologies, mock-only assertions,
+  #             duplicates, framework tests) are critical findings and block merge
+  # advisory  = same findings reported as warnings
+  # off       = skip the Test Value criterion entirely
+  # Note: judgment calls (naming, structure, verbosity) are ALWAYS warnings
+  # regardless of this setting. Only diff-decidable triggers can block.
+  test_value_enforcement: "blocking"
+
+  # Where /coco:test-audit writes its reports
+  test_audit_report_dir: "docs/test-audit"
+
+  # Paths /coco:test-audit skips
+  test_audit_exclude:
+    - "**/fixtures/**"
+    - "**/__snapshots__/**"
+    - "**/testdata/**"
+
 loop:
   # Maximum iterations before the loop pauses (safety limit)
   max_iterations: 20

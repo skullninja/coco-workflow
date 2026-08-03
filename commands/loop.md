@@ -215,6 +215,10 @@ gh pr create --base main --head "$FEATURE_BRANCH" --title "{feature-name}: {epic
 
 {list of all issue PRs merged into this feature branch, with links}
 
+## Test Value Summary
+
+{planned tests written / total planned across all sub-phases; count of unplanned tests carried in from issue PRs}
+
 ## Test Results
 
 {full test suite results}

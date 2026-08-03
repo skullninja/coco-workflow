@@ -86,8 +86,24 @@ If `issue_key` is missing and provider is configured, STOP and fix metadata.
 
 Read the sub-phase tasks from `specs/{feature}/tasks.md` and implement:
 
-**a. Write Tests First** (if TDD requested in design)
-- Create test files, verify they fail (RED)
+**a. Write Tests First**
+
+Read the test budget, in this order:
+1. `test_plan` in the task's metadata (`coco-tracker show {task-id}`)
+2. `## Test Strategy` in `specs/{feature}/design.md`
+3. `test_strategy` in task metadata (light-tier features)
+
+Write exactly the tests the budget calls for -- one per `FR-###` marked `Test? = yes`, at the level named there. Create test files, verify they fail (RED).
+
+- **Write no test for an FR marked `Test? = no`**, or for anything under **Not worth testing**. That was a design decision, not an oversight.
+- Name tests for the behavior and failure mode they defend (`test_rejects_expired_token_with_401`), not for the function under test (`test_validate_token`). The name is the anchor everything downstream reads.
+- If you find you need a test the budget does not call for, **write it and proceed** -- do not block. Record it in the PR body's Test Value table with a one-line justification naming the concrete defect it catches.
+
+**If `TDD: no`**, still write the planned tests -- write them after the implementation rather than before. Skip the RED step, not the tests.
+
+**If the Test Strategy has no FR table** (light-tier features have no `FR-###` IDs -- they carry only a TDD verdict and a **Not worth testing** list), fall back to the acceptance criteria: write one test per criterion that is not covered by the **Not worth testing** list. Do not read the absent table as "no tests required."
+
+**If no Test Strategy can be found at all** (legacy design predating the section), write tests for the acceptance criteria only, and note in the PR body that no Test Strategy was available.
 
 **b. Implement Code**
 - Write implementation to make tests pass (GREEN)
@@ -175,8 +191,19 @@ Resolves {issue_key}
 ## Test Results
 
 {test output summary}
+
+## Test Value
+
+| Test | Defends | FR | Planned? |
+|------|---------|----|----------|
+| {test name} | {concrete failure mode it catches} | {FR-###} | yes |
+| {test name} | {failure mode} | -- | NO -- {why it was worth writing anyway} |
+
+Planned: {n}/{m} written. Unplanned: {k}.
 EOF
 ```
+
+The Test Value table is **required** whenever the diff adds or changes tests. It is the code reviewer's input -- it reads this table against the diff. Omit the section entirely only when the diff touches no test files.
 
 **Issue ID in PR body is MANDATORY:**
 - For Linear issues: `Resolves {ISSUE-KEY}` (e.g., `Resolves AUTH-3`)
@@ -343,6 +370,13 @@ At session end:
 ```bash
 coco-tracker session-end
 ```
+
+## Rules
+
+- Write the tests the budget calls for, and no others. Unplanned tests are recorded in the PR body, never suppressed and never written casually
+- Name tests for the failure mode they defend (`test_rejects_expired_token_with_401`), not the function under test
+- Never add a test solely to raise a coverage number or to accompany a diff -- a test that defends nothing costs review time, CI time, and every future refactor
+- An FR marked `Test? = no` is a decision already made. Do not relitigate it while executing
 
 ## Error Handling
 
