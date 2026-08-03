@@ -53,8 +53,10 @@ In Claude Code, add the marketplace and install the plugin:
 
 ```
 /plugin marketplace add skullninja/coco-workflow
-/plugin install coco@coco-workflow
+/plugin install coco@coco-local
 ```
+
+> The marketplace registers as **`coco-local`** — that name comes from `.claude-plugin/marketplace.json`, not from the repo you add it from. It is the same name `scripts/setup.sh` uses for git submodule installs, so both installation paths resolve to the same plugin ID.
 
 Then, in your project:
 
@@ -224,7 +226,7 @@ In Claude Code:
 
 ```
 /plugin marketplace add skullninja/coco-workflow
-/plugin install coco@coco-workflow
+/plugin install coco@coco-local
 ```
 
 In your project:
