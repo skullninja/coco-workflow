@@ -201,7 +201,7 @@ Light mode: `design` generates a minimal design (single user story, 3-5 acceptan
 
 Two types of hooks in separate directories:
 - **Claude Code hooks** (`hooks/hooks.json`): JSON config pointing at `command`-type scripts in `hooks/scripts/`. Events defined:
-  - `PreToolUse` (matcher `Bash`) -- Denies commands that would actually break (tracker misuse, `cd &&` compounds)
+  - `PreToolUse` (matcher `Bash`) -- Denies the two command forms that fail *silently* (tracker in a shell variable, multiline tracker command)
   - `PostToolUse` (matcher `Write|Edit`) -- Runs quality checks (lint, typecheck)
   - `PreCompact` -- Captures session state to `.coco/state/session-memory.md`
   - `SessionStart` -- Restores context from session memory
@@ -218,7 +218,28 @@ Never convert it to a `prompt` hook. A prompt hook's sub-model returns `{ok, rea
 
 blocks only that call and hands the reason back to Claude, which rewrites and continues.
 
-Scope is deliberately narrow: the hook denies only things that genuinely fail (tracker misuse, `cd &&`). Broad style rules like `&&` chaining were removed -- they fired constantly on legitimate work for no functional gain.
+Re-verified against CLI 2.1.220: `permissionDecision: "deny"` sets `permissionBehavior="deny"` plus a `blockingError`, and never `preventContinuation` -- which is assigned only in the prompt-hook path. The reason survives too (`blockingError: hookSpecificOutput.permissionDecisionReason || reason || "Blocked by hook"`). Prompt hooks have since gained a `continueOnBlock: true` escape hatch, but it is still the wrong tool for a per-call denial.
+
+### Why the scope is now two rules
+
+A recoverable deny is **not free**. It costs a turn, and repeated denials starve `/coco:loop`'s `no_progress` counter until the circuit breaker fires and exits the loop -- which reads as "the hook stopped execution" even though nothing halted.
+
+So the bar is: deny only what fails **silently**, leaving the model no error to recover from.
+
+| Kept | Silent failure |
+|------|----------------|
+| tracker assigned to a shell variable | expansion resolves the path wrongly |
+| multiline `coco-tracker` command | `--metadata` becomes invalid JSON; `lib/tracker.sh` discards it as `{}` and continues |
+
+Dropped, with regression coverage in `tests/test-hooks.sh` asserting they stay allowed:
+
+- `cd &&` compounds -- only ever avoided a permission prompt, which autonomous / skip-permissions modes already handle
+- 2+ tracker calls in one command, and tracker piped to python -- cosmetic; both run correctly
+- `tracker.sh` by path, and space-separated subcommands (`epic create`) -- fail loudly with a clear error the model recovers from
+
+Earlier, broad style rules like `&&` chaining were removed for the same reason: they fired constantly on legitimate work for no functional gain.
+
+**Gating tests must probe with a surviving rule.** They previously used `cd /tmp && ls`; when that rule was dropped, every gating assertion would have become trivially "allowed" and stopped testing gating at all. They now probe with the tracker-variable form.
 - **Git hooks** (`git-hooks/`): Shell scripts installed to `.git/hooks/` by `setup.sh`
   - `commit-msg.sh` -- Commit message validation
   - `pre-commit.sh` -- Build check + UI change detection
@@ -274,7 +295,7 @@ bash tests/test-tracker.sh
 bash tests/test-hooks.sh
 ```
 
-`test-tracker.sh` runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. `test-hooks.sh` runs 29 tests covering the PreToolUse guardrail: project-root gating from nested directories, each deny rule, and regression coverage asserting the dropped cosmetic rules stay allowed.
+`test-tracker.sh` runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. `test-hooks.sh` runs 32 tests covering the PreToolUse guardrail: project-root gating from nested directories, both surviving deny rules, and regression coverage asserting every dropped rule stays allowed. Most of that suite is the dropped-rule coverage -- trimming the hook moved assertions from "denied" to "allowed" rather than deleting them.
 
 ## Development Notes
 
@@ -287,14 +308,19 @@ bash tests/test-hooks.sh
 
 ## Bash Command Guidelines
 
-To minimize Claude Code permission prompts, follow these rules when generating bash commands. Most are **style guidance** -- prefer them, but they will not block you. Only the tracker rules and `cd &&` compounds are enforced by the PreToolUse hook; those are denied because they genuinely fail.
+**Enforced by the PreToolUse hook** (these fail silently, so they are denied):
 
-- **No `$()` in echo/printf**: Don't add `echo "Created: $(git branch --show-current)"` confirmations. Git commands already print useful output. If you need a variable, assign it on a separate line first.
-- **No multiline strings**: Keep all `--description`, `--title`, `--metadata` values on a single line. Use semicolons to separate items.
-- **No `\` line continuations**: Write each command on one line. Long lines are fine.
-- **No `cd &&` compounds**: Never combine `cd /path && command` in a single Bash call. Instead, use separate Bash tool calls — one for `cd` (if needed) and one for the command. Compound `cd && git` triggers a "bare repository attack" security prompt.
-- **Minimize command chaining**: Prefer separate Bash tool calls over `&&`-chained commands when the commands are independent. This gives clearer output and avoids prompts about multi-command execution.
-- **No `for` loops or multiline blocks**: Instead of `for x in ...; do ... done`, use separate Bash tool calls for each iteration. Multiline commands trigger a "Command contains newlines" confirmation prompt.
-- **Use `--body-file -` for `gh` commands**: Instead of `--body "$(cat <<'EOF'...EOF)"`, use `--body-file - <<'EOF'...EOF`. The `$()` pattern triggers a command substitution warning prompt. The heredoc-to-stdin pattern avoids it.
-- **Always use `coco-tracker`**: The plugin installs a `coco-tracker` executable on PATH. Call it directly — e.g., `coco-tracker ready --json`. Do not use `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`, `source`, hardcoded absolute paths, or variable assignment (`TRACKER=...; $TRACKER ...`). These trigger permission prompts, expansion bugs, and path-resolution failures.
-- **One tracker call per Bash tool invocation**: Never put multiple `coco-tracker` calls in a single Bash command (via newlines, semicolons, or any other means). Each call must be a separate Bash tool call.
+- **Never assign the tracker to a shell variable**: `TRACKER=...; $TRACKER list` breaks path resolution. Call the bare command: `coco-tracker ready --json`.
+- **Never write a multiline `coco-tracker` command**: newlines truncate titles and turn `--metadata` into invalid JSON, which the tracker silently discards as `{}`. Keep the command and every argument value on one line; separate list items with `; `.
+
+**Style guidance** — prefer these, but nothing blocks you. They reduce permission prompts in interactive sessions; under autonomous or skip-permissions modes they are purely cosmetic:
+
+- **Always use `coco-tracker`**: call it directly rather than `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`, `source`, or a hardcoded absolute path. Those fail with a clear error rather than silently, so they are no longer denied — but the bare command is still correct.
+- **Hyphenated subcommands**: `epic-create`, `dep-add`, `session-start`. The space-separated forms just produce a usage error.
+- **One tracker call per Bash tool invocation**: batching works, but separate calls give clearer error attribution.
+- **Use jq, not python, for tracker JSON**: `list --json` returns an array (iterate with `jq '.[]'`); `show ID` and `ready --json` return a single object.
+- **No `$()` in echo/printf**: git commands already print useful output. Assign to a variable on its own line if needed.
+- **No `\` line continuations**: write each command on one line. Long lines are fine.
+- **Avoid `cd &&` compounds**: `cd /path && command` can trigger a "bare repository attack" security prompt interactively. Issue the `cd` and the command as separate Bash tool calls.
+- **Minimize command chaining** and **avoid `for` loops / multiline blocks**: separate Bash tool calls give clearer output.
+- **Use `--body-file -` for `gh` commands**: `--body-file - <<'EOF'...EOF` instead of `--body "$(cat <<'EOF'...EOF)"`.

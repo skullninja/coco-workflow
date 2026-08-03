@@ -372,6 +372,14 @@ loop:
 **`git-hooks/commit-msg.sh`** -- Validates commit message format per config
 **`git-hooks/pre-commit.sh`** -- Build check and UI change detection per config
 
+### Bash Guardrail
+
+The `PreToolUse` hook blocks exactly two `coco-tracker` command forms — assigning the tracker to a shell variable, and spanning a tracker command across multiple lines. Both fail *silently*: the first resolves the path wrongly, the second turns `--metadata` into invalid JSON that the tracker discards as `{}` without erroring.
+
+Everything else is allowed. Rules that only avoided permission prompts (`cd &&` compounds) are redundant once you run with autonomous or skip-permissions mode, and rules for commands that fail loudly were dropped because the error message already tells Claude what to fix.
+
+The narrow scope is deliberate. A blocked call is recoverable — Claude rewrites and continues — but it still costs a turn, and repeated blocks starve `/coco:loop`'s no-progress counter until the circuit breaker exits the loop.
+
 ### Planning Sessions
 
 | Type | Cadence | Purpose | Command |
