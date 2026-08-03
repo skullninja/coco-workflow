@@ -59,9 +59,14 @@ git checkout -b fix/{short-name}
 ### 3. Implement Fix
 
 - Understand the issue (read related code, reproduce if bug)
-- Write tests if appropriate (especially for bugs -- reproduce the bug in a test first)
+- **For a bug: reproduce it in a failing test first.** A bug that shipped once is proof the failure mode is real and undefended -- that is the highest-value test there is, and it is the one case where a test is always worth writing
+- For a non-bug change (config, docs, a small refactor), write a test only if it defends a failure mode nothing else covers. Do not add a test purely to accompany the diff
 - Implement the fix
 - Run test suite to verify no regressions
+
+Hotfixes have no design.md and therefore no test budget. Every test here is technically "unplanned" -- that is expected and is not a finding. Report the Test Value table with `FR: n/a`.
+
+**If this hotfix acts on `/coco:test-audit` findings** (the user asked to "fix TA-3", or similar), cite every finding ID it resolves in the PR body under a `## Resolves Audit Findings` heading, one line per ID with the file and what changed. Code review reads those IDs and will not re-flag the removed coverage -- without them, a test-deletion PR is reviewed as if the coverage were dropped for no reason.
 
 ### 4. Pre-Commit Validation
 
@@ -105,8 +110,22 @@ Resolves {issue_key}
 ## Test Results
 
 {test output summary}
+
+## Test Value
+
+| Test | Defends | FR | Planned? |
+|------|---------|----|----------|
+| {test name} | {concrete failure mode it catches} | n/a | n/a (hotfix) |
+
+## Resolves Audit Findings
+
+- {TA-N}: {file} -- {what changed and why the finding applies}
 EOF
 ```
+
+Include the Test Value table only if the hotfix adds or changes tests. `FR` and `Planned?` are always `n/a` for hotfixes -- there is no design to plan against.
+
+Include `## Resolves Audit Findings` only when acting on `/coco:test-audit` findings. Omit the whole section otherwise.
 
 If `github.use_projects` is true and the issue was added to a project, add the PR to the project board:
 

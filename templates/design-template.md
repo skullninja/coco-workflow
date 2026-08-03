@@ -66,6 +66,36 @@
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
+## Test Strategy *(mandatory)*
+
+<!--
+  This section is the test budget. Every later stage measures actual tests
+  against it: the tasks skill generates test tasks from it, the executor
+  writes exactly these tests, and code review flags deviations.
+
+  One row per FR-### above. Do not omit an FR -- an untested requirement is a
+  deliberate decision recorded here, not an oversight.
+
+  "Failure mode defended" must name a concrete defect the test would catch.
+  "Validates FR-001" is not a failure mode. "Expired token accepted as valid" is.
+-->
+
+**TDD**: [yes | no]
+**Levels in play**: [e.g., unit (domain logic), integration (HTTP boundary)]
+
+| FR | Test? | Level | Failure mode defended |
+|----|-------|-------|-----------------------|
+| FR-001 | yes | unit | [specific defect this catches] |
+| FR-002 | yes | integration | [specific defect this catches] |
+| FR-003 | no | -- | -- |
+
+### Not worth testing
+
+<!-- Every FR marked "Test? = no" needs an entry here, plus anything else
+     a reasonable implementer might otherwise write a test for. -->
+
+- **[behavior]**: [why the cost of testing exceeds the risk of not testing]
+
 ## Technical Approach
 
 <!--
@@ -75,7 +105,7 @@
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
 **Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Testing**: [test framework only, e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION -- what gets tested is decided in Test Strategy above]
 **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
 **Project Type**: [single/web/mobile - determines source structure]
 **Performance Goals**: [domain-specific or NEEDS CLARIFICATION]

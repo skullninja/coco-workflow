@@ -153,6 +153,7 @@ specs/{feature}/
 | `/coco:sync` | Reconcile tracker and issue tracker state |
 | `/coco:dashboard` | Compact visual progress dashboard with progress bar and dependency graph |
 | `/coco:status` | Show detailed execution status and parallel opportunities |
+| `/coco:test-audit` | Score the test suite against the value rubric, report low-value tests |
 | `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
 
 ## Coco Tracker
@@ -288,7 +289,7 @@ Configure in `.coco/config.yaml` under `loop:`.
 2. **Claim task**: `coco-tracker update <id> --status in_progress`
 3. **Create issue branch**: `git checkout -b feature/{name}/{ISSUE-KEY}` (if PRs enabled)
 4. **Bridge to issue tracker (start)**: Update issue to "In Progress"
-5. **TDD implementation**: Write tests (RED) -> implement (GREEN) -> verify
+5. **TDD implementation**: Write the tests the design's Test Strategy calls for (RED) -> implement (GREEN) -> verify
 6. **Pre-commit validation**: Check staged files against UI patterns; invoke tester if matches
 7. **Commit**: `Brief description. Completes {issue_key}` (traceability -- does NOT resolve issue)
 8. **Create PR**: `gh pr create` with `Resolves {ISSUE-KEY}` in body; issue moves to "In Review"
@@ -317,6 +318,69 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Issue key at END of first line with `Completes` prefix
 - Bracket format `[ISSUE-X]` is rejected
 - Exempt patterns configurable in `.coco/config.yaml`
+
+---
+
+## Test Value
+
+TDD tells you to write a test before the code. It does not tell you *which* tests are worth writing, and left unchecked that produces suites that grow faster than the behavior they defend — slow, brittle, and expensive to refactor around.
+
+Coco handles both directions with one mechanism: **the design commits to a test budget, and every later stage measures actual tests against it.**
+
+### The budget
+
+`design.md` carries a mandatory `## Test Strategy` section keyed on the `FR-###` requirement IDs:
+
+```markdown
+| FR | Test? | Level | Failure mode defended |
+|----|-------|-------|-----------------------|
+| FR-001 | yes | unit | expired token accepted as valid |
+| FR-003 | no | -- | -- |
+
+### Not worth testing
+- **Label padding**: cosmetic, caught immediately in dev
+```
+
+Deciding what *not* to test is part of the design. `Failure mode defended` must name a concrete defect — "validates FR-001" is not a failure mode.
+
+Light-tier features emit a degenerate form (a TDD verdict plus a not-worth-testing list, no table). They do not skip it — small features are where over-testing is most wasteful.
+
+### How it is enforced
+
+| Stage | What happens |
+|-------|--------------|
+| `tasks` | Generates one test task per `Test? = yes` FR. Consistency analysis pass **G** flags both under-testing and over-testing at HIGH severity |
+| `import` | Carries `test_plan` into tracker task metadata |
+| `execute` / `task-executor` | Writes exactly the planned tests. An unplanned test is **written and recorded**, never blocked — it appears in the PR body's `## Test Value` table with a justification |
+| `code-reviewer` | Reads that table against the diff. Objectively bad tests are **critical** and block merge |
+| `/coco:test-audit` | Sweeps the existing suite against the same rubric |
+
+Write-time is advisory, review-time blocks. That keeps the executor from fighting itself mid-task while still putting a real gate where a human already looks.
+
+### What blocks a merge
+
+Only findings decidable from the diff alone — tautologies, mock-only assertions, tests of third-party libraries, exact duplicates, and tests of behavior the design explicitly excluded. Everything else about tests (naming, structure, "this should be a unit test") stays a warning.
+
+That line matters. A blanket "test smells are critical" rule would burn all three review-fix iterations on ordinary PRs and escalate to a human every time, making the pipeline worse rather than better.
+
+Configure with `testing.test_value_enforcement`: `blocking` (default), `advisory` (report as warnings), or `off`.
+
+### Auditing an existing suite
+
+```bash
+/coco:test-audit                # whole repo
+/coco:test-audit tests/auth     # scoped
+/coco:test-audit --summary      # terminal only, no report file
+```
+
+The audit is **read-only** — it writes one report and never touches a test. Findings get IDs (`TA-1`, `TA-2`), and you act on them by asking Claude to "fix TA-1 and TA-4", which routes to the hotfix skill: one branch, one PR, one review per fix.
+
+Verdicts are Keep, Keep-rewrite, Consolidate, Delete, and Escalate. Two safeguards are worth knowing:
+
+- **Keep-rewrite over Delete.** A test that defends a real failure mode badly gets rewritten, not deleted. Deleting loses real coverage; leaving it loses nothing but misleads every later reader.
+- **Escalate never auto-deletes.** A test introduced by a bugfix commit (`git log -S`) is proof the failure mode is real and was once undefended. So is the sole defender of a security or data-integrity property. Those go to a human.
+
+The rubric lives at `templates/test-value-rubric.md` and is overridable per project at `.coco/templates/test-value-rubric.md`.
 
 ---
 
@@ -424,7 +488,7 @@ git push
 
 ## Quick Reference
 
-### Command Table (13 commands)
+### Command Table (14 commands)
 
 | Command | Purpose |
 |---------|---------|
@@ -439,6 +503,7 @@ git push
 | `/coco:status` | Show detailed execution state and opportunities |
 | `/coco:standup` | Daily standup -- done, in-progress, blocked, metrics |
 | `/coco:sync` | Reconcile tracker and issue tracker state |
+| `/coco:test-audit` | Score the test suite, report low-value tests |
 | `/coco:planning-session` | Start a planning session |
 | `/coco:planning-triage` | Score and disposition an item |
 
@@ -502,3 +567,4 @@ git push
 | Single-issue hotfix | hotfix skill |
 | Phase orchestration | `/coco:phase` |
 | Sync drift | `/coco:sync` |
+| Test suite feels bloated or slow | `/coco:test-audit`, then hotfix skill per finding |

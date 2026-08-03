@@ -64,16 +64,23 @@ Fill the design template following this workflow:
 4. Generate testable Functional Requirements (use reasonable defaults; document assumptions)
 5. Define measurable, technology-agnostic Success Criteria
 6. Identify Key Entities (if data involved)
+7. Fill the Test Strategy section -- this is the **test budget** every later stage measures against:
+   - Set `**TDD**: yes|no` and `**Levels in play**`
+   - One row per `FR-###` from step 4. **Omit no FR** -- an untested requirement is a decision recorded here, not an oversight
+   - `Failure mode defended` must name a concrete defect the test would catch ("expired token accepted as valid"), never a restatement of the requirement ("validates FR-001")
+   - Every FR marked `Test? = no` needs an entry under **Not worth testing** giving the reason
+   - Default to the cheapest level that catches the failure mode. Do not list the same failure mode at two levels -- pick one
+   - Be willing to write `Test? = no`. A design where every FR is tested at every level is a design that has not made any decisions
 
 **Technical planning phase** (HOW):
 
-7. Fill Technical Approach section (language, dependencies, storage, testing, platform, project type, performance, constraints)
-8. For each "NEEDS CLARIFICATION" in Technical Approach:
+8. Fill Technical Approach section (language, dependencies, storage, testing, platform, project type, performance, constraints). The `**Testing**` field names the *framework* only -- what gets tested was decided in step 7
+9. For each "NEEDS CLARIFICATION" in Technical Approach:
    - Research the unknown using web search or codebase exploration
    - Document findings in the Research & Decisions table (decision, rationale, alternatives)
-9. Fill Project Structure section with the concrete source layout
-10. Generate API Contracts section (if feature exposes APIs) -- inline endpoint contracts
-11. Fill Constitution Check section from constitution (if exists)
+10. Fill Project Structure section with the concrete source layout
+11. Generate API Contracts section (if feature exposes APIs) -- inline endpoint contracts
+12. Fill Constitution Check section from constitution (if exists)
     - Evaluate gates -- ERROR if violations are unjustified
     - Document any justified violations in the Complexity Tracking table
 
@@ -100,6 +107,8 @@ Run inline validation against these criteria (no separate checklist file):
 - [ ] All mandatory sections completed
 - [ ] No unresolved `[NEEDS CLARIFICATION]` markers remain (or max 3 critical ones)
 - [ ] Requirements are testable and unambiguous
+- [ ] Test Strategy has one row per FR, and every `Test? = no` has a reason under **Not worth testing**
+- [ ] Every `Failure mode defended` names a concrete defect, not a restatement of the requirement
 - [ ] Success criteria are measurable and technology-agnostic
 - [ ] Edge cases identified
 
@@ -170,10 +179,16 @@ When invoked for a **Light-tier** feature (1-3 files, single user story, no inte
    - One-paragraph overview
    - Single user story
    - 3-5 acceptance criteria
+   - A **Test Strategy** section (see 2 below) -- this one is not optional
    - No Technical Approach, API Contracts, Research & Decisions, Data Model, or Constitution Check sections
-2. **Skip clarification pass** (Step 6) entirely
-3. **Skip detailed validation** -- just verify the acceptance criteria are testable
-4. **Suggest next step**: Tell the user to ask Claude to "import the design into the tracker" (this triggers the `import` skill automatically -- skills are NOT slash commands, so never suggest `/coco:import`)
+2. **Degenerate Test Strategy**: light-tier features have no `FR-###` IDs, so skip the table. Emit only:
+   - `**TDD**: yes|no`
+   - A **Not worth testing** list naming what an implementer might otherwise test here and why it isn't worth it
+
+   Do not skip this. Light features are where over-testing is most wasteful -- a 3-file change does not need a test per file -- and the executor and code reviewer both read this section. Omitting it leaves them with no budget to measure against.
+3. **Skip clarification pass** (Step 6) entirely
+4. **Skip detailed validation** -- just verify the acceptance criteria are testable
+5. **Suggest next step**: Tell the user to ask Claude to "import the design into the tracker" (this triggers the `import` skill automatically -- skills are NOT slash commands, so never suggest `/coco:import`)
 
 Light mode is triggered by:
 - `/coco:planning-session tactical` routing to Light tier
@@ -185,7 +200,8 @@ Light mode is triggered by:
 - User Stories and Functional Requirements focus on **WHAT** users need and **WHY** -- avoid HOW (no tech stack, APIs, code structure in those sections)
 - Technical Approach, API Contracts, and Project Structure focus on **HOW** -- informed by the spec sections
 - Make informed guesses using industry standards; document assumptions
-- Every requirement must be testable
+- Every requirement must be testable -- but "testable" is not "must be tested". Which requirements are actually worth a test is decided in Test Strategy
+- Test Strategy is a budget, not a wish list. Deciding what not to test is as much a part of the design as deciding what to build
 - Success criteria: measurable, technology-agnostic, user-focused, verifiable
 - Use absolute paths throughout
 - ERROR on gate failures or unresolved clarifications in Technical Approach

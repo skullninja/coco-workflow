@@ -62,7 +62,7 @@ Organize tasks by user story. Every task MUST use this format:
 - **Sub-Phase 2: Foundational** - Blocking prerequisites (MUST complete before user stories)
 - **Sub-Phase 3+: User Stories** - One sub-phase per story in priority order (P1, P2, P3...)
   - Each includes: goal, independent test criteria, acceptance criteria (min 3), implementation tasks
-  - Tests are OPTIONAL (include only if design requests TDD)
+  - Test tasks are derived from `## Test Strategy` in design.md: one per `FR-###` marked `Test? = yes`, at the level named there, tagged with the FR ID. Create **no** test task for an FR marked `Test? = no` or for anything under **Not worth testing**
   - Order within story: Tests -> Models -> Services -> Endpoints -> Integration
 - **Final Sub-Phase: Polish** - Cross-cutting concerns
 
@@ -82,9 +82,14 @@ If `design.md` contains file-level implementation details (in the Project Struct
 ```markdown
 ### Sub-Phase 3: User Authentication
 **owns_files**: `src/auth/**`, `tests/auth/**`
+**test_plan**: `FR-001` (unit), `FR-002` (integration)
 ```
 
 These annotations are consumed by the `import` skill to populate task metadata, enabling worktree-based parallel execution. Only include `owns_files` when file paths are determinable from the design -- omit for sub-phases with unclear file boundaries.
+
+**Test Plan (`test_plan`) Annotations:**
+
+List the `FR-###` IDs this sub-phase must test, with the level from design.md Test Strategy. This is the sub-phase's **test budget** -- the executor reads it to decide which tests to write, then reports the result in the PR body's Test Value table, which is what code review reads. Emit `**test_plan**: none` for a sub-phase that intentionally has no tests, rather than omitting the line; an absent annotation reads as "unknown," while `none` reads as "decided."
 
 ### 5. Write tasks.md
 
@@ -133,11 +138,24 @@ Load from `{specs_dir}/{feature}/`:
 - Task ordering contradictions
 - Conflicting requirements
 
+**G. Test Plan Coherence**
+
+Compare test tasks in tasks.md against `## Test Strategy` in design.md. Both directions are findings:
+
+- *Under-testing*: an `FR-###` marked `Test? = yes` with no test task
+- *Over-testing*: a test task with no `FR` tag, or tagged to an `FR` marked `Test? = no`, or asserting something listed under **Not worth testing**
+- *Level drift*: a test task at a different level than the Test Strategy specifies (e.g. an integration test where the strategy says unit)
+- *Duplicate defense*: two or more test tasks naming the same failure mode
+
+Over-testing is a real finding, not a courtesy. A test that defends nothing still costs review time, CI time, and every future refactor that has to keep it passing. Report it with the same seriousness as a coverage gap.
+
+If design.md has no `## Test Strategy` section (legacy design, or generated before this section existed), report one MEDIUM finding saying so and skip pass G -- do not infer a strategy and grade against it.
+
 #### Severity Assignment
 
 - **CRITICAL**: Constitution violation, missing core artifact, requirement with zero coverage blocking baseline
-- **HIGH**: Duplicate/conflicting requirement, ambiguous security/performance attribute, untestable criterion
-- **MEDIUM**: Terminology drift, missing non-functional task coverage, underspecified edge case
+- **HIGH**: Duplicate/conflicting requirement, ambiguous security/performance attribute, untestable criterion, test task for an FR marked `Test? = no` (over-testing), missing test task for an FR marked `Test? = yes` (under-testing)
+- **MEDIUM**: Terminology drift, missing non-functional task coverage, underspecified edge case, test-level drift, missing Test Strategy section
 - **LOW**: Style/wording improvements, minor redundancy
 
 #### Analysis Output
@@ -152,8 +170,15 @@ Load from `{specs_dir}/{feature}/`:
 **Coverage Summary:**
 | Requirement Key | Has Task? | Task IDs | Notes |
 
+**Test Budget:**
+| FR | Test? (design) | Test task? | Level planned | Level in tasks | Verdict |
+|----|----------------|------------|---------------|----------------|---------|
+| FR-001 | yes | T010 | unit | unit | ok |
+| FR-003 | no | T015 | -- | unit | OVER |
+
 **Metrics:**
 - Total Requirements / Total Tasks / Coverage %
+- Test tasks planned / written / unplanned
 - Ambiguity Count / Duplication Count / Critical Issues Count
 
 **Next Actions:**
@@ -180,5 +205,6 @@ Output:
 - No vague acceptance criteria ("works correctly", "looks good")
 - Include exact file paths in every task description
 - Never hallucinate missing sections in the analysis
+- Never invent test tasks the Test Strategy does not call for -- an untested FR is a decision the design already made
 - Prioritize constitution violations (always CRITICAL)
 - Report zero analysis issues gracefully with coverage statistics

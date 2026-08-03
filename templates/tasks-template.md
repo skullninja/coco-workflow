@@ -3,7 +3,7 @@
 **Input**: Design documents from `specs/[feature-name]/`
 **Prerequisites**: design.md (required), data-model.md (optional)
 
-**Tests**: Test tasks are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Test tasks are derived from the `## Test Strategy` section of design.md - one test task per FR marked `Test? = yes`, at the level named there. Do NOT create test tasks for FRs marked `Test? = no` or for anything listed under **Not worth testing**.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -12,6 +12,13 @@
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
+
+## Sub-Phase Annotations
+
+Both are read by the `import` skill and written into tracker task metadata:
+
+- **`owns_files`**: globs this sub-phase exclusively modifies. Enables worktree-based parallel execution. Omit when file boundaries are unclear
+- **`test_plan`**: the `FR-###` IDs this sub-phase must test, with the level from design.md Test Strategy. Write `none` (not an omission) for a sub-phase that intentionally has no tests -- absent reads as "undetermined", `none` reads as "decided"
 
 ## Path Conventions
 
@@ -73,18 +80,22 @@
 
 **Goal**: [Brief description of what this story delivers]
 
+**owns_files**: `src/[area]/**`, `tests/[area]/**`
+**test_plan**: `FR-001` (unit), `FR-002` (integration)
+
 **Independent Test**: [How to verify this story works on its own]
 
 **Acceptance Criteria:**
 - [ ] [Specific testable outcome 1]
 - [ ] [Specific testable outcome 2]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested)
+### Tests for User Story 1 (per Test Strategy)
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+> One task per FR marked `Test? = yes` in design.md Test Strategy. Cite the FR in each task.
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name]
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name]
+- [ ] T010 [P] [US1] [FR-001] Test that [failure mode from Test Strategy] in tests/contract/test_[name]
+- [ ] T011 [P] [US1] [FR-002] Test that [failure mode from Test Strategy] in tests/integration/test_[name]
 
 ### Implementation for User Story 1
 
@@ -101,16 +112,19 @@
 
 **Goal**: [Brief description of what this story delivers]
 
+**owns_files**: `src/[area]/**`, `tests/[area]/**`
+**test_plan**: none
+
 **Independent Test**: [How to verify this story works on its own]
 
 **Acceptance Criteria:**
 - [ ] [Specific testable outcome 1]
 - [ ] [Specific testable outcome 2]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested)
+### Tests for User Story 2 (per Test Strategy)
 
-- [ ] T018 [P] [US2] Contract test for [endpoint]
-- [ ] T019 [P] [US2] Integration test for [user journey]
+- [ ] T018 [P] [US2] [FR-00N] Test that [failure mode from Test Strategy]
+- [ ] T019 [P] [US2] [FR-00N] Test that [failure mode from Test Strategy]
 
 ### Implementation for User Story 2
 
@@ -133,7 +147,7 @@
 - [ ] TXXX [P] Documentation updates
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization
-- [ ] TXXX [P] Additional tests (if requested)
+- [ ] TXXX [P] Any remaining Test Strategy rows not covered by a user story sub-phase
 - [ ] TXXX Final acceptance criteria validation
 
 ---
@@ -150,7 +164,7 @@
 
 ### Within Each User Story
 
-- Tests (if included) MUST be written and FAIL before implementation
+- Tests (per Test Strategy) MUST be written and FAIL before implementation
 - Models before services
 - Services before endpoints
 - Core implementation before integration

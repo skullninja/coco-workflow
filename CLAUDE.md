@@ -23,7 +23,8 @@ Five layers:
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** (invoked via `coco-tracker`) |
 | `config/coco.default.yaml` | Default configuration schema |
 | `commands/setup.md` | `/coco:setup` -- project initialization (config wizard, git hooks, permissions) |
-| `commands/` | 13 slash commands (setup, prd [greenfield/audit/derive], roadmap, phase, loop, execute, dashboard, standup, etc.) |
+| `commands/` | 14 slash commands (setup, prd [greenfield/audit/derive], roadmap, phase, loop, execute, dashboard, standup, test-audit, etc.) |
+| `commands/test-audit.md` | `/coco:test-audit` -- read-only test suite audit against the value rubric |
 | `skills/interview/SKILL.md` | Pre-design discovery interview (AI-selected) |
 | `skills/design/SKILL.md` | Feature design: spec + implementation plan (AI-selected) |
 | `skills/tasks/SKILL.md` | Task list generation with consistency analysis (AI-selected) |
@@ -33,6 +34,7 @@ Five layers:
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/task-executor.md` | Worktree-isolated task executor for parallel execution |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
+| `agents/test-auditor.md` | Read-only test scoring agent, dispatched by `/coco:test-audit` for large suites |
 | `hooks/scripts/post-tool-use-quality.sh` | PostToolUse hook -- runs lint/typecheck after file edits |
 | `hooks/scripts/pre-compact.sh` | PreCompact hook -- captures session state before compaction |
 | `hooks/scripts/session-start.sh` | SessionStart hook -- restores session context |
@@ -41,6 +43,7 @@ Five layers:
 | `git-hooks/pre-commit.sh` | Build check + UI change detection (reads config) |
 | `GUIDE.md` | Comprehensive workflow guide with deep-dives and quick reference |
 | `templates/` | Default templates for PRD, analysis, roadmap, discovery, design, tasks, constitution |
+| `templates/test-value-rubric.md` | Test value rubric -- verdicts and evidence used by review and audit |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
 | `tests/test-tracker.sh` | 53 tests for tracker.sh |
@@ -114,6 +117,34 @@ Key sections:
 - `testing` -- test command, timeout
 - `loop` -- max iterations, no-progress threshold, pause-on-error, parallel execution config
 - `pr` -- PR workflow, merge strategies, AI review config, branch naming
+
+## Test Value Contract
+
+Guards against both under- and over-testing with one mechanism: the design commits to a test budget, and every later stage measures actual tests against it.
+
+**The budget**: `design.md` carries a mandatory `## Test Strategy` section keyed on `FR-###` (the only globally-unique ID namespace in the design template — acceptance scenarios restart numbering per user story, so `AC-N` is ambiguous). One row per FR: `Test?`, `Level`, `Failure mode defended`, plus an explicit **Not worth testing** list.
+
+This section also resolves a long-standing bug: the RED steps in `commands/execute.md` and `agents/task-executor.md` were gated on `(if TDD requested in design)`, a signal nothing in the pipeline ever produced. TDD was opt-out by default despite the docs promising otherwise.
+
+| Stage | Enforcement |
+|-------|-------------|
+| `design` | Emits Test Strategy. Light mode emits a degenerate form (TDD verdict + not-worth-testing list, no table) — it must not be skipped |
+| `tasks` | One test task per `Test? = yes` FR. Consistency pass **G** flags under- and over-testing at HIGH |
+| `import` | Carries `test_plan` into task metadata; light tier carries `test_strategy` as a single-line string |
+| `execute` / `task-executor` | Writes planned tests. Unplanned tests are **written and recorded**, not blocked — they land in the PR body's `## Test Value` table |
+| `code-reviewer` | Reads that table against the diff. Objective triggers are critical and block merge |
+| `/coco:test-audit` | Read-only sweep of the existing suite against the same rubric |
+
+**Posture**: advisory at write-time, blocking at review. Blocking the executor mid-task makes it fight itself; the PR is where a human already looks.
+
+**Why the severity rewrite was necessary**: `agents/code-reviewer.md` listed `TestCoverage` as a critical category, but three separate rules ("critical means it will cause a production failure", "when in doubt classify as warning", "don't flag style preferences as critical") made that unreachable. Adding a `TestValue` category would have changed nothing. The fix broadens the *definition* of critical to include **verification integrity**, then carves out a closed set of diff-decidable triggers exempt from "when in doubt" — while leaving every judgment call a warning, so the review-fix loop doesn't exhaust on ordinary PRs.
+
+**Config**: `testing.test_value_enforcement` (`off` | `advisory` | `blocking`), `testing.test_audit_report_dir`, `testing.test_audit_exclude`. All leaf-unique names — the shell config reader `_yaml_value()` matches leaf keys only and takes the first hit, so a nested `enabled:` would collide with `loop.parallel.enabled`.
+
+**Rejected during design** (do not reintroduce without addressing these):
+- *Test ledger* recording per-run failures. `.coco/state/` is gitignored, so it is machine-local and absent in every worktree — meaning the entire parallel path contributes nothing. There is no stable cross-framework test identity, and under a working RED→GREEN loop every test fails exactly once at RED and never again, so the signal measures authorship recency, not value.
+- *Audit-created cleanup epic*. `commands/execute.md` resolves "most recent open epic," so a cleanup epic silently hijacks a bare `/coco:execute`; the pre-execution gate hard-stops on `issue_key: null`; and cleanup tasks owning `tests/**` collide with feature sub-phases owning `tests/auth/**`. Deletions route through the `hotfix` skill instead.
+- *Source-comment justifications*. No language-agnostic syntax, stripped by formatters, and permanently tattoos the tool onto user code. The mapping lives in the PR body and tracker metadata, where it dies with coco.
 
 ## PR Workflow
 

@@ -49,6 +49,21 @@
 
   - Technology choices (language version, framework, platform APIs)
   - Testing requirements (TDD, coverage thresholds, testing pyramid)
+
+    A testing principle should bind in BOTH directions, or it only ever
+    ratchets the suite upward. For example:
+
+      ### N. Tests Defend Behavior
+
+      Every test MUST defend a named failure mode of a stated requirement.
+      Tests that assert implementation detail, restate a mock, or duplicate
+      coverage already provided at a cheaper level MUST be deleted rather
+      than maintained. Deleting a test that defends nothing is not a
+      reduction in quality -- it is a reduction in cost.
+
+      Rationale: an unjustified test is not free. It costs review time, CI
+      time, and blocks every future refactor that would otherwise be safe.
+
   - Performance requirements (benchmarks, latency targets, memory limits)
   - Architecture patterns (data layer, service layer, dependency rules)
   - Code quality (linting, formatting, documentation standards)
@@ -64,8 +79,8 @@
 A feature is **DONE** when all criteria are met:
 
 1. Code written and compiles without errors
-2. Tests written and passing (per testing principle)
-3. Code coverage meets threshold (if defined)
+2. Tests written and passing (per testing principle and the feature's Test Strategy)
+3. Code coverage meets threshold (if defined), and no test was added solely to reach it
 4. No new warnings or errors
 5. Documentation updated (if user-facing)
 
@@ -76,6 +91,7 @@ A feature is **DONE** when all criteria are met:
 **Every pull request MUST**:
 - Pass all tests
 - Meet code coverage threshold (if defined)
+- Add no test that does not defend a named failure mode
 - Pass linting checks (if configured)
 - Verify constitution compliance
 
