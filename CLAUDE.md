@@ -48,6 +48,7 @@ Five layers:
 | `scripts/uninstall.sh` | Removes git hooks |
 | `tests/test-tracker.sh` | 53 tests for tracker.sh |
 | `tests/test-hooks.sh` | 9 tests for `coco-lib.sh` project-root resolution |
+| `tests/test-setup-config.sh` | 15 tests guarding wizard/config drift |
 
 ## Tracker (`lib/tracker.sh`)
 
@@ -115,7 +116,7 @@ Key sections:
 - `commit` -- title format, exempt patterns
 - `pre_commit` -- UI patterns for agent triggering, build command
 - `testing` -- test command, timeout
-- `loop` -- max iterations, no-progress threshold, pause-on-error, parallel execution config
+- `loop` -- max iterations, no-progress threshold, pause-on-error, dashboard cadence, parallel execution config
 - `pr` -- PR workflow, merge strategies, AI review config, branch naming
 
 ## Test Value Contract
@@ -294,8 +295,9 @@ Config:
 ```yaml
 loop:
   parallel:
-    enabled: false      # Enable worktree-based parallel execution
-    max_agents: 3       # Max concurrent task-executor agents
+    enabled: true            # Worktree-based parallel execution (default since 0.5.0)
+    max_agents: 3            # Max concurrent task-executor agents
+    max_agent_attempts: 2    # Agent gives up and reports rather than spinning
 ```
 
 ## Installation
@@ -322,13 +324,105 @@ bash coco-workflow/scripts/setup.sh
 ```bash
 bash tests/test-tracker.sh
 bash tests/test-hooks.sh
+bash tests/test-setup-config.sh
 ```
 
 `test-tracker.sh` runs 53 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. The `Invalid Metadata` group is the load-bearing one: it asserts that malformed `--metadata` fails with a non-zero exit on both `create` and `update` and leaves existing state untouched, and -- in the other direction -- that a **multiline but valid** command is accepted. Those last two assertions are what stop the deleted PreToolUse rule being reintroduced on the same false premise.
 
 `test-hooks.sh` runs 9 tests over `coco_project_root` in `hooks/scripts/coco-lib.sh`: the upward walk from nested and worktree-like directories, the gate that keeps hooks out of non-coco projects, and the `hint -> $CLAUDE_PROJECT_DIR -> $PWD` fallback chain including a hint directory that no longer exists (`/coco:loop` prunes the worktrees its agents ran in). All three behaviors were mutation-tested: breaking the walk, the gate, or the fallback each fails the suite.
 
+`test-setup-config.sh` runs 15 tests over `config/coco.default.yaml` and its two
+consumers, both of which fail *silently*. It asserts every `sed` substitution in
+`scripts/setup.sh` still matches something in the shipped config -- a pattern
+keyed to a value rather than an anchor stops matching when that default changes,
+and the wizard then accepts the user's answer and writes nothing. It also asserts
+the five leaf keys the hooks read are unique in the file, since the reader takes
+the first match and ignores nesting. Both were mutation-tested against real
+defects: restoring `s|enabled: false.*# Enable worktree|` and duplicating
+`auto_fix` each fail the suite. The extractor asserts its own yield first, so an
+extraction bug cannot empty the list and quietly pass.
+
+## Loop Autonomy
+
+`/coco:loop` and `/coco:phase` are markdown executed by a model, not programs.
+Nothing in the runtime forces the next iteration to start -- the loop continues
+only because the model keeps going. So the failure mode is not a crash, it is a
+polite stop: the model writes a status paragraph ending in "Continuing with X"
+and emits `end_turn`. Measured across local transcripts, 21 turns ended that way.
+
+`commands/loop.md` therefore carries **The Loop Does Not Stop To Report** as a
+first-class section, with four rules. The load-bearing one is that *announcing a
+step must not substitute for taking it* -- "I'll now do X" followed by a turn
+ending is the single most common stall, because writing the sentence feels like
+progress. The second is that offering an unrequested checkpoint ("unless you'd
+rather look at X first") is a stall, not courtesy: the user asked for autonomy,
+and clearing the offer costs them a message.
+
+The same rules apply to `commands/phase.md` (after its plan gate) and, in a
+different form, to `agents/task-executor.md`: an agent has **no interactive
+channel**: the parent is blocked on its return value, so a turn that ends without
+one hangs the whole batch.
+
+**The orchestrator cannot interrupt a running agent.** The dispatch call blocks
+until return. The only bound available is inside the agent
+(`loop.parallel.max_agent_attempts`), so agents give up and report rather than
+spinning. A genuinely hung agent still holds the batch -- a known limit, not
+something the loop can recover from. Do not add a "timeout" to `loop.md` that
+markdown cannot enforce.
+
+### Progress must be legible without asking
+
+The loop used to log `Iteration 5: Task epic-003.4 completed.` -- task-level only,
+with no epic total and no remaining count, so "is this making progress?" required
+stopping the loop and running `/coco:dashboard`. It now emits a **ledger line** at
+the start and end of every iteration carrying epic, done/total, blocked count,
+iteration number, and no-progress counter, and renders the dashboard inline every
+`loop.dashboard_every` iterations.
+
+Two previously-silent decisions are now spoken: a parallel batch **falling back to
+serial** (and which of the three conditions caused it), and an agent **returning
+without committing**. Both used to be indistinguishable from ordinary progress.
+
+## Config Drift
+
+`.coco/config.yaml` is copied from `config/coco.default.yaml` **once, at setup**,
+and never consulted again -- no command reads the plugin default as a fallback.
+Changing a default therefore reaches new projects only. Every existing project
+keeps whatever the defaults were the day it was initialized, including ones since
+reversed as mistakes.
+
+This is the same class of failure as [the version-bump trap](#every-change-needs-a-version-bump-or-it-does-not-ship):
+the fix is correct, merged, released, and still not running. Ship a default change
+together with its migration path, or it is decoration.
+
+`/coco:setup migrate` is that path. It **adds** keys the project is missing
+(silent and safe -- an absent key already behaves as its default) and **reports**
+keys whose value differs, applying a change only when the user selects it. It never
+reverts a deliberate choice in bulk.
+
+**Wizard `sed` patterns must key on the comment, not the value.**
+`scripts/setup.sh` had `s|enabled: false.*# Enable worktree|...|`, which silently
+stopped matching the moment that default flipped to `true` -- the wizard would
+have accepted the user's answer and written nothing. Match the stable half of the
+line.
+
 ## Development Notes
+
+### This repository is public
+
+Never name a private project, client, or repository in anything that leaves this
+machine: commit messages, PR titles and bodies, PR comments, release notes,
+issue text, branch names, or tracked files. That includes test fixtures and
+example paths -- an assertion like `cd /Users/you/Projects/AcmeApp && ...` names
+a client in a public test file.
+
+Evidence drawn from real usage is welcome and often the strongest part of a
+change; strip the attribution instead of the number. "Measured across local
+transcripts: 61 of ~140 merge-blocking findings" carries the whole argument.
+"In the AcmeApp loop worktree" adds nothing and cannot be taken back -- GitHub
+keeps the edit history of an amended PR body, so a redaction after the fact is
+visible to anyone who clicks "edited".
+
 
 - Zero external dependencies beyond bash + jq (gh CLI needed for PR workflow)
 - All commands are markdown files with frontmatter -- Claude Code executes them as slash commands

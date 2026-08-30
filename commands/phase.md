@@ -16,6 +16,20 @@ $ARGUMENTS
 
 ## Execution
 
+**This command runs to completion in one turn.** After the plan gate in step 3,
+there are no further checkpoints. Do not end a turn on a statement about the next
+feature ("Next I'll design X", "Continuing with feature 2") -- take the step
+instead. Do not offer to pause between features. The user approved the phase; the
+only legitimate stops are a hard failure or Phase Completion. Same four rules as
+`/coco:loop` -- see **The Loop Does Not Stop To Report** in `commands/loop.md`.
+
+Report progress as one line per feature as it resolves, so the user can see phase
+position without asking:
+
+```
+[phase "{name}" | feature {i}/{n} | {done} complete] {feature} -> {stage}
+```
+
 ### 1. Identify Specs for the Phase
 
 Read `discovery.roadmap_dir` from config (default: `docs/roadmap`).

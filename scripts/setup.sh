@@ -147,8 +147,10 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 
     # --- Parallel execution ---
     echo ""
-    PARALLEL=$(prompt "Enable parallel execution with git worktrees? (true/false)" "false")
-    sed -i '' "s|enabled: false.*# Enable worktree|enabled: $PARALLEL                     # Enable worktree|" "$CONFIG_FILE"
+    PARALLEL=$(prompt "Enable parallel execution with git worktrees? (true/false)" "true")
+    # Match on the comment, not on the shipped value -- keying this sed to
+    # "enabled: false" silently stopped matching when the default flipped.
+    sed -i '' "s|enabled: .*# Enable worktree|enabled: $PARALLEL                      # Enable worktree|" "$CONFIG_FILE"
 
     if [[ "$PARALLEL" == "true" ]]; then
         MAX_AGENTS=$(prompt "Max parallel agents" "3")

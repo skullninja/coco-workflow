@@ -207,11 +207,28 @@ gh project item-edit --project-id {project_id} --id {gh_project_item_id} --field
 coco-tracker close {task-id}
 ```
 
+## Bounded Effort
+
+Attempt the task at most `loop.parallel.max_agent_attempts` times (config, default
+2). An attempt is one full pass through Execution below. If the task is still not
+committable after the last attempt, **return a `failure` result and stop** -- do
+not keep trying, and do not return `success` with nothing committed.
+
+This bound exists because the parent cannot interrupt you. `/coco:loop` dispatches
+you and blocks until you return, so an agent that keeps retrying holds the entire
+parallel batch. Returning a clean failure lets the parent log it and move on;
+spinning silently is the worst outcome available to you.
+
+Never end your turn to ask the parent a question or to report interim status. You
+have no interactive channel -- the parent is blocked waiting on your return value,
+so a turn that ends without one stalls the whole loop. Run to a terminal state.
+
 ## Return Value
 
 Return a structured summary to the parent:
 - **task_id**: The task ID that was executed
-- **status**: `success` or `failure`
+- **status**: `success` or `failure`. `success` requires a commit; a run that
+  produced no commit is a `failure`, whatever the reason
 - **commit_hash**: The commit SHA (if successful)
 - **pr_number**: The PR number (if created)
 - **issue_branch**: The branch name

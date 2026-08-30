@@ -14,7 +14,16 @@ $ARGUMENTS
 
 1. Read `.coco/config.yaml` for project configuration (including `pr` and `loop` sections).
 2. Determine the target epic from `$ARGUMENTS` or most recent open epic.
-3. Read loop config (defaults: `max_iterations: 20`, `no_progress_threshold: 3`, `pause_on_error: true`).
+3. Read loop config. Defaults when a key is absent: `max_iterations: 20`,
+   `no_progress_threshold: 3`, `pause_on_error: false`, `dashboard_every: 5`,
+   `parallel.enabled: true`, `parallel.max_agents: 3`,
+   `parallel.max_agent_attempts: 2`.
+
+   A project initialized before these defaults changed still carries the old
+   values in its own `.coco/config.yaml`, which is read in preference to any
+   default here. If `pause_on_error` is `true` or `parallel.enabled` is `false`
+   in this project, say so in the opening ledger line -- the user may not know
+   their config predates the change, and `/coco:setup migrate` reconciles it.
 
 ## Pre-Loop Gate
 
@@ -53,6 +62,68 @@ Set counters:
 - `initial_commit_count = $(git rev-list --count HEAD)`
 
 ## Autonomous Loop
+
+### The Loop Does Not Stop To Report
+
+This loop runs to completion inside one turn. **Ending the turn is an exit**, and
+the only legitimate exits are the ones enumerated under Exit Conditions below.
+
+Four rules, ordered by how often they are broken:
+
+1. **Never end a turn on a statement about what you are about to do.** If you can
+   name the next step, take it -- in the same turn, with a tool call. The moment
+   you find yourself writing "Continuing with X", "I'll now X", "Next I'll X", or
+   "Moving on to X", delete the sentence and call the tool for X instead.
+   Announcing a step is not performing it, and it does not count as progress.
+
+2. **Never offer a checkpoint nobody asked for.** "Unless you want to look at X
+   first", "say the word and I'll", "let me know if you'd rather" -- the user
+   invoked an autonomous loop. Offering to stop is not deference; it is a stall
+   they now have to clear by typing. If a decision genuinely requires them, it is
+   an Exit Condition, so exit properly using the report format below.
+
+3. **Status belongs in the ledger line, not in prose.** One line per iteration,
+   in the format under Progress Ledger. A paragraph explaining what you just did,
+   what you learned, and what you plan next is the shape a stall takes: it reads
+   as a natural stopping point, and then you stop.
+
+4. **A failed task is not an exit** when `pause_on_error` is false (the default).
+   Log it, leave it `in_progress`, take the next ready task. The circuit breaker
+   exists to catch a genuinely stuck loop; do not pre-empt it.
+
+If you are unsure whether to continue: continue. The user can interrupt at any
+moment, but they cannot un-stall a loop that has already yielded without typing a
+new message -- which is the exact cost this section exists to avoid.
+
+### Progress Ledger
+
+Emit one line at the **start** of every iteration, before doing any work:
+
+```
+[{epic-id} "{epic title}" | {done}/{total} tasks | {blocked} blocked | iter {n}/{max} | no-progress {c}/{threshold}] -> {task-id} "{task title}"
+```
+
+And one when the iteration resolves:
+
+```
+[{epic-id} | {done}/{total} | iter {n}/{max}] {task-id} merged | PR #{n} (+{add}/-{del}, {k} tests) 
+```
+
+Use `FAILED`, `BLOCKED`, or `NO-PROGRESS` in place of `merged` where they apply,
+and name the reason in the same line. Counts come from `coco-tracker epic-status`.
+
+Two things this makes visible that were previously silent:
+
+- **Parallel falling back to serial.** When `loop.parallel.enabled` is true but a
+  batch runs serially anyway, say which condition caused it -- only one task
+  ready, or ready tasks missing `owns_files`. Today this decision is invisible,
+  so a loop that never parallelizes looks identical to one that cannot.
+- **An agent that returned without committing.** Name the agent and its task
+  rather than silently counting the iteration as no-progress.
+
+Every `dashboard_every` iterations (config, default 5) and at every exit, render
+the full `/coco:dashboard` view inline. The ledger line says where you are; the
+dashboard says how far along the epic is.
 
 ### Loop Condition
 
@@ -95,7 +166,7 @@ Waiting on: {dependency list}
 
 **3. Check for parallel dispatch opportunity**
 
-Read `loop.parallel.enabled` from config (default: `false`).
+Read `loop.parallel.enabled` from config (default: `true`).
 
 **If parallel is enabled:**
 
@@ -126,11 +197,23 @@ Read `loop.parallel.enabled` from config (default: `false`).
      c. Merge approved PRs: `gh pr merge {pr-number} --{pr.issue_merge_strategy} --delete-branch`
      d. Bridge to issue tracker (complete) -- set "Done"
    - For each failed agent: mark task for retry in next iteration
+   - **An agent that returns without a PR or any commit counts as failed**, not as
+     completed. Name it and its task in the ledger line, leave the task
+     `in_progress`, and continue. Do not re-dispatch it in the same iteration.
+
+   The orchestrator cannot interrupt a running agent -- the dispatch call blocks
+   until the agent returns. The bound is inside the agent instead
+   (`loop.parallel.max_agent_attempts`), so an agent that cannot finish gives up
+   and reports rather than spinning. A genuinely hung agent will still hold the
+   batch; that is a known limit, not something this step can recover from.
 
 5. Skip to step 7 (Check progress) after handling all parallel results.
 
 **If parallel is disabled**, or if ready tasks lack `owns_files` metadata, or if only one task is ready:
-Fall through to serial execution (step 4).
+Fall through to serial execution (step 4), and **say which of those three it was**
+in the ledger line. A loop that silently never parallelizes is indistinguishable
+from one that cannot, and missing `owns_files` is a fixable planning gap the user
+can only fix if they are told about it.
 
 **4. Record pre-iteration commit count (serial path)**
 
@@ -166,11 +249,16 @@ Compare to the pre-iteration count.
 
 If `post_commit_count > pre_commit_count`:
 - `consecutive_no_progress = 0` (reset)
-- Log: `Iteration {iteration}: Task {task-id} completed. {commits} new commit(s).`
+- Emit the resolution ledger line (see Progress Ledger)
 
 If `post_commit_count == pre_commit_count`:
 - `consecutive_no_progress += 1`
-- Log: `Iteration {iteration}: No progress. ({consecutive_no_progress}/{no_progress_threshold})`
+- Emit the ledger line with `NO-PROGRESS` and the reason -- an agent returned
+  without committing, a review-fix loop exhausted, a task was skipped after
+  failure. "No progress" without a reason is the least useful thing the loop can
+  say, because it is exactly when the user most needs to know why.
+
+Then render the dashboard if `iteration % dashboard_every == 0`.
 
 **7. Check epic status**
 
@@ -336,6 +424,10 @@ To resume: /coco:loop {epic-id}
 ```
 
 ### Error Pause
+
+Only when `pause_on_error` is **true**. It defaults to `false`, in which case a
+failed task is skipped (left `in_progress`), logged in the ledger, and the loop
+takes the next ready task -- see rule 4 under The Loop Does Not Stop To Report.
 
 If `pause_on_error` is true and a task fails (tests fail repeatedly, build broken):
 

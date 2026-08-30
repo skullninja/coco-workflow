@@ -105,14 +105,27 @@ loop:
   # Consecutive iterations with no commits before circuit breaker triggers
   no_progress_threshold: 3
 
-  # Pause the loop on task failure (test/build errors)
-  # If false, skips the failed task and tries the next one
-  pause_on_error: true
+  # Pause the loop on task failure (test/build errors).
+  # Default false: skip the failed task, leave it in_progress, and try the next
+  # ready one. A genuinely stuck loop is still caught -- three consecutive
+  # iterations with no commits trip no_progress_threshold above. Pausing on the
+  # first failure turns every flaky test into a full stop that needs a human.
+  pause_on_error: false
+
+  # Print the /coco:dashboard inline every N iterations, and at every exit.
+  # The per-iteration ledger line says where you are; this says how far along
+  # the epic is. Set to 0 to disable.
+  dashboard_every: 5
 
   # Worktree-based parallel execution
   parallel:
-    enabled: false                     # Enable worktree-based parallel execution
+    enabled: true                      # Enable worktree-based parallel execution
     max_agents: 3                      # Max concurrent task-executor agents
+
+    # How many times a task-executor agent retries its own task before it
+    # returns a failure result instead of continuing to attempt. Bounds the
+    # agent from the inside -- the orchestrator cannot interrupt a running one.
+    max_agent_attempts: 2
 
 pr:
   # Enable two-tier PR workflow (if false, merges directly as before)
