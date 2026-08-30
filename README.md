@@ -40,6 +40,7 @@ Coco is the whole pipeline in one plugin:
 - **Dependency-aware execution** -- Built-in tracker with topological sort. `ready` always returns the next unblocked task.
 - **Autonomous loop** -- Runs to completion without checkpoints, reporting a one-line progress ledger per iteration and an inline dashboard every few. Circuit breaker, configurable safety limits, worktree-based parallel execution on by default.
 - **AI code review** -- Every PR reviewed before merge. Critical findings auto-fixed. Up to 3 review iterations.
+- **A test budget** -- The design commits up front to which requirements get tested and at what level. Review measures the diff against it, in both directions: too little coverage and worthless tests are both defects.
 - **Adaptive routing** -- Quick fix? Skip the ceremony. Full feature? Full pipeline. Complexity detected automatically.
 - **Session memory** -- Survives context compaction. Pick up where you left off across sessions.
 - **Multi-repo support** -- Derive platform-specific PRDs from a primary repo. Each satellite runs its own independent pipeline.
@@ -115,9 +116,11 @@ Not every change needs the full pipeline. `/coco:planning-session tactical` and 
 
 `/coco:loop` wraps TDD + PR + review in an autonomous loop:
 
-- **Circuit breaker** -- Pauses after consecutive iterations with no progress
+- **No checkpoints** -- The loop runs to completion in one turn. It does not stop to report, and it does not offer to pause between tasks
+- **Progress ledger** -- One line per iteration: epic, done/total, blocked count, iteration, no-progress counter. An inline dashboard every `dashboard_every` iterations (default 5)
+- **Circuit breaker** -- Pauses after consecutive iterations with no commits (default 3)
 - **Safety limit** -- Configurable max iterations (default: 20)
-- **Error pause** -- Stops on test/build failures
+- **Failures skip, not stop** -- A failed task is left `in_progress` and the loop takes the next ready one. Set `pause_on_error: true` to stop instead
 - **Progress tracking** -- Measured by git commits, not just status changes
 - **Feature PR** -- Auto-creates and reviews the feature-to-main PR on completion
 
@@ -137,7 +140,7 @@ Every PR gets reviewed. Critical findings are auto-fixed and re-reviewed (up to 
 
 ### Built-In Task Tracker
 
-The tracker (`lib/tracker.sh`) is ~480 lines of bash + jq. No external tools.
+The tracker (`lib/tracker.sh`) is ~640 lines of bash + jq. No external tools.
 
 - **Dependency graphs** with topological sort
 - **Epic management** for grouping tasks into features
@@ -195,7 +198,7 @@ AI-selected workflow steps. These run automatically as part of the pipeline -- y
 |-------|---------|
 | `interview` | Pre-design discovery interview producing structured brief |
 | `design` | Feature design (spec + plan) with optional clarification (supports light mode) |
-| `tasks` | Dependency-ordered task list with 6-pass consistency analysis |
+| `tasks` | Dependency-ordered task list with 7-pass consistency analysis |
 | `import` | Import to tracker + issue tracker (supports design-only mode) |
 | `hotfix` | Single-issue fix -- no epic, no ceremony |
 | `execute` | Delegates to /coco:execute command |
@@ -239,6 +242,34 @@ In your project:
 The setup wizard walks through project name, issue tracker, and parallel execution settings, creates the `.coco/` directory, and installs git hooks.
 
 For existing projects, run `/coco:prd audit` after setup to generate a PRD from your codebase. For satellite repos in a multi-repo project, run `/coco:prd derive /path/to/primary/docs/prd.md` to create a platform-specific PRD.
+
+### Upgrading
+
+Two steps, and skipping either one is silent.
+
+```
+/plugin
+```
+
+Update `coco`, then confirm the new build is what is actually running:
+
+```bash
+which coco-tracker
+```
+
+Claude Code serves plugins from a **version-keyed cache**, so the path contains
+the live version. If it still shows the old one, the update has not taken. A
+session that was already open keeps the version it started with -- open a new one.
+
+```
+/coco:setup migrate
+```
+
+`.coco/config.yaml` is copied from the defaults once, at setup, and never read
+again. A project set up before a default changed keeps the old value forever.
+`migrate` adds keys your config is missing and reports any whose value differs
+from the current default, applying a change only when you pick it. It never
+overwrites a deliberate choice.
 
 ### Project Structure
 

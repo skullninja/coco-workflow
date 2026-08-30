@@ -10,13 +10,14 @@ This workflow uses a unified pipeline to take features from description to merge
 2. **Parallel execution** -- Independent user stories run concurrently across up to 3 agents, with file-ownership rules preventing conflicts.
 3. **Comprehensive tracking** -- Every artifact, status change, commit, and test result is recorded in the coco tracker (execution state) and optionally in an issue tracker (visibility).
 
-### Four-Layer Architecture
+### Five-Layer Architecture
 
 | Layer | Tool | Role |
 |-------|------|------|
 | **Discovery** | `/coco:prd`, `/coco:roadmap` | Produces PRD, analysis docs, and per-release roadmaps |
 | **Planning** | Coco skills (`interview`, `design`, `tasks`, `import`) | Produces `specs/{feature}/` artifacts: discovery.md, design.md, tasks.md |
 | **Execution** | Coco tracker (`lib/tracker.sh`) | Manages task state, dependency graphs, session memory |
+| **Review** | `code-reviewer` agent | Reviews every PR against correctness, security, and the design's test budget |
 | **Visibility** | Issue tracker (configurable) | Mirrors status for human tracking, commit linkage, project dashboards |
 
 ---
@@ -246,15 +247,33 @@ The `/coco:loop` command wraps `/coco:execute` in an autonomous loop that runs u
 /coco:loop {epic-id}
 
   while tasks remain:
+    0. Emit the ledger line (epic, done/total, blocked, iter, no-progress)
     1. coco-tracker ready -> next unblocked task(s)
     2. If parallel enabled + multiple ready tasks with non-overlapping owns_files:
        -> Dispatch task-executor agents in parallel (worktree isolation)
        -> Review and merge PRs after all agents complete
+       (otherwise say which of the three conditions forced serial)
     3. Otherwise: Execute full TDD cycle serially (same as /coco:execute)
-    4. Check progress (git commits)
-    5. Check epic status (all tasks closed?)
-    6. If no progress for N iterations -> circuit breaker
-    7. If all done -> exit with summary
+    4. Check progress (git commits); emit the resolution ledger line
+    5. Every dashboard_every iterations -> render /coco:dashboard inline
+    6. Check epic status (all tasks closed?)
+    7. If no progress for N iterations -> circuit breaker
+    8. If all done -> exit with summary
+```
+
+**The loop does not stop to report.** It runs to completion in a single turn.
+Ending the turn is an exit, and the only exits are the ones in the table below.
+It will not end a turn on a statement about what it is about to do next, and it
+will not offer an optional checkpoint between tasks -- those read as courtesy but
+cost you a message to clear. Interrupt it whenever you like; it will not
+interrupt itself.
+
+Progress is legible without stopping it. Every iteration opens and closes with a
+ledger line:
+
+```
+[epic-003 "Set Editor" | 4/7 tasks | 2 blocked | iter 5/20 | no-progress 0/3] -> epic-003.4 "Selection model"
+[epic-003 | 5/7 | iter 5/20] epic-003.4 merged | PR #82 (+120/-14, 3 tests)
 ```
 
 ### Circuit Breaker
@@ -265,9 +284,14 @@ Prevents infinite loops when a task can't be completed:
 |-----------|---------|----------|
 | Max iterations | 20 | Pauses loop, reports remaining tasks |
 | No progress | 3 consecutive | Pauses loop, reports stuck task |
-| Task error | On by default | Pauses loop on test/build failure |
+| Task error | **Off** (`pause_on_error: false`) | Skips the failed task, leaves it `in_progress`, takes the next ready one |
 
 Configure in `.coco/config.yaml` under `loop:`.
+
+`pause_on_error` defaulted to `true` before 0.5.0, which turned every flaky test
+into a full stop needing a human. The no-progress breaker already catches a
+genuinely stuck loop, so the first failure no longer needs to end the run. Set it
+back to `true` if you would rather inspect each failure as it happens.
 
 ### When to Use
 
@@ -414,9 +438,15 @@ Each `task-executor` runs in its own git worktree with full filesystem isolation
 ```yaml
 loop:
   parallel:
-    enabled: true       # Enable worktree-based parallel execution
-    max_agents: 3       # Max concurrent task-executor agents
+    enabled: true            # Worktree-based parallel execution (default since 0.5.0)
+    max_agents: 3            # Max concurrent task-executor agents
+    max_agent_attempts: 2    # Agent gives up and reports rather than spinning
 ```
+
+`max_agent_attempts` bounds an agent **from the inside**. The orchestrator cannot
+interrupt a running one -- the dispatch call blocks until it returns -- so the
+agent has to give up on its own and return a failure the parent can log. A
+genuinely hung agent will still hold the batch; that is a known limit.
 
 ### Constraints
 
@@ -430,6 +460,31 @@ loop:
 ---
 
 ## Supporting Infrastructure
+
+### Upgrading and Config Drift
+
+Updating the plugin is two steps, and skipping either is silent.
+
+`${CLAUDE_PLUGIN_ROOT}` resolves into a **version-keyed cache**
+(`~/.claude/plugins/cache/{marketplace}/{plugin}/{version}/`), not the marketplace
+git clone. The cache refreshes only when the version in `plugin.json` changes, so
+`which coco-tracker` is the honest check -- the version segment in that path is
+the build that is really running. A session already open keeps the version it
+started with; open a new one.
+
+`.coco/config.yaml` is copied from `config/coco.default.yaml` once, at setup, and
+never consulted again. No command falls back to the plugin default. A project set
+up before a default changed keeps the old value indefinitely, which is how
+`pause_on_error: true` survived past the release that reversed it.
+
+```
+/coco:setup migrate
+```
+
+Adds keys the project is missing -- safe and silent, since an absent key already
+behaves as its default -- and *reports* keys whose value differs from the current
+default, applying a change only when you select it. It will not revert a
+deliberate choice in bulk.
 
 ### Git Hooks
 
