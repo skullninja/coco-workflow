@@ -147,11 +147,10 @@ The tracker (`lib/tracker.sh`) is ~480 lines of bash + jq. No external tools.
 
 ### Hooks
 
-Event-driven automation via Claude Code hooks:
+Event-driven automation via Claude Code hooks. None of them block a tool call -- there is deliberately no `PreToolUse` hook:
 
 | Hook | Trigger | What It Does |
 |------|---------|--------------|
-| **pre-tool-use** | Before `Bash` | Blocks the two tracker command forms that fail silently, with a message explaining the rewrite |
 | **post-tool-use** | After `Write`/`Edit` | Runs lint + typecheck against modified file |
 | **pre-compact** | Before compaction | Saves session state so you don't lose context |
 | **session-start** | New session | Restores context from previous session |

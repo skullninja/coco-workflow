@@ -372,13 +372,13 @@ loop:
 **`git-hooks/commit-msg.sh`** -- Validates commit message format per config
 **`git-hooks/pre-commit.sh`** -- Build check and UI change detection per config
 
-### Bash Guardrail
+### No Bash Guardrail
 
-The `PreToolUse` hook blocks exactly two `coco-tracker` command forms — assigning the tracker to a shell variable, and spanning a tracker command across multiple lines. Both fail *silently*: the first resolves the path wrongly, the second turns `--metadata` into invalid JSON that the tracker discards as `{}` without erroring.
+Coco used to ship a `PreToolUse` hook that denied certain `coco-tracker` command forms. It was removed in 0.3.1. Every rule it still carried turned out to be defending a failure that does not happen — a tracker assigned to a shell variable works fine now that `coco-tracker` is on PATH, and a multiline command is handled by the tracker itself (newlines in titles collapse to spaces, and jq accepts newlines inside JSON).
 
-Everything else is allowed. Rules that only avoided permission prompts (`cd &&` compounds) are redundant once you run with autonomous or skip-permissions mode, and rules for commands that fail loudly were dropped because the error message already tells Claude what to fix.
+A blocked call is recoverable — Claude rewrites and continues — but it is not free. It costs a turn, and consecutive blocks produce no commits, which starves `/coco:loop`'s no-progress counter until the circuit breaker exits the loop. That reads as "the hook stopped execution" even though nothing halted.
 
-The narrow scope is deliberate. A blocked call is recoverable — Claude rewrites and continues — but it still costs a turn, and repeated blocks starve `/coco:loop`'s no-progress counter until the circuit breaker exits the loop.
+Where a real silent failure did exist, it was fixed at the source rather than policed at the harness: `coco-tracker create` and `update` now **fail** on malformed `--metadata` instead of substituting `{}` and exiting 0.
 
 ### Planning Sessions
 

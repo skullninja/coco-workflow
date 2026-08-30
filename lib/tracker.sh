@@ -257,10 +257,14 @@ _cmd_create() {
         deps_json=$(echo "$depends_on" | tr ',' '\n' | jq -R . | jq -sc .)
     fi
 
-    # Validate metadata is valid JSON; fall back to {} if not
+    # Invalid metadata is a hard error, not a fallback. Silently substituting
+    # {} creates the task and exits 0, so owns_files and test_plan vanish with
+    # no failure to recover from -- parallel execution and the test budget then
+    # break far from the cause.
     if ! echo "$metadata" | jq empty 2>/dev/null; then
-        echo "WARNING: invalid metadata JSON, using {}" >&2
-        metadata="{}"
+        echo "ERROR: invalid metadata JSON -- task not created." >&2
+        echo "       --metadata must parse as JSON. Received: $metadata" >&2
+        return 1
     fi
 
     local now
@@ -316,11 +320,14 @@ _cmd_update() {
                 shift 2
                 ;;
             --metadata)
-                # Merge metadata (new keys override, existing keys preserved)
+                # Merge metadata (new keys override, existing keys preserved).
+                # Invalid JSON is a hard error for the same reason as create:
+                # skipping it reports success while dropping the update whole.
                 local _m="$2"
                 if ! echo "$_m" | jq empty 2>/dev/null; then
-                    echo "WARNING: invalid metadata JSON, skipping" >&2
-                    shift 2; continue
+                    echo "ERROR: invalid metadata JSON -- task $id not updated." >&2
+                    echo "       --metadata must parse as JSON. Received: $_m" >&2
+                    return 1
                 fi
                 record=$(echo "$record" | jq -c --argjson m "$_m" --arg now "$now" '.metadata = (.metadata // {} | . * $m) | .updated_at = $now')
                 shift 2
