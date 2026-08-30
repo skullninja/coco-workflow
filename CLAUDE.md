@@ -18,7 +18,7 @@ Five layers:
 | Path | Purpose |
 |------|---------|
 | `.claude-plugin/plugin.json` | Claude Code plugin manifest (auto-discovers commands/skills/agents) |
-| `hooks/hooks.json` | Claude Code hook definitions (PreToolUse, PostToolUse, PreCompact, SessionStart) |
+| `hooks/hooks.json` | Claude Code hook definitions (PostToolUse, PreCompact, SessionStart) -- no PreToolUse, see Hooks |
 | `bin/coco-tracker` | Tracker wrapper -- on PATH as bare command `coco-tracker` |
 | `lib/tracker.sh` | Built-in task tracker -- **core of the system** (invoked via `coco-tracker`) |
 | `config/coco.default.yaml` | Default configuration schema |
@@ -33,7 +33,6 @@ Five layers:
 | `agents/code-reviewer.md` | AI code review agent for PRs |
 | `agents/task-executor.md` | Worktree-isolated task executor for parallel execution |
 | `agents/pre-commit-tester.md` | UI/UX validation agent (config-driven) |
-| `hooks/scripts/pre-tool-use-bash.sh` | PreToolUse hook -- denies Bash commands that would actually break |
 | `hooks/scripts/post-tool-use-quality.sh` | PostToolUse hook -- runs lint/typecheck after file edits |
 | `hooks/scripts/pre-compact.sh` | PreCompact hook -- captures session state before compaction |
 | `hooks/scripts/session-start.sh` | SessionStart hook -- restores session context |
@@ -44,7 +43,8 @@ Five layers:
 | `templates/` | Default templates for PRD, analysis, roadmap, discovery, design, tasks, constitution |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
-| `tests/test-tracker.sh` | 46 tests for tracker.sh |
+| `tests/test-tracker.sh` | 53 tests for tracker.sh |
+| `tests/test-hooks.sh` | 9 tests for `coco-lib.sh` project-root resolution |
 
 ## Tracker (`lib/tracker.sh`)
 
@@ -201,48 +201,46 @@ Light mode: `design` generates a minimal design (single user story, 3-5 acceptan
 
 Two types of hooks in separate directories:
 - **Claude Code hooks** (`hooks/hooks.json`): JSON config pointing at `command`-type scripts in `hooks/scripts/`. Events defined:
-  - `PreToolUse` (matcher `Bash`) -- Denies the two command forms that fail *silently* (tracker in a shell variable, multiline tracker command)
   - `PostToolUse` (matcher `Write|Edit`) -- Runs quality checks (lint, typecheck)
   - `PreCompact` -- Captures session state to `.coco/state/session-memory.md`
   - `SessionStart` -- Restores context from session memory
+- **Git hooks** (`git-hooks/`): Shell scripts installed to `.git/hooks/` by `setup.sh`
+  - `commit-msg.sh` -- Commit message validation
+  - `pre-commit.sh` -- Build check + UI change detection
 
-All four scripts gate on `.coco/config.yaml`, resolved via `coco_project_root` in `hooks/scripts/coco-lib.sh`, which **walks upward** from the hook's cwd (then `$CLAUDE_PROJECT_DIR`, then `$PWD`). Hooks routinely fire with cwd set to a package subdirectory or a parallel-execution worktree, so a bare relative `.coco/config.yaml` check silently no-ops there.
+All three Claude Code hook scripts gate on `.coco/config.yaml`, resolved via `coco_project_root` in `hooks/scripts/coco-lib.sh`, which **walks upward** from the hook's cwd (then `$CLAUDE_PROJECT_DIR`, then `$PWD`). Hooks routinely fire with cwd set to a package subdirectory or a parallel-execution worktree, so a bare relative `.coco/config.yaml` check silently no-ops there. `tests/test-hooks.sh` covers that resolution directly -- it is the one code path all three hooks share, and it fails invisibly in both directions (hooks stop firing in real projects, or start firing in unrelated ones).
 
-### Why PreToolUse must stay a `command` hook
+**No coco hook blocks a tool call.** There is deliberately no `PreToolUse` hook.
 
-Never convert it to a `prompt` hook. A prompt hook's sub-model returns `{ok, reason}`, and Claude Code maps `ok: false` to `preventContinuation` -- which **halts the entire turn** ("hook stopped continuation"), not just the one tool call. There is no recoverable-denial path for prompt hooks. A command hook returning:
+### Why there is no PreToolUse hook
+
+There was one, from 0.2.x through 0.3.0. It denied Bash commands believed to fail silently. Removed in 0.3.1, because each rule it still carried was defending a failure mode that does not occur:
+
+| Rule | Claimed failure | What actually happens |
+|------|-----------------|-----------------------|
+| tracker assigned to a shell variable | expansion resolves the path wrongly | `TRACKER=coco-tracker; $TRACKER list` works fine. The claim was true when the tracker was invoked as `bash ${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh`; it stopped being true when `bin/coco-tracker` went on PATH, and the rule was never revisited |
+| multiline `coco-tracker` command | titles truncate, `--metadata` becomes invalid JSON | `lib/tracker.sh:142` collapses newlines in titles to spaces, and jq accepts newlines inside JSON. Both now have assertions in `tests/test-tracker.sh` |
+
+Earlier rounds had already dropped `cd &&` compounds, 2+ tracker calls per command, tracker piped to python, `tracker.sh` by path, and space-separated subcommands (`epic create`) -- as permission-prompt avoidance that autonomous / skip-permissions modes made redundant, or as commands that fail loudly on their own.
+
+Measured across one developer's local transcripts before removal: **164 denials, none of which prevented a real failure.** The heaviest single case was a `task-executor` subagent inside a `/coco:loop` worktree, taking 18.
+
+**A recoverable deny is not free.** It costs a turn, and consecutive denials produce no commits, which starves `/coco:loop`'s `no_progress` counter until the circuit breaker exits the loop -- reading as "the hook stopped execution" when nothing halted.
+
+The one real gap the multiline rule gestured at was in the tracker, not the harness: invalid `--metadata` printed a warning, substituted `{}`, and **exited 0**, so `owns_files` and `test_plan` could vanish while every caller saw success. `lib/tracker.sh` now errors and returns 1 from both `create` and `update`. Fix the tool; do not police the caller.
+
+### Before adding a PreToolUse hook back
+
+**Demonstrate the failure first.** Every rule this hook ever carried came from a plausible-sounding theory, and each one that was eventually tested did not reproduce. Write the failing `tests/test-tracker.sh` case before writing the rule. If the command cannot be made to fail, there is nothing to deny.
+
+**It must be a `command` hook, never a `prompt` hook.** A prompt hook's sub-model returns `{ok, reason}`, and Claude Code maps `ok: false` to `preventContinuation` -- which **halts the entire turn** ("hook stopped continuation"), not just the one tool call. A command hook returning:
 
 ```json
 {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "..."}}
 ```
 
-blocks only that call and hands the reason back to Claude, which rewrites and continues.
+blocks only that call and hands the reason back to Claude, which rewrites and continues. Verified against CLI 2.1.220: `permissionDecision: "deny"` sets `permissionBehavior="deny"` plus a `blockingError`, and never `preventContinuation` -- which is assigned only in the prompt-hook path. The reason survives as `blockingError: hookSpecificOutput.permissionDecisionReason || reason || "Blocked by hook"`. Prompt hooks have since gained a `continueOnBlock: true` escape hatch, but a command hook is still the right tool for a per-call denial.
 
-Re-verified against CLI 2.1.220: `permissionDecision: "deny"` sets `permissionBehavior="deny"` plus a `blockingError`, and never `preventContinuation` -- which is assigned only in the prompt-hook path. The reason survives too (`blockingError: hookSpecificOutput.permissionDecisionReason || reason || "Blocked by hook"`). Prompt hooks have since gained a `continueOnBlock: true` escape hatch, but it is still the wrong tool for a per-call denial.
-
-### Why the scope is now two rules
-
-A recoverable deny is **not free**. It costs a turn, and repeated denials starve `/coco:loop`'s `no_progress` counter until the circuit breaker fires and exits the loop -- which reads as "the hook stopped execution" even though nothing halted.
-
-So the bar is: deny only what fails **silently**, leaving the model no error to recover from.
-
-| Kept | Silent failure |
-|------|----------------|
-| tracker assigned to a shell variable | expansion resolves the path wrongly |
-| multiline `coco-tracker` command | `--metadata` becomes invalid JSON; `lib/tracker.sh` discards it as `{}` and continues |
-
-Dropped, with regression coverage in `tests/test-hooks.sh` asserting they stay allowed:
-
-- `cd &&` compounds -- only ever avoided a permission prompt, which autonomous / skip-permissions modes already handle
-- 2+ tracker calls in one command, and tracker piped to python -- cosmetic; both run correctly
-- `tracker.sh` by path, and space-separated subcommands (`epic create`) -- fail loudly with a clear error the model recovers from
-
-Earlier, broad style rules like `&&` chaining were removed for the same reason: they fired constantly on legitimate work for no functional gain.
-
-**Gating tests must probe with a surviving rule.** They previously used `cd /tmp && ls`; when that rule was dropped, every gating assertion would have become trivially "allowed" and stopped testing gating at all. They now probe with the tracker-variable form.
-- **Git hooks** (`git-hooks/`): Shell scripts installed to `.git/hooks/` by `setup.sh`
-  - `commit-msg.sh` -- Commit message validation
-  - `pre-commit.sh` -- Build check + UI change detection
 
 ## Template System
 
@@ -295,7 +293,9 @@ bash tests/test-tracker.sh
 bash tests/test-hooks.sh
 ```
 
-`test-tracker.sh` runs 46 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. `test-hooks.sh` runs 32 tests covering the PreToolUse guardrail: project-root gating from nested directories, both surviving deny rules, and regression coverage asserting every dropped rule stays allowed. Most of that suite is the dropped-rule coverage -- trimming the hook moved assertions from "denied" to "allowed" rather than deleting them.
+`test-tracker.sh` runs 53 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. The `Invalid Metadata` group is the load-bearing one: it asserts that malformed `--metadata` fails with a non-zero exit on both `create` and `update` and leaves existing state untouched, and -- in the other direction -- that a **multiline but valid** command is accepted. Those last two assertions are what stop the deleted PreToolUse rule being reintroduced on the same false premise.
+
+`test-hooks.sh` runs 9 tests over `coco_project_root` in `hooks/scripts/coco-lib.sh`: the upward walk from nested and worktree-like directories, the gate that keeps hooks out of non-coco projects, and the `hint -> $CLAUDE_PROJECT_DIR -> $PWD` fallback chain including a hint directory that no longer exists (`/coco:loop` prunes the worktrees its agents ran in). All three behaviors were mutation-tested: breaking the walk, the gate, or the fallback each fails the suite.
 
 ## Development Notes
 
@@ -306,16 +306,29 @@ bash tests/test-hooks.sh
 - Git hooks read config from `.coco/config.yaml` using jq-based YAML parsing
 - Commit formats: `Completes {KEY}` for implementation, `Ref {KEY}` for review fixes
 
+### Every change needs a version bump, or it does not ship
+
+Claude Code installs a plugin into a **version-keyed cache**: `~/.claude/plugins/cache/{marketplace}/{plugin}/{version}/`. `${CLAUDE_PLUGIN_ROOT}` resolves there, not to the marketplace git clone. The cache is only refreshed when the version string in `.claude-plugin/plugin.json` changes.
+
+So merging to `main` ships nothing on its own. A commit that edits plugin files without bumping the version is invisible to every installed session, indefinitely, with no warning.
+
+This has already happened once: `3a74275` trimmed the PreToolUse hook from six rules to two and deliberately said "no version bump" (PR #3 was going to claim the next number). The cache stayed pinned at `0.3.0` and kept serving the six-rule hook for weeks after the trim merged -- including into `/coco:loop` worktrees, whose denials were then blamed on the hook design rather than on a stale build.
+
+Bump `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` **together, in the same commit as the change**. If a pending PR already claims the next minor, take a patch (`0.3.1`) rather than deferring the bump. Verify a release actually landed with:
+
+```bash
+which coco-tracker
+```
+
+The version segment in that path is the build that is really running.
+
 ## Bash Command Guidelines
 
-**Enforced by the PreToolUse hook** (these fail silently, so they are denied):
+**Nothing here is enforced.** No hook blocks Bash commands -- see [Why there is no PreToolUse hook](#why-there-is-no-pretooluse-hook). These are conventions: they keep tracker calls readable and reduce permission prompts in interactive sessions. Under autonomous or skip-permissions modes most are purely cosmetic.
 
-- **Never assign the tracker to a shell variable**: `TRACKER=...; $TRACKER list` breaks path resolution. Call the bare command: `coco-tracker ready --json`.
-- **Never write a multiline `coco-tracker` command**: newlines truncate titles and turn `--metadata` into invalid JSON, which the tracker silently discards as `{}`. Keep the command and every argument value on one line; separate list items with `; `.
+The one command shape that still costs you something is malformed `--metadata`, and the tracker now rejects it with a clear error and a non-zero exit. Keep `--metadata` to valid JSON; a newline inside it is fine.
 
-**Style guidance** — prefer these, but nothing blocks you. They reduce permission prompts in interactive sessions; under autonomous or skip-permissions modes they are purely cosmetic:
-
-- **Always use `coco-tracker`**: call it directly rather than `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`, `source`, or a hardcoded absolute path. Those fail with a clear error rather than silently, so they are no longer denied — but the bare command is still correct.
+- **Always use `coco-tracker`**: call it directly rather than `bash "${CLAUDE_PLUGIN_ROOT}/lib/tracker.sh"`, `source`, or a hardcoded absolute path. The alternatives fail with a clear error, but the bare command is correct and shorter.
 - **Hyphenated subcommands**: `epic-create`, `dep-add`, `session-start`. The space-separated forms just produce a usage error.
 - **One tracker call per Bash tool invocation**: batching works, but separate calls give clearer error attribution.
 - **Use jq, not python, for tracker JSON**: `list --json` returns an array (iterate with `jq '.[]'`); `show ID` and `ready --json` return a single object.

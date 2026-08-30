@@ -1,18 +1,6 @@
 {
-  "description": "Coco workflow hooks: quality checks, session memory, and bash command guardrails",
+  "description": "Coco workflow hooks: quality checks and session memory",
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-tool-use-bash.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

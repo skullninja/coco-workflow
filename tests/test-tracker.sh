@@ -311,6 +311,33 @@ assert_contains "unknown subcommand errors" "ERROR" "$unknown_err"
 
 # ============================================================
 echo ""
+echo "=== Test: Invalid Metadata ==="
+
+# Invalid metadata is a hard failure, not a silent fallback. It used to warn on
+# stderr, substitute {}, and exit 0 -- so owns_files and test_plan could vanish
+# while every caller saw success.
+
+bad_create=$(coco_tracker create --epic "epic-002" --title "Bad meta" --metadata '{bad}' 2>&1) && bad_create_rc=0 || bad_create_rc=$?
+assert_eq "create rejects invalid metadata" "1" "$bad_create_rc"
+assert_contains "rejected create says why" "ERROR" "$bad_create"
+assert_eq "rejected create leaves no task behind" "" "$(coco_tracker list --json | jq -r '.[] | select(.title == "Bad meta") | .id')"
+
+bad_update=$(coco_tracker update "$mt_id" --metadata 'not json' 2>&1) && bad_update_rc=0 || bad_update_rc=$?
+assert_eq "update rejects invalid metadata" "1" "$bad_update_rc"
+assert_eq "rejected update leaves metadata intact" "PROJ-42" "$(coco_tracker show "$mt_id" | jq -r '.metadata.issue_key')"
+
+# A newline inside otherwise-valid JSON is fine: jq parses it, and titles have
+# their newlines collapsed at tracker.sh:142. The PreToolUse hook denied these
+# commands on the theory that they broke both. They never did -- these two
+# assertions are what stops that rule being reintroduced.
+ml=$(coco_tracker create --epic "epic-002" --title "Multi
+line" --metadata '{"a": 1,
+"b": 2}')
+assert_eq "multiline title collapses to one line" "Multi line" "$(echo "$ml" | jq -r '.title')"
+assert_eq "multiline valid metadata is accepted" "2" "$(echo "$ml" | jq -r '.metadata.b')"
+
+# ============================================================
+echo ""
 echo "==============================="
 echo "Results: $PASS passed, $FAIL failed"
 echo "==============================="
