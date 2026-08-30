@@ -1,6 +1,6 @@
 ---
-argument-hint: ["reset"]
-description: Initialize Coco in the current project. Creates .coco/ directory, config, git hooks, and permissions. Use "reset" to force reconfiguration.
+argument-hint: ["reset" | "migrate"]
+description: Initialize Coco in the current project. Creates .coco/ directory, config, git hooks, and permissions. Use "reset" to force reconfiguration, or "migrate" to reconcile an existing config against the current defaults.
 allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -9,6 +9,51 @@ allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
 ```text
 $ARGUMENTS
 ```
+
+## Migrate Mode
+
+If `$ARGUMENTS` contains "migrate", run **only** this section and stop. Do not
+touch git hooks, gitignore, or permissions.
+
+`.coco/config.yaml` is copied from `config/coco.default.yaml` once, at setup, and
+never consulted again. A project set up months ago keeps whatever the defaults
+were that day -- including defaults that have since been reversed because they
+were wrong. Migrate is how that gets reconciled without discarding deliberate
+choices.
+
+**1. Read both files.**
+
+```bash
+cat .coco/config.yaml
+```
+```bash
+cat "${CLAUDE_PLUGIN_ROOT}/config/coco.default.yaml"
+```
+
+**2. Add keys the project is missing.** For every key present in the default and
+absent from the project config, insert it with the default value and its comment,
+in the same section and position. This is safe and needs no confirmation -- an
+absent key already behaves as its default, so writing it changes nothing except
+making it visible and editable.
+
+**3. Report keys whose values differ. Do not change them.** A differing value is
+usually a deliberate choice, and silently reverting it would be worse than the
+drift. Present them as a table:
+
+| Key | Yours | Current default | Why the default changed |
+|-----|-------|-----------------|-------------------------|
+| `loop.pause_on_error` | `true` | `false` | Pausing on the first failure turns a flaky test into a full stop needing a human |
+| `loop.parallel.enabled` | `false` | `true` | Worktree isolation is proven; serial execution is the slow path |
+
+Only include a `Why` for keys whose default actually changed in a release. For a
+key that merely differs because the user set it, leave that cell `--`.
+
+**4. Offer to apply.** Use `AskUserQuestion` listing each differing key that has a
+changed default, and apply only what the user selects. Never apply in bulk without
+asking, and never touch a key the user set to a non-default value that was not
+itself a changed default.
+
+**5. Report** what was added, what was changed, and what was left alone.
 
 ## Step 0: Idempotency Check
 
@@ -26,6 +71,7 @@ Check if `.coco/config.yaml` already exists.
   - If "Reinstall hooks": jump to Step 4 (Git Hooks).
   - If "Reconfigure": continue from Step 2.
 - If `$ARGUMENTS` contains "reset": continue from Step 1 (recreates everything).
+- If `$ARGUMENTS` contains "migrate": Migrate Mode above already handled it; stop.
 - If `.coco/config.yaml` does NOT exist: continue from Step 1.
 
 ## Step 1: Create Directory Structure
@@ -99,8 +145,8 @@ Edit `.coco/config.yaml`: change `provider: "none"` to the chosen provider (`non
 Use `AskUserQuestion`:
 - **Question**: "Enable parallel execution with git worktrees?"
 - **Options**:
-  - "No (Recommended)" -- Sequential task execution
-  - "Yes" -- Parallel execution with isolated git worktrees
+  - "Yes (Recommended)" -- Parallel execution with isolated git worktrees
+  - "No" -- Sequential task execution, one task at a time
 
 If "Yes":
 - Use `AskUserQuestion`: "Max parallel agents?"
@@ -108,6 +154,12 @@ If "Yes":
   - "2"
   - "4"
 - Edit config: set `loop.parallel.enabled: true` and `loop.parallel.max_agents`.
+
+If "No": set `loop.parallel.enabled: false`.
+
+Parallel needs `owns_files` metadata on tasks to find non-overlapping work; when
+it is missing, `/coco:loop` falls back to serial and says so. Enabling it costs
+nothing when it cannot apply.
 
 ## Step 4: Git Hooks
 

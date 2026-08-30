@@ -38,7 +38,7 @@ Coco is the whole pipeline in one plugin:
 
 - **Discovery to delivery** -- PRD, roadmap, design, tasks, implementation, review, merge. One plugin.
 - **Dependency-aware execution** -- Built-in tracker with topological sort. `ready` always returns the next unblocked task.
-- **Autonomous loop** -- Circuit breaker, progress detection, configurable safety limits. Runs until done or stuck. Supports worktree-based parallel execution.
+- **Autonomous loop** -- Runs to completion without checkpoints, reporting a one-line progress ledger per iteration and an inline dashboard every few. Circuit breaker, configurable safety limits, worktree-based parallel execution on by default.
 - **AI code review** -- Every PR reviewed before merge. Critical findings auto-fixed. Up to 3 review iterations.
 - **Adaptive routing** -- Quick fix? Skip the ceremony. Full feature? Full pipeline. Complexity detected automatically.
 - **Session memory** -- Survives context compaction. Pick up where you left off across sessions.
@@ -172,7 +172,7 @@ Human-facing entry points. These show up in `/` autocomplete.
 
 | Command | Purpose |
 |---------|---------|
-| `/coco:setup` | Initialize Coco in the current project (config, hooks, permissions) |
+| `/coco:setup` | Initialize Coco in the current project (config, hooks, permissions). `migrate` reconciles an existing config against current defaults |
 | `/coco:prd` | Create, audit, or derive Product Requirements Document |
 | `/coco:roadmap` | Build prioritized, phased roadmap from PRD + analysis |
 | `/coco:phase` | Orchestrate full pipeline for a roadmap phase |
@@ -297,10 +297,12 @@ commit:
 loop:
   max_iterations: 20
   no_progress_threshold: 3
-  pause_on_error: true
+  pause_on_error: false         # Skip the failed task, keep going
+  dashboard_every: 5            # Render the dashboard inline every N iterations
   parallel:
-    enabled: false              # Enable worktree-based parallel execution
+    enabled: true               # Worktree-based parallel execution
     max_agents: 3
+    max_agent_attempts: 2       # Agent gives up and reports rather than spinning
 
 pr:
   enabled: true
