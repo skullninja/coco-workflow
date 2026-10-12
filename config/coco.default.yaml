@@ -80,7 +80,20 @@ pre_commit:
   skip_env_var: "COCO_QUICK_COMMIT"
 
 testing:
-  # Test runner command (empty = no test runner configured)
+  # Test runner command (empty = no test runner configured).
+  #
+  # A single command covers a single-target repo. A repo with more than one test
+  # target needs more than one command -- one project's mutation harness drove
+  # `swift test`, which never compiled the app target, so a third of the codebase
+  # was invisible to it and nobody was told. Use the map form for that:
+  #
+  #   test_command:
+  #     "Sources/**": "swift test"
+  #     "App/**":     "xcodebuild test -scheme App"
+  #
+  # Keys are path globs matched against the diff; the first match wins. A diff
+  # touching paths no key matches is a finding, not a pass -- whoever reviews it
+  # must say which command covered what.
   test_command: ""
 
   # Test timeout in seconds
@@ -153,6 +166,21 @@ pr:
 
     # Maximum review-fix iterations before leaving PR open for human review
     max_review_iterations: 3
+
+    # Review depth by path. Without this, a docs change and a scoring algorithm
+    # get the same six criteria -- projects were inventing their own tiering in
+    # CLAUDE.md, where the reviewer cannot see it and does not honour it.
+    #
+    #   tiers:
+    #     "docs/**":     none
+    #     "Sources/**":  full
+    #     "**":          standard
+    #
+    # none = skip review. standard = the criteria below, one round.
+    # full = standard plus: run the project's verification command, require a
+    #        control (see agents/code-reviewer.md), and probe adversarially.
+    # First matching glob wins; unmatched paths get standard.
+    tiers: {}
 
     # Severity levels that block merge (critical = bugs/security, warning = advisory)
     blocking_severities:

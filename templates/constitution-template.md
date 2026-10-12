@@ -13,12 +13,35 @@
 
 ## Core Principles
 
+<!--
+  Every principle needs a **Bounds** line as well as a MUST and a Rationale.
+
+  A principle shaped only as MUST + Rationale can require and can never limit,
+  so principles accumulate as one-directional ratchets. That is not theoretical:
+  a principle reading "cover the states, not just the happy path: [six states]
+  each need a case" is an unbounded multiplier -- N states x M behaviours, no
+  ceiling -- and combined with a verification gate it produced a suite with more
+  test code than product code. Its author's reaction on being shown the
+  arithmetic was that the density "was not the intent." The document produced an
+  outcome nobody chose, because its form had nowhere to say "and this much is
+  too much."
+
+  Bounds is where the cost goes. "Test-first for domain logic, bounded by the
+  per-feature count in each design's Test Strategy." "Adversarial review for
+  algorithmic paths, one round for UI, none for docs." A principle whose Bounds
+  line reads "none" is a deliberate choice; a principle with no Bounds line is
+  an oversight.
+-->
+
+
 ### I. [First Principle Name]
 
 **MUST** [describe the non-negotiable requirement]:
 - [Specific rule or guideline]
 - [Specific rule or guideline]
 - [Specific rule or guideline]
+
+**Bounds**: [What too much of this looks like, and what it is willing to pay]
 
 **Rationale**: [Why this principle matters for the project]
 
@@ -30,6 +53,8 @@
 - [Specific rule or guideline]
 - [Specific rule or guideline]
 
+**Bounds**: [What too much of this looks like, and what it is willing to pay]
+
 **Rationale**: [Why this principle matters for the project]
 
 ---
@@ -39,6 +64,8 @@
 **MUST** [describe the non-negotiable requirement]:
 - [Specific rule or guideline]
 - [Specific rule or guideline]
+
+**Bounds**: [What too much of this looks like, and what it is willing to pay]
 
 **Rationale**: [Why this principle matters for the project]
 

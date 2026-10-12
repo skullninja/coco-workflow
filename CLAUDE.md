@@ -48,7 +48,7 @@ Five layers:
 | `scripts/uninstall.sh` | Removes git hooks |
 | `tests/test-tracker.sh` | 84 tests for tracker.sh |
 | `tests/test-hooks.sh` | 9 tests for `coco-lib.sh` project-root resolution |
-| `tests/test-setup-config.sh` | 15 tests guarding wizard/config drift |
+| `tests/test-setup-config.sh` | 26 tests guarding wizard/config drift |
 
 ## Tracker (`lib/tracker.sh`)
 
@@ -200,6 +200,64 @@ This section also resolves a long-standing bug: the RED steps in `commands/execu
 - *Test ledger* recording per-run failures. `.coco/state/` is gitignored, so it is machine-local and absent in every worktree — meaning the entire parallel path contributes nothing. There is no stable cross-framework test identity, and under a working RED→GREEN loop every test fails exactly once at RED and never again, so the signal measures authorship recency, not value.
 - *Audit-created cleanup epic*. `commands/execute.md` resolves "most recent open epic," so a cleanup epic silently hijacks a bare `/coco:execute`; the pre-execution gate hard-stops on `issue_key: null`; and cleanup tasks owning `tests/**` collide with feature sub-phases owning `tests/auth/**`. Deletions route through the `hotfix` skill instead.
 - *Source-comment justifications*. No language-agnostic syntax, stripped by formatters, and permanently tattoos the tool onto user code. The mapping lives in the PR body and tracker metadata, where it dies with coco.
+
+## Evidence Provenance
+
+Every `code-reviewer` finding states how it is known: **observed** (with the
+command run) or **inferred**. Both are legitimate -- most real defects are caught
+by reading -- but they are not interchangeable, and the review-fix loop had no way
+to tell them apart, so it treated a hunch and a test result as equally settled.
+
+A reviewer may not report a command's output it did not run. A review once
+produced a section of empirical harness results and retracted it as fabricated;
+the conclusion happened to be correct, which is the worst case, because the
+finding held up and nobody checked where the numbers came from.
+
+**A verification harness must prove itself before its verdicts are evidence.**
+Two requirements, and their absence is itself a finding:
+
+- **A control**: a semantically null change must report SURVIVED. A harness that
+  reports CAUGHT for a no-op is measuring its own noise.
+- **A clean baseline**: the unmutated suite must pass repeatedly. A flaky suite
+  reads as CAUGHT whenever it flakes.
+
+Two harness defects in one project produced wrong verdicts in both directions,
+twice, inside review rounds. **A false SURVIVED is worse than a false CAUGHT** --
+it sends the author writing tests nothing needed.
+
+`testing.test_command` accepts a **path-glob map** as well as a scalar, because a
+single command cannot cover a repo with two test targets. First match wins; a diff
+touching unmatched paths is a finding, not a pass. `pr.review.tiers` does the same
+for review depth -- projects were inventing tiering in their own `CLAUDE.md`,
+where the reviewer could not see it.
+
+## Test Budgets Carry Numbers
+
+`## Test Strategy` has an **Expected** count per FR, an **Expected total**, a
+**Ceiling**, and a **Feature-review allowance**. `Test? = yes` without a number is
+not a budget: one test and forty satisfy it equally.
+
+This is the one item in the whole improvement with a measured control. Unbudgeted:
+1,726 lines of test against 388 of source, a core mechanic shipped untested, and
+nobody able to say what any test defended. Budgeted, with **nothing enforcing it**:
+44 tests against a stated 40, and the overage detected and explained unprompted.
+So the mechanism is a template column, not reviewer enforcement.
+
+Two things the template now anticipates. The ceiling is used to justify testing
+**less** -- that is the intended use, not a loophole. And the **feature-review
+allowance** exists because a per-sub-phase budget cannot predict what the
+feature-level review finds; a ceiling held through implementation and every
+sub-phase review, then broke at the feature gate.
+
+Constitution principles carry a **Bounds** line beside MUST and Rationale. Without
+it a principle can require and never limit, so principles accumulate as
+one-directional ratchets -- one project's "cover the states, each needs a case" was
+an unbounded multiplier that produced more test code than product code, and its
+author's reaction was that the density was not the intent.
+
+**Heading matching is case-insensitive.** A design written `## Test strategy` is
+the same section; treating it as absent silently drops the budget in every
+consumer.
 
 ## PR Workflow
 
@@ -385,7 +443,7 @@ bash tests/test-setup-config.sh
 
 `test-hooks.sh` runs 9 tests over `coco_project_root` in `hooks/scripts/coco-lib.sh`: the upward walk from nested and worktree-like directories, the gate that keeps hooks out of non-coco projects, and the `hint -> $CLAUDE_PROJECT_DIR -> $PWD` fallback chain including a hint directory that no longer exists (`/coco:loop` prunes the worktrees its agents ran in). All three behaviors were mutation-tested: breaking the walk, the gate, or the fallback each fails the suite.
 
-`test-setup-config.sh` runs 15 tests over `config/coco.default.yaml` and its two
+`test-setup-config.sh` runs 26 tests over `config/coco.default.yaml` and its two
 consumers, both of which fail *silently*. It asserts every `sed` substitution in
 `scripts/setup.sh` still matches something in the shipped config -- a pattern
 keyed to a value rather than an anchor stops matching when that default changes,

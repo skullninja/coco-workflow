@@ -19,6 +19,8 @@ Also read, when they exist:
 
 - `.coco/memory/constitution.md` -- project principles. A diff violating a constitution `MUST` principle is a critical finding, category `Correctness`
 - `specs/{feature}/design.md` `## Test Strategy` -- the feature's test budget. Resolve the feature from the branch name or the PR body's task reference
+
+Match this heading **case-insensitively** and tolerate a trailing `*(mandatory)*`: a design written `## Test strategy` is the same section, and treating it as absent silently drops the budget.
 - The PR body's `## Test Value` table -- what the author says they tested and why
 
 When a design or Test Strategy cannot be found (hotfix PRs have none by design, and legacy features predate the section), the triggers that reference it simply do not fire. **Do not infer a test strategy and grade the diff against it.** The universal triggers -- tautologies, mock-only assertions, framework tests, exact duplicates -- still apply, because those need no plan to judge.
@@ -93,6 +95,53 @@ More tests is not better. A suite that grows faster than the behavior it defends
 - Unclear naming or misleading variable names
 - Violation of project conventions
 
+## Evidence Provenance
+
+**Every finding states how you know it. Two values, and no third.**
+
+- **observed** -- you ran something and read the result. Give the command.
+- **inferred** -- you reasoned it from the diff, the spec, or the code.
+
+An inferred finding is not a lesser finding. Most real defects are caught by
+reading. But inference and measurement are not interchangeable, and the review-fix
+loop currently cannot tell them apart, so it treats a hunch and a test result as
+equally settled.
+
+**You may not report a command's output unless you ran that command.** If a
+finding would be stronger with evidence you cannot obtain -- because you were
+dispatched read-only, because a mutation needs to modify a file, because the
+harness needs a simulator you do not have -- say so in the finding and mark it
+`inferred`. "I could not run this; here is what I expect and how to check it" is a
+useful finding. An invented command output is not.
+
+This is not hypothetical. A review once produced a section of empirical harness
+results and later retracted it as fabricated. The conclusion happened to be
+correct, which is the worst case: the finding held up, so nobody checked where the
+numbers came from.
+
+**If you consulted a verification harness, say whether you trusted it.** A
+mutation harness is only evidence if it can state its own noise floor -- see
+**Verification harnesses must prove themselves** below.
+
+## Verification harnesses must prove themselves
+
+When a project supplies a mutation or verification command and you rely on its
+verdicts, check the harness before the code. Two defects in one project's harness
+produced wrong verdicts in both directions, twice, inside review rounds.
+
+Require two things of it, and report their absence as a finding:
+
+1. **A control.** A semantically null change -- a comment, a reformat -- must
+   report SURVIVED. A harness that reports CAUGHT for a no-op is detecting its own
+   noise, and every CAUGHT it produced is worthless.
+2. **A clean baseline.** The unmutated suite must pass, repeatedly. A flaky suite
+   reads as CAUGHT whenever it flakes, so at a 1-in-5 flake rate roughly one
+   CAUGHT in five is spurious. Report the flake rate beside the verdicts.
+
+**A false SURVIVED is worse than a false CAUGHT.** A spurious CAUGHT grants
+unearned confidence; a spurious SURVIVED sends the author writing tests that
+nothing needed, which is a volume ratchet driven by broken tooling.
+
 ## Severity Classification
 
 | Severity | Definition | Blocks Merge? |
@@ -117,6 +166,8 @@ Everything else is a warning.
 - The test duplicates an existing test at the same level with the same inputs and the same assertions. Name the duplicate as `file:line`.
 - The test cannot fail for the behavior it names: it passes identically with that behavior removed or inverted, because the code under test is mocked out, the assertion does not observe the result, or the assertion is on a value the test itself supplied.
 - The test asserts a behavior this feature's `design.md` `## Test Strategy` lists under **Not worth testing**, and the PR body offers no justification for the deviation.
+- The test derives its expected value by **reimplementing the behaviour under test** rather than calling it -- a local copy of the loop, the formula, or the state machine, compared against itself. Nothing is mocked, the assertion observes a real computed result, and the value is not a literal the test supplied, so this slips every trigger above; it also passes with the production function arbitrarily broken. Distinguish from a legitimate independent oracle (a table of known-good values, a reference implementation taken from a spec) by whether the copy tracks the implementation: if a refactor of the production code would require editing the test's copy, it is not an oracle. Observed shipping a real defect -- two tests hand-rolled a clamp's stepping loop instead of calling the function, and the function was missing a parameter it needed.
+- A performance assertion whose bound does not discriminate: it passes with the optimisation present *and* absent. `#expect(elapsed < 3.0)` where both the fast and slow paths finish in under a second pins nothing. This one is **not** decidable from the diff alone -- flag it as `inferred` and name the measurement that would settle it.
 
 **Objective trigger -- critical, category `TestCoverage`:**
 
@@ -147,6 +198,7 @@ gh pr comment {pr-number} --body-file - <<'REVIEW'
 - **File**: `{path}:{line}`
 - **Severity**: critical
 - **Category**: {Correctness | Security | Breaking | TestCoverage | TestValue}
+- **Evidence**: {observed: `the command you ran` | inferred}
 - **Description**: {what's wrong and why it matters}
 - **Suggested Fix**: {specific, actionable fix with code if possible}
 
@@ -156,6 +208,7 @@ gh pr comment {pr-number} --body-file - <<'REVIEW'
 - **File**: `{path}:{line}`
 - **Severity**: warning
 - **Category**: {Performance | CodeQuality | Style | TestValue | TestCoverage}
+- **Evidence**: {observed: `the command you ran` | inferred}
 - **Description**: {observation}
 - **Suggestion**: {recommendation}
 
