@@ -528,6 +528,11 @@ coco-tracker ready --json --epic {epic-id}
 ### Resuming Work
 
 - `coco-tracker ready` always returns the correct next task based on dependencies
+- `coco-tracker reconcile` finds tasks left `in_progress` by an interrupted run and
+  epics closed over unfinished work; `--fix` resets the former. The Pre-Loop Gate
+  runs it, which makes a killed loop recoverable instead of permanently stuck
+- `coco-tracker round pr-<n> --bump` counts review rounds in `.coco/state/`, so
+  `max_review_iterations` can actually be enforced rather than remembered
 - Issue tracker reflects current progress for human visibility
 - `/coco:execute` can be invoked at any point to continue
 

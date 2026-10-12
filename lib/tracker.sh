@@ -33,6 +33,10 @@ COCO_DIR="${COCO_DIR:-$COCO_ROOT/.coco}"
 TASKS_DIR="$COCO_DIR/tasks"
 TASKS_FILE="$TASKS_DIR/tasks.jsonl"
 SESSIONS_FILE="$TASKS_DIR/sessions.jsonl"
+# Machine-local run state. .coco/state/ is gitignored, which is right for this:
+# review-round counts belong to one run on one machine and must not travel.
+STATE_DIR="$COCO_DIR/state"
+ROUNDS_FILE="$STATE_DIR/rounds.json"
 
 _coco_ensure_dirs() {
     mkdir -p "$TASKS_DIR"
@@ -662,6 +666,120 @@ _cmd_sync() {
 
 # --- Main Dispatch ---
 
+_cmd_reconcile() {
+    local fix=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --fix) fix=true; shift ;;
+            *) echo "ERROR: unknown reconcile option: $1" >&2; return 1 ;;
+        esac
+    done
+
+    if [[ ! -s "$TASKS_FILE" ]]; then
+        echo "Tracker is consistent (no records)."
+        return 0
+    fi
+    if ! jq empty "$TASKS_FILE" 2>/dev/null; then
+        echo "ERROR: $TASKS_FILE is not valid JSONL -- cannot reconcile." >&2
+        return 1
+    fi
+
+    local stranded closed_over_open orphans
+    stranded=$(jq -sr '[.[] | select(.type == "task" and .status == "in_progress") | .id] | join(" ")' "$TASKS_FILE")
+    closed_over_open=$(jq -sr '
+        . as $all
+        | [ $all[]
+            | select(.type == "epic" and (.status | IN("closed","completed")))
+            | . as $e
+            | select([ $all[]
+                       | select(.type == "task" and .epic_id == $e.id
+                                and ((.status | IN("completed","closed","cancelled")) | not)) ]
+                     | length > 0)
+            | $e.id ]
+        | join(" ")' "$TASKS_FILE")
+    orphans=$(jq -sr '
+        ([.[] | select(.type == "epic") | .id]) as $epics
+        | [ .[] | select(.type == "task" and .epic_id != null
+                         and ((.epic_id | IN($epics[])) | not)) | .id ]
+        | join(" ")' "$TASKS_FILE")
+
+    local found=0
+
+    if [[ -n "$stranded" ]]; then
+        found=1
+        echo "Stranded tasks (in_progress): $stranded"
+        echo "  'ready' selects only pending, so these are unstartable."
+        if [[ "$fix" == "true" ]]; then
+            local t
+            for t in $stranded; do
+                _cmd_update "$t" --status pending >/dev/null || return 1
+                echo "  reset to pending: $t"
+            done
+        fi
+    fi
+
+    if [[ -n "$closed_over_open" ]]; then
+        found=1
+        echo "Epics closed over unfinished tasks: $closed_over_open"
+        echo "  Nothing will surface the tasks underneath these; reopen or close them."
+    fi
+
+    if [[ -n "$orphans" ]]; then
+        found=1
+        echo "Tasks referencing a missing epic: $orphans"
+    fi
+
+    if [[ "$found" -eq 0 ]]; then
+        echo "Tracker is consistent."
+        return 0
+    fi
+
+    if [[ "$fix" == "true" && -z "$closed_over_open" && -z "$orphans" ]]; then
+        echo "Reconciled."
+        return 0
+    fi
+
+    [[ "$fix" == "true" ]] && echo "Some findings need a decision and were not changed." >&2
+    return 1
+}
+
+_cmd_round() {
+    local key="${1:-}"; shift || true
+    local action="read"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --bump)  action="bump";  shift ;;
+            --reset) action="reset"; shift ;;
+            *) echo "ERROR: unknown round option: $1" >&2; return 1 ;;
+        esac
+    done
+    if [[ -z "$key" ]]; then
+        echo "ERROR: round requires a key (e.g. the PR number)" >&2
+        return 1
+    fi
+
+    mkdir -p "$STATE_DIR"
+    [[ -s "$ROUNDS_FILE" ]] || echo '{}' > "$ROUNDS_FILE"
+
+    local cur
+    cur=$(jq -r --arg k "$key" '.[$k] // 0' "$ROUNDS_FILE" 2>/dev/null) || cur=0
+
+    case "$action" in
+        read)  echo "$cur"; return 0 ;;
+        bump)  cur=$((cur + 1)) ;;
+        reset) cur=0 ;;
+    esac
+
+    local tmp="${ROUNDS_FILE}.tmp"
+    if ! jq --arg k "$key" --argjson v "$cur" '.[$k] = $v' "$ROUNDS_FILE" > "$tmp"; then
+        rm -f "$tmp"
+        echo "ERROR: failed to write $ROUNDS_FILE -- original left untouched." >&2
+        return 1
+    fi
+    mv "$tmp" "$ROUNDS_FILE"
+    echo "$cur"
+}
+
 coco_tracker() {
     local cmd="${1:-help}"
     shift || true
@@ -680,6 +798,8 @@ coco_tracker() {
         session-start)  _cmd_session_start "$@" ;;
         session-end)    _cmd_session_end "$@" ;;
         sync)           _cmd_sync "$@" ;;
+        reconcile)      _cmd_reconcile "$@" ;;
+        round)          _cmd_round "$@" ;;
         help|--help|-h)
             cat <<'EOF'
 coco_tracker - JSONL-based task tracker for coco-workflow

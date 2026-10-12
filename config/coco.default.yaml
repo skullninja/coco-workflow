@@ -12,7 +12,13 @@ discovery:
   source_prd: ""                       # Path to source PRD (for derived/satellite repos)
 
 issue_tracker:
-  provider: "none"                     # linear | github | none
+  provider: "none"
+
+  # Create a GitHub/Linear issue per task, or only at feature level.
+  # false suits a project whose convention is "the PR is the review unit and git
+  # history is the record" -- the pre-loop gate then stops requiring issue_key on
+  # every task, which previously blocked such projects outright.
+  per_task_issues: true                     # linear | github | none
 
   # Linear configuration (when provider: linear)
   linear:

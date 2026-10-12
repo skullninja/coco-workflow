@@ -404,6 +404,70 @@ assert_eq "a finished epic closes cleanly" "closed" "$(coco_tracker show "$f_epi
 
 # ============================================================
 echo ""
+echo "=== Test: Reconcile ==="
+
+# Any interruption -- usage limit, crash, Ctrl-C -- leaves the claimed task
+# in_progress. `ready` selects only pending, so the task is unstartable and the
+# epic can never complete. Nothing in coco recovered it, and the loop reported
+# "all remaining tasks are blocked" while nothing was blocked.
+#
+# reconcile inspects the whole file, so it gets its own tracker rather than
+# running against whatever the preceding 60 tests left behind.
+
+RECON_DIR="$TEST_DIR/recon"
+mkdir -p "$RECON_DIR/.coco/tasks"
+recon() { ( COCO_ROOT="$RECON_DIR" COCO_DIR="$RECON_DIR/.coco" bash "$TRACKER" "$@" ); }
+
+r_epic=$(recon epic-create "Reconcile" | jq -r '.id')
+rt1=$(recon create --epic "$r_epic" --title "stranded" | jq -r '.id')
+rt2=$(recon create --epic "$r_epic" --title "fine" | jq -r '.id')
+
+clean=$(recon reconcile 2>&1) && clean_rc=0 || clean_rc=$?
+assert_eq "reconcile exits 0 when consistent" "0" "$clean_rc"
+assert_contains "reconcile says so" "consistent" "$clean"
+
+recon update "$rt1" --status in_progress >/dev/null
+strand=$(recon reconcile 2>&1) && strand_rc=0 || strand_rc=$?
+assert_eq "reconcile exits 1 when it finds something" "1" "$strand_rc"
+assert_contains "reconcile names the stranded task" "$rt1" "$strand"
+assert_eq "reconcile does not reset without --fix" "in_progress" "$(recon show "$rt1" | jq -r '.status')"
+
+recon reconcile --fix >/dev/null 2>&1
+assert_eq "--fix resets the stranded task" "pending" "$(recon show "$rt1" | jq -r '.status')"
+assert_eq "--fix leaves healthy tasks alone" "pending" "$(recon show "$rt2" | jq -r '.status')"
+assert_eq "reconcile is clean afterwards" "0" "$(recon reconcile >/dev/null 2>&1; echo $?)"
+
+# an epic closed over unfinished work is the same inconsistency pointing the
+# other way, and is worse: nothing will ever surface it
+recon update "$rt1" --status in_progress >/dev/null
+recon epic-close "$r_epic" --force >/dev/null 2>&1
+inc=$(recon reconcile 2>&1) && inc_rc=0 || inc_rc=$?
+assert_eq "reconcile flags a closed epic over open tasks" "1" "$inc_rc"
+assert_contains "reconcile names the epic" "$r_epic" "$inc"
+
+# a decision-needing finding is not silently "fixed"
+fixout=$(recon reconcile --fix 2>&1) && fix_rc=0 || fix_rc=$?
+assert_eq "--fix still exits 1 when a finding needs a decision" "1" "$fix_rc"
+assert_contains "--fix says it did not decide" "need a decision" "$fixout"
+
+echo "=== Test: Round Counting ==="
+
+# max_review_iterations defaulted to 3 and nothing ever counted. Two PRs reached
+# round four with no signal, and four earlier PRs in the same project had each
+# taken a third round. The cap was decorative because the count lived in the
+# model's head rather than anywhere it could be compared.
+
+assert_eq "an unseen key starts at 0" "0" "$(coco_tracker round pr-99)"
+assert_eq "bump returns 1" "1" "$(coco_tracker round pr-99 --bump)"
+assert_eq "bump returns 2" "2" "$(coco_tracker round pr-99 --bump)"
+assert_eq "reading does not bump" "2" "$(coco_tracker round pr-99)"
+assert_eq "keys are independent" "1" "$(coco_tracker round pr-100 --bump)"
+assert_eq "the first key is unaffected" "2" "$(coco_tracker round pr-99)"
+assert_eq "reset returns to 0" "0" "$(coco_tracker round pr-99 --reset)"
+assert_eq "reset persisted" "0" "$(coco_tracker round pr-99)"
+
+# ============================================================
+echo ""
 echo "==============================="
 echo "Results: $PASS passed, $FAIL failed"
 echo "==============================="
