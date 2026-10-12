@@ -117,6 +117,8 @@ Not every change needs the full pipeline. `/coco:planning-session tactical` and 
 `/coco:loop` wraps TDD + PR + review in an autonomous loop:
 
 - **No checkpoints** -- The loop runs to completion in one turn. It does not stop to report, and it does not offer to pause between tasks
+- **Verified state** -- Every tracker mutation is read back; a write that does not land stops the loop rather than being reported as done. `coco-tracker reconcile` recovers a run killed mid-task, so an interruption is no longer permanent
+- **Overlapped reviews** -- While a PR is in review the loop starts the next non-overlapping task, instead of blocking 7-19 minutes per review. Requires a clean `reconcile` and non-overlapping `owns_files`; it says which precondition failed when it runs serially instead
 - **Progress ledger** -- One line per iteration: epic, done/total, blocked count, iteration, no-progress counter. An inline dashboard every `dashboard_every` iterations (default 5)
 - **Circuit breaker** -- Pauses after consecutive iterations with no commits (default 3)
 - **Safety limit** -- Configurable max iterations (default: 20)

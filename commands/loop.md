@@ -337,11 +337,13 @@ Read `loop.parallel.enabled` from config (default: `true`).
      completed. Name it and its task in the ledger line, leave the task
      `in_progress`, and continue. Do not re-dispatch it in the same iteration.
 
-   The orchestrator cannot interrupt a running agent -- the dispatch call blocks
-   until the agent returns. The bound is inside the agent instead
-   (`loop.parallel.max_agent_attempts`), so an agent that cannot finish gives up
-   and reports rather than spinning. A genuinely hung agent will still hold the
-   batch; that is a known limit, not something this step can recover from.
+   The orchestrator cannot *interrupt* a running agent, but it is not blind to
+   one: wait with a bounded `TaskOutput` call and report, per **Waiting On A
+   Dispatched Agent** above. A timeout returns `status: running`, which
+   distinguishes slow from dead -- the distinction an earlier version of this
+   file wrongly called impossible. The agent is also bounded from the inside by
+   `loop.parallel.max_agent_attempts`, so one that cannot finish reports rather
+   than spinning.
 
 5. Skip to step 7 (Check progress) after handling all parallel results.
 
@@ -350,6 +352,56 @@ Fall through to serial execution (step 4), and **say which of those three it was
 in the ledger line. A loop that silently never parallelizes is indistinguishable
 from one that cannot, and missing `owns_files` is a fixable planning gap the user
 can only fix if they are told about it.
+
+**3b. Overlap the review with the next task**
+
+This is what the preceding stages bought. The loop blocks for 7 to 19 minutes per
+review doing nothing; measured across one full feature, 40-70% of wall clock was
+spent waiting, against 28% doing work. Reviews cannot be made much faster -- the
+time is the reviewer's analysis, not test execution (a 412-test suite runs in 4.4
+seconds, and a 19-minute review ran against a *smaller* diff than a 12.5-minute
+one). So the lever is not to wait idle.
+
+**After dispatching a review, do not sit on it. Start the next task.**
+
+Preconditions, all required:
+
+1. `coco-tracker ready --json --epic {epic-id}` returns a task.
+2. That task's `owns_files` does **not** overlap the files in the PR under
+   review (`gh pr diff {n} --name-only`). No `owns_files` means no overlap can be
+   ruled out -- do not overlap.
+3. The ready task does not depend on the task whose PR is in review.
+4. `coco-tracker reconcile` is clean. **Never pipeline over an inconsistent
+   tracker.** Two things in flight over state that can silently fail to persist
+   corrupts twice as fast, which is why this step comes after the verification
+   work and not before it.
+
+Then:
+
+- Record the dispatch (`.coco/state/dispatches.jsonl`) so the review is not lost
+  if this session ends.
+- Claim and implement the next task, emitting its ledger line as usual.
+- Before committing it, collect the outstanding review: `TaskOutput` with
+  `block=true`. Handle its findings and merge its PR **before** opening the next
+  PR, so merges stay in dependency order and a review-fix never races a commit on
+  the same branch.
+
+Emit both in the ledger so the overlap is visible rather than inferred:
+
+```
+[{epic-id} | {done}/{total} | iter {n}/{max}] review #{a} dispatched, starting {task-id}
+[{epic-id} | {done}/{total} | iter {n}/{max}] review #{a} returned ({k} findings), {task-id} implemented
+```
+
+**If any precondition fails, say which and run serially.** A silent fallback is
+how a loop that never pipelines becomes indistinguishable from one that cannot.
+
+**Re-reviews are scoped to what changed since the last round.** Narrowing a third
+round to the single file its predecessor touched cut it from ~12 minutes to ~7 --
+close to half, from scope alone. Give the reviewer the incremental diff
+(`gh pr diff {n}` since the last review commit) and say which findings it is
+verifying, rather than re-submitting the whole PR. Keep the full-scope review for
+round one and for the feature PR.
 
 **4. Record pre-iteration commit count (serial path)**
 
