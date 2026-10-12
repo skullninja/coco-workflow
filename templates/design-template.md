@@ -78,16 +78,46 @@
 
   "Failure mode defended" must name a concrete defect the test would catch.
   "Validates FR-001" is not a failure mode. "Expired token accepted as valid" is.
+
+  THE COUNTS ARE THE POINT. "Test? = yes" without a number is not a budget:
+  one test and forty both satisfy it. A feature built without counts produced
+  1,726 lines of test against 388 lines of source and still shipped a core
+  mechanic untested -- volume bought the appearance of coverage, not coverage.
+  The same pipeline, given an expected count and a ceiling, produced 44 tests
+  against a stated 40 and flagged the overage itself.
+
+  Pick counts deliberately small. Most features have one or two requirements
+  where a wrong answer is invisible and the rest are either obvious on sight or
+  better served by the visual/manual check your constitution names. Using the
+  ceiling to justify testing LESS is the intended use.
 -->
 
 **TDD**: [yes | no]
 **Levels in play**: [e.g., unit (domain logic), integration (HTTP boundary)]
 
-| FR | Test? | Level | Failure mode defended |
-|----|-------|-------|-----------------------|
-| FR-001 | yes | unit | [specific defect this catches] |
-| FR-002 | yes | integration | [specific defect this catches] |
-| FR-003 | no | -- | -- |
+| FR | Test? | Level | Expected | Failure mode defended |
+|----|-------|-------|----------|-----------------------|
+| FR-001 | yes | unit | 3 | [specific defect this catches] |
+| FR-002 | yes | integration | 2 | [specific defect this catches] |
+| FR-003 | no | -- | 0 | -- |
+
+**Expected total: [N]. Ceiling: [N + headroom].**
+**Feature-review allowance: [M].**
+
+<!--
+  Going over the ceiling is a finding to explain, not a result to be pleased
+  with. Exceeding it means one of three things, and the PR must say which:
+
+    - a requirement needed more cases than expected  -> fine, name it
+    - tests were written for the views, not the model -> not fine, delete them
+    - a fixture was duplicated across FRs             -> not fine, merge them
+
+  The feature-review allowance exists because the per-sub-phase budget cannot
+  anticipate what the feature-level review finds -- it sees interactions no
+  per-PR review can, and its findings legitimately produce tests. Observed: a
+  ceiling held through implementation and every sub-phase review, then broke at
+  the feature gate. Budget that stage rather than being surprised by it.
+-->
 
 ### Not worth testing
 

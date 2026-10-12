@@ -35,6 +35,24 @@ If user input provides principles, use them. Otherwise:
   - Security/accessibility requirements
 - The user might need fewer or more principles than the template provides. Respect their choice.
 
+**For every principle, ask the paired question.** Not just *what does this
+require* but *what would too much of it look like?* The answer goes in the
+principle's **Bounds** line.
+
+A constitution whose principles are MUST + Rationale can only ratchet. One
+project's testing principle required a case for each of six states, which is an
+unbounded multiplier; combined with a verification gate it produced more test
+code than product code, and its author's reaction on seeing the arithmetic was
+that the density "was not the intent." Asking for the limit at authoring time is
+cheaper than inferring it from a ratio months later.
+
+**Offer the test-cost principle as a default**, not as example text. The template
+carries one -- every test must defend a named failure mode; coverage already
+provided at a cheaper level must be deleted rather than duplicated; an
+unjustified test is not free -- and projects that would have wanted it did not
+get it, because it sat in the template as illustration and was never raised in
+the interview. Opting out should be a decision, not an omission.
+
 ### 2. Draft Constitution
 
 Replace all placeholder tokens with concrete text:

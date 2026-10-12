@@ -29,6 +29,8 @@ You will be given:
 - The repo root
 - Optionally, the paths of relevant `design.md` files whose `## Test Strategy` sections state what the project decided to test
 
+Match this heading **case-insensitively** and tolerate a trailing `*(mandatory)*`: a design written `## Test strategy` is the same section, and treating it as absent silently drops the budget.
+
 ## Method
 
 1. **Read every test file in scope.** Do not sample. A verdict on an unread test is a fabrication.

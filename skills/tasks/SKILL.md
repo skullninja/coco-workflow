@@ -63,6 +63,11 @@ Organize tasks by user story. Every task MUST use this format:
 - **Sub-Phase 3+: User Stories** - One sub-phase per story in priority order (P1, P2, P3...)
   - Each includes: goal, independent test criteria, acceptance criteria (min 3), implementation tasks
   - Test tasks are derived from `## Test Strategy` in design.md: one per `FR-###` marked `Test? = yes`, at the level named there, tagged with the FR ID. Create **no** test task for an FR marked `Test? = no` or for anything under **Not worth testing**
+  - Carry the FR's `Expected` count into the task, and keep the sub-phase's total
+    within the sum of its FRs' counts. The budget is a quantity, not just a
+    selection: "yes" without a number is satisfied equally by one test and forty
+
+Match this heading **case-insensitively** and tolerate a trailing `*(mandatory)*`: a design written `## Test strategy` is the same section, and treating it as absent silently drops the budget.
   - Order within story: Tests -> Models -> Services -> Endpoints -> Integration
 - **Final Sub-Phase: Polish** - Cross-cutting concerns
 
@@ -143,6 +148,10 @@ Load from `{specs_dir}/{feature}/`:
 Compare test tasks in tasks.md against `## Test Strategy` in design.md. Both directions are findings:
 
 - *Under-testing*: an `FR-###` marked `Test? = yes` with no test task
+- *Budget breach*: the test tasks for a sub-phase total more than the `Expected`
+  counts its FRs declare, or the feature's tasks total more than the **Ceiling**.
+  Report the arithmetic, not just the verdict -- "FR-005 expects 4, three tasks
+  carry 9 between them" is actionable; "over budget" is not
 - *Over-testing*: a test task with no `FR` tag, or tagged to an `FR` marked `Test? = no`, or asserting something listed under **Not worth testing**
 - *Level drift*: a test task at a different level than the Test Strategy specifies (e.g. an integration test where the strategy says unit)
 - *Duplicate defense*: two or more test tasks naming the same failure mode
@@ -171,10 +180,14 @@ If design.md has no `## Test Strategy` section (legacy design, or generated befo
 | Requirement Key | Has Task? | Task IDs | Notes |
 
 **Test Budget:**
-| FR | Test? (design) | Test task? | Level planned | Level in tasks | Verdict |
-|----|----------------|------------|---------------|----------------|---------|
-| FR-001 | yes | T010 | unit | unit | ok |
-| FR-003 | no | T015 | -- | unit | OVER |
+| FR | Test? (design) | Expected | Test task? | Level planned | Level in tasks | Verdict |
+|----|----------------|----------|------------|---------------|----------------|---------|
+| FR-001 | yes | 3 | T010 | unit | unit | ok |
+| FR-003 | no | 0 | T015 | -- | unit | OVER |
+
+**Totals**: expected {N}, planned {M}, ceiling {C}. State whether the plan is
+inside the ceiling before the executor starts, because that is the cheapest point
+at which it can be fixed.
 
 **Metrics:**
 - Total Requirements / Total Tasks / Coverage %

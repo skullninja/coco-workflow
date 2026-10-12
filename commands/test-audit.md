@@ -47,6 +47,8 @@ Report the count before proceeding. If it is zero, follow Edge Cases.
 
 For each feature directory under `{specs_dir}/`, read the `## Test Strategy` section of `design.md` if present. Collect the FRs marked `Test? = yes`, the levels chosen, and everything listed under **Not worth testing**.
 
+Match this heading **case-insensitively** and tolerate a trailing `*(mandatory)*`: a design written `## Test strategy` is the same section, and treating it as absent silently drops the budget.
+
 This is *evidence*, not authority. Designs are written before implementation and are never rewritten afterward, so a stale "not worth testing" note penalizes a test's behavioral anchoring but never by itself justifies deleting it. Record which designs were found -- the report states what the audit had to work with.
 
 ### 3. Score

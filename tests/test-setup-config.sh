@@ -65,7 +65,14 @@ echo "Keys read by hooks must be leaf-unique"
 # The hook config reader is grep -E "^\s*<key>:" | head -1. It matches a leaf key
 # anywhere in the file and takes the first hit, ignoring nesting -- so a second
 # occurrence under a different parent wins or loses purely by file order.
-for key in lint_command typecheck_command auto_fix skip_env_var build_command; do
+# Leaf-key uniqueness matters beyond the hook reader: command and skill markdown
+# resolves config by leaf name too, and takes the first hit. A second
+# `enabled:` or `tiers:` under a different parent silently wins or loses by file
+# order. These are the keys the pipeline reads by name.
+for key in lint_command typecheck_command auto_fix skip_env_var build_command \
+           test_command test_value_enforcement per_task_issues tiers \
+           max_review_iterations max_iterations no_progress_threshold \
+           pause_on_error dashboard_every max_agents max_agent_attempts; do
     n=$(grep -cE "^[[:space:]]*${key}:" "$CONFIG")
     if [ "$n" -eq 1 ]; then
         ok "$key appears once"

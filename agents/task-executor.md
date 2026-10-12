@@ -68,6 +68,8 @@ Read the sub-phase tasks from `specs/{feature}/tasks.md` and implement:
 Read the test budget, in this order:
 1. `test_plan` in the task's metadata (`coco-tracker show {task-id}`)
 2. `## Test Strategy` in `specs/{feature}/design.md`
+
+Match this heading **case-insensitively** and tolerate a trailing `*(mandatory)*`: a design written `## Test strategy` is the same section, and treating it as absent silently drops the budget.
 3. `test_strategy` in task metadata (light-tier features)
 
 Write exactly the tests the budget calls for -- one per `FR-###` marked `Test? = yes`, at the level named there. Create test files, verify they fail (RED).

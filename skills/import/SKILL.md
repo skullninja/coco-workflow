@@ -263,6 +263,8 @@ When `tasks.md` doesn't exist but `design.md` does (light-tier feature):
 
    Light-tier designs have no `FR-###` IDs, so there is no `test_plan` array. Carry the design's `## Test Strategy` across as a single-line `test_strategy` string instead -- there is no tasks.md for the executor to read it from. Collapse it to one line (semicolons between items); never embed a literal newline in `--metadata`. Code review reads the design and the PR body directly, not task metadata.
 
+Match this heading **case-insensitively** and tolerate a trailing `*(mandatory)*`: a design written `## Test strategy` is the same section, and treating it as absent silently drops the budget.
+
    If the design has no `## Test Strategy` section, omit the key rather than inventing one.
 3. No dependencies to set (single task)
 4. Run issue tracker bridge (Step 5) as normal -- creates one issue
