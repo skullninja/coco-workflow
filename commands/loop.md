@@ -33,11 +33,37 @@ Verify the epic is ready for autonomous execution:
 coco-tracker epic-status {epic-id}
 ```
 
-**Check ALL before entering the loop:**
+**First, reconcile.** Any previous run that ended without finishing -- usage
+limit, crash, Ctrl-C, context exhaustion -- left its claimed task `in_progress`.
+`ready` selects only `pending`, so that task is unstartable and the epic can never
+complete, while the loop reports "all remaining tasks are blocked" with nothing
+actually blocked.
+
+```bash
+coco-tracker reconcile
+```
+
+Exit 0 means consistent, carry on. Exit 1 means it found something and printed it.
+Stranded tasks are safe to reset on entry -- by definition nothing is working on
+them, because the run that claimed them is over:
+
+```bash
+coco-tracker reconcile --fix
+```
+
+An epic closed over unfinished tasks, or a task pointing at a missing epic, needs
+a decision rather than a reset. `--fix` leaves those alone and still exits 1. Stop
+and report them.
+
+**Then check ALL before entering the loop:**
 
 1. **Tracker epic exists** and has tasks
 2. **Dependencies are set** -- at least one task is unblocked (`ready` returns a result)
-3. **If issue tracker configured**: every task has `issue_key` in metadata
+3. **If an issue tracker is configured AND `issue_tracker.per_task_issues` is not
+   `false`**: every task has `issue_key` in metadata. A project that uses
+   feature-level issues only sets `per_task_issues: false` and this check is
+   skipped -- it previously blocked such a project outright, forcing the creation
+   of per-task issues its own working agreement refused
 4. **If `pr.enabled`**: verify on a `feature/*` branch
 5. **If `pr.enabled`**: verify remote origin is configured (`git remote -v`)
 6. **If `pr.enabled`**: verify `gh` CLI is available
@@ -116,11 +142,96 @@ Four rules, ordered by how often they are broken:
    Log it, leave it `in_progress`, take the next ready task. The circuit breaker
    exists to catch a genuinely stuck loop; do not pre-empt it.
 
-If you are unsure whether to continue: continue. The user can interrupt at any
-moment, but they cannot un-stall a loop that has already yielded without typing a
-new message -- which is the exact cost this section exists to avoid.
+**The one rule all four follow from: stop when continuing cannot change the
+outcome without a human, and never otherwise.**
+
+Apply it to the case that defeated the four rules above. A review was dispatched
+asynchronously; the loop wrote *"Holding for the review verdict before merge --
+starting the next sub-phase now would mean writing into the same files under
+review"* and ended the turn. Every clause of that is true, and it is still wrong:
+the reviewer returns **to the loop**, so continuing *could* change the outcome
+without anyone. A blocker on one particular next step is not an exit. Wait inside
+the turn instead -- see Waiting On A Dispatched Agent below.
+
+Then apply it to the opposite error. A PR that has burned `max_review_iterations`
+and still has critical findings is a real exit: the work exists, it cannot land,
+and no further looping resolves it. The loop used to log a warning and carry on,
+which left the task stranded and the PR open with nobody told.
+
+If you are unsure, the rule decides it. When the rule genuinely does not, continue
+-- the user can interrupt at any moment, but they cannot un-stall a loop that has
+already yielded without typing a new message.
+
+### Waiting On A Dispatched Agent
+
+A review you dispatched returns to you. Blocking on it is **not** a reason to end
+the turn.
+
+Wait with a bounded call rather than an open-ended one:
+
+```bash
+TaskOutput task_id=<id> block=true timeout=600000
+```
+
+**Record the dispatch before waiting on it.** Append one line to
+`.coco/state/dispatches.jsonl` (the directory is gitignored, which is right --
+this is per-run, per-machine state):
+
+```bash
+echo '{"task_id":"<id>","pr":<number>,"dispatched_at":"<iso8601>"}' >> .coco/state/dispatches.jsonl
+```
+
+A session that ends mid-wait leaves the agent running and takes the knowledge of
+it with it. On resume the Pre-Loop Gate reads that file and, for each entry
+without a recorded outcome, calls `TaskOutput` with `block=false` -- which returns
+a status without dumping the agent's transcript -- to tell a finished dispatch
+from a dead one before re-dispatching. Clear the entry once the result is in.
+
+This is deliberately a file and not a tracker subcommand. The finding behind it
+rests on one observation, and a counter plus a glob is proportionate to that;
+promote it if it recurs.
+
+A `timeout` is **not** a failure. It returns `status: running` plus a path to the
+agent's partial output -- liveness *and* progress in one call. On timeout, emit a
+ledger line (`review dispatched 20:39, still running, 10m`) and wait again.
+
+**Do not impose a deadline after which you abandon the review.** Observed review
+durations ranged 7 to 19 minutes, and the longest returned a genuine correctness
+defect the PR body claimed to have prevented. Any fixed cut-off short enough to be
+useful would have discarded it. Wait as long as it takes; just say that you are.
+
+If `status` comes back as anything other than running and no result arrived, the
+agent died. That is an exit condition -- report it with the PR number.
+
+### Review Rounds Are Counted, Not Remembered
+
+`pr.review.max_review_iterations` (default 3) was read from config and never
+compared to anything, because the count lived in the model's head. Two PRs reached
+round four with no signal.
+
+Count it where it can be checked:
+
+```bash
+coco-tracker round pr-{number} --bump
+```
+
+It prints the new count. Emit `review-fix N/3` in the ledger each round. Read
+without bumping with `coco-tracker round pr-{number}`, and clear it after a merge
+with `--reset`.
+
+**At the cap, exit.** Do not narrow the scope and continue -- that reads as
+intelligent and is unbounded, and the difference only matters when nobody is
+watching. Take the Review Exhausted exit below.
 
 ### Progress Ledger
+
+**Emit it as part of claiming and closing a task, not as a thing to remember.**
+This format was followed on one run and silently abandoned on the next -- one
+ledger line across two full iterations -- because it existed as a standalone
+instruction. Tie it to a step that must happen anyway: the line goes in the same
+turn as `coco-tracker update --status in_progress`, and the resolution line in the
+same turn as `coco-tracker close`. If you are writing one of those commands
+without its ledger line, the line is missing.
 
 Emit one line at the **start** of every iteration, before doing any work:
 
@@ -413,6 +524,28 @@ Total commits: {final_count - initial_count}
 
 ```bash
 coco-tracker sync
+```
+
+### Review Exhausted
+
+`coco-tracker round pr-{number}` has reached `pr.review.max_review_iterations`
+and critical findings remain. The work is written and cannot land; more looping
+will not change that.
+
+Leave the task recoverable -- the next run's `reconcile` will find it -- and stop:
+
+```bash
+coco-tracker session-end
+```
+
+```
+LOOP PAUSED: Review could not converge on PR #{number}.
+{N} rounds, cap is {max_review_iterations}.
+Outstanding critical findings:
+{list}
+
+Task {task-id} is left claimed; `coco-tracker reconcile --fix` resets it.
+To resume after deciding: /coco:loop {epic-id}
 ```
 
 ### Circuit Breaker: No Progress

@@ -46,7 +46,7 @@ Five layers:
 | `templates/test-value-rubric.md` | Test value rubric -- verdicts and evidence used by review and audit |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
-| `tests/test-tracker.sh` | 64 tests for tracker.sh |
+| `tests/test-tracker.sh` | 84 tests for tracker.sh |
 | `tests/test-hooks.sh` | 9 tests for `coco-lib.sh` project-root resolution |
 | `tests/test-setup-config.sh` | 15 tests guarding wizard/config drift |
 
@@ -88,11 +88,35 @@ coco-tracker session-end
 
 # Git sync
 coco-tracker sync
+
+# Consistency and run state
+coco-tracker reconcile [--fix]              # find stranded tasks / inconsistent epics
+coco-tracker round <key> [--bump|--reset]   # count review rounds where it can be checked
 ```
 
 These are the **only valid tracker commands**. Do NOT invent commands like `epic-list` — use `epic-status` (no args) to list epics, or `list --json` to list tasks.
 
 **Output formats**: `list --json` returns a JSON **array** (`[...]`). Use `jq '.[]'` to iterate elements. `show ID` and `ready --json` return a single JSON object. Do NOT pipe tracker output to Python — use jq for all JSON processing.
+
+### `reconcile` and `round`
+
+Two subcommands exist because the loop was keeping state in prose.
+
+**`reconcile`** reports three inconsistencies and exits 1 if it finds any: tasks
+left `in_progress` (unstartable, since `ready` selects only `pending`), epics
+closed over unfinished tasks (worse -- nothing will ever surface those tasks), and
+tasks pointing at a missing epic. `--fix` resets stranded tasks, which is safe at
+loop entry because the run that claimed them is over. It deliberately does **not**
+fix the other two: they need a decision, and `--fix` still exits 1 when it sees
+one. `commands/loop.md` calls it from the Pre-Loop Gate, which is the recovery
+path for every interruption -- usage limit, crash, Ctrl-C.
+
+**`round`** keeps review-round counts in `.coco/state/rounds.json`, which is
+gitignored and therefore machine-local -- correct for per-run state that must not
+travel between machines or into a merge. `pr.review.max_review_iterations` was
+read from config and never compared to anything, because the count lived in the
+model's head; two PRs reached round four with no signal. A count that can be read
+back can be enforced.
 
 ### State mutations verify themselves
 
@@ -142,7 +166,7 @@ Key sections:
 - `project` -- name, specs directory
 - `discovery` -- PRD path, analysis directory, roadmap directory, source PRD (for derived/satellite repos)
 - `quality` -- lint command, typecheck command, auto-fix (used by PostToolUse hook)
-- `issue_tracker` -- provider (linear/github/none), status mappings, team/labels, GitHub Projects V2 config
+- `issue_tracker` -- provider (linear/github/none), per-task issues toggle, status mappings, team/labels, GitHub Projects V2 config
 - `commit` -- title format, exempt patterns
 - `pre_commit` -- UI patterns for agent triggering, build command
 - `testing` -- test command, timeout
@@ -357,7 +381,7 @@ bash tests/test-hooks.sh
 bash tests/test-setup-config.sh
 ```
 
-`test-tracker.sh` runs 64 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. The `Invalid Metadata` group is the load-bearing one: it asserts that malformed `--metadata` fails with a non-zero exit on both `create` and `update` and leaves existing state untouched, and -- in the other direction -- that a **multiline but valid** command is accepted. Those last two assertions are what stop the deleted PreToolUse rule being reintroduced on the same false premise.
+`test-tracker.sh` runs 84 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. The `Invalid Metadata` group is the load-bearing one: it asserts that malformed `--metadata` fails with a non-zero exit on both `create` and `update` and leaves existing state untouched, and -- in the other direction -- that a **multiline but valid** command is accepted. Those last two assertions are what stop the deleted PreToolUse rule being reintroduced on the same false premise.
 
 `test-hooks.sh` runs 9 tests over `coco_project_root` in `hooks/scripts/coco-lib.sh`: the upward walk from nested and worktree-like directories, the gate that keeps hooks out of non-coco projects, and the `hint -> $CLAUDE_PROJECT_DIR -> $PWD` fallback chain including a hint directory that no longer exists (`/coco:loop` prunes the worktrees its agents ran in). All three behaviors were mutation-tested: breaking the walk, the gate, or the fallback each fails the suite.
 

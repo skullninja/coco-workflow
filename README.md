@@ -316,6 +316,7 @@ discovery:
 
 issue_tracker:
   provider: "none"                # linear | github | none
+  per_task_issues: true           # false = feature-level issues only
 
 quality:
   lint_command: ""                # e.g., "ruff check {file}"
