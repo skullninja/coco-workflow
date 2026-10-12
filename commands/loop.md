@@ -63,6 +63,31 @@ Set counters:
 
 ## Autonomous Loop
 
+### State Mutations Are Ordered And Verified
+
+**Never put a `coco-tracker` call in the same Bash invocation as a git or `gh`
+command.** One observed block contained a python heredoc, four git/gh commands,
+and two tracker calls; the `close` in it did not take effect, and the loop
+reported the task complete anyway. It is still `in_progress` today.
+
+The order is fixed, one Bash call per step:
+
+1. `gh pr merge`
+2. `git checkout` the feature branch
+3. `git pull`
+4. **then** mutate the tracker
+5. **then** read it back
+
+`coco-tracker` now verifies its own writes and exits non-zero when one does not
+land, so **check the exit status of every tracker call**. Do not pipe them
+through `tail` or `grep` in a way that discards it. On a non-zero exit, stop --
+this is an exit condition, not something to log and continue past.
+
+The tracker's state file is **tracked in git in most projects**. That means git
+operations can move it underneath you, so a mutation is only real once it has
+been read back. Never assert progress from the fact that you issued a command;
+assert it from what the tracker says afterwards.
+
 ### The Loop Does Not Stop To Report
 
 This loop runs to completion inside one turn. **Ending the turn is an exit**, and

@@ -338,6 +338,72 @@ assert_eq "multiline valid metadata is accepted" "2" "$(echo "$ml" | jq -r '.met
 
 # ============================================================
 echo ""
+echo "=== Test: State Verification ==="
+
+# Stage 1's premise: a mutation that does not land must not report success.
+# The loop called close, printed "2/2 tasks", and proceeded over a task that is
+# still in_progress today. Three routes to that were found; only one was ever
+# explained. Verification catches all of them without knowing which.
+
+# --- a malformed file must stop a write, not silently append a duplicate ---
+# One bad line used to make the "does this record exist?" probe fail, which took
+# the append branch, wrote a second record with the same id, and left the file
+# unparseable -- while printing success and exiting 0.
+cp "$COCO_DIR/tasks/tasks.jsonl" "$TEST_DIR/tasks.backup"
+printf '%s\n' '{"id":"broken","type":"task"' >> "$COCO_DIR/tasks/tasks.jsonl"
+
+bad_file=$(coco_tracker close "$mt_id" 2>&1) && bad_file_rc=0 || bad_file_rc=$?
+assert_eq "malformed file refuses the write" "1" "$bad_file_rc"
+assert_contains "malformed file says why" "not valid JSONL" "$bad_file"
+assert_eq "malformed file appended nothing" "1" "$(grep -c '"id":"broken"' "$COCO_DIR/tasks/tasks.jsonl")"
+cp "$TEST_DIR/tasks.backup" "$COCO_DIR/tasks/tasks.jsonl"
+
+# --- close verifies the record actually changed ---
+vt=$(coco_tracker create --epic "epic-002" --title "Verify close" 2>/dev/null)
+vt_id=$(echo "$vt" | jq -r '.id')
+coco_tracker close "$vt_id" >/dev/null
+assert_eq "close lands on disk" "completed" "$(coco_tracker show "$vt_id" | jq -r '.status')"
+assert_not_null "close sets closed_at" "$(coco_tracker show "$vt_id" | jq -r '.closed_at')"
+
+# --- update --status verifies too ---
+ut=$(coco_tracker create --epic "epic-002" --title "Verify update" 2>/dev/null)
+ut_id=$(echo "$ut" | jq -r '.id')
+coco_tracker update "$ut_id" --status "in_progress" >/dev/null
+assert_eq "update --status lands on disk" "in_progress" "$(coco_tracker show "$ut_id" | jq -r '.status')"
+
+# ============================================================
+echo ""
+echo "=== Test: Epic Close Guard ==="
+
+# The loop closed an epic over a task still in_progress. `ready` skips
+# in_progress and a closed epic hides it, so the task became unreachable except
+# by reading the JSONL directly. 17 such epics existed across four projects.
+g_epic=$(coco_tracker epic-create "Guarded" | jq -r '.id')
+gt1=$(coco_tracker create --epic "$g_epic" --title "done one" 2>/dev/null)
+gt1_id=$(echo "$gt1" | jq -r '.id')
+gt2=$(coco_tracker create --epic "$g_epic" --title "still open" 2>/dev/null)
+gt2_id=$(echo "$gt2" | jq -r '.id')
+coco_tracker close "$gt1_id" >/dev/null
+coco_tracker update "$gt2_id" --status in_progress >/dev/null
+
+guard=$(coco_tracker epic-close "$g_epic" 2>&1) && guard_rc=0 || guard_rc=$?
+assert_eq "epic-close refuses over an unfinished task" "1" "$guard_rc"
+assert_contains "epic-close names the offender" "$gt2_id" "$guard"
+assert_eq "refused epic stays open" "open" "$(coco_tracker show "$g_epic" | jq -r '.status')"
+
+# --force is the deliberate override
+coco_tracker epic-close "$g_epic" --force >/dev/null 2>&1
+assert_eq "--force closes anyway" "closed" "$(coco_tracker show "$g_epic" | jq -r '.status')"
+
+# and a genuinely finished epic closes without ceremony
+f_epic=$(coco_tracker epic-create "Finished" | jq -r '.id')
+ft=$(coco_tracker create --epic "$f_epic" --title "the only task" 2>/dev/null)
+coco_tracker close "$(echo "$ft" | jq -r '.id')" >/dev/null
+coco_tracker epic-close "$f_epic" >/dev/null 2>&1
+assert_eq "a finished epic closes cleanly" "closed" "$(coco_tracker show "$f_epic" | jq -r '.status')"
+
+# ============================================================
+echo ""
 echo "==============================="
 echo "Results: $PASS passed, $FAIL failed"
 echo "==============================="

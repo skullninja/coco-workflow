@@ -217,10 +217,24 @@ coco-tracker epic-status {epic-id}
 coco-tracker list --json --epic {epic-id}
 ```
 
-**All must pass:**
-- [ ] Every tracker task exists with correct dependencies
-- [ ] If issue tracker configured: every task has `issue_key` in metadata
-- [ ] Dependencies match sub-phase ordering from tasks.md
+**All must pass, and each is verified by querying the tracker -- not by
+recalling what you did.** This checklist previously read as prose and was
+self-reported against; an import once finished with every task carrying
+`issue_key: null` and the checklist passed anyway. The gate one stage later
+caught it, which is one stage too late.
+
+Run these and read the output:
+
+```bash
+coco-tracker list --json --epic {epic-id}
+```
+
+- [ ] Every sub-phase in tasks.md appears as a task (compare counts)
+- [ ] `depends_on` matches the sub-phase ordering in tasks.md
+- [ ] If an issue tracker is configured **and** `issue_tracker.per_task_issues`
+      is not false: **no** task has a null `issue_key`. Check it directly ---
+      `coco-tracker list --json --epic {epic-id} | jq '[.[] | select(.metadata.issue_key == null)] | length'`
+      must print `0`. If it does not, backfill before reporting success.
 
 ### Step 7: Report
 

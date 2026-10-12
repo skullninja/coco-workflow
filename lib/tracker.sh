@@ -84,15 +84,57 @@ _coco_write_record() {
 
     _coco_ensure_dirs
 
+    # The file must parse before we touch it. The existence probe below is a jq
+    # invocation, so a single malformed line made it exit non-zero -- which read
+    # as "record not found", took the append branch, and wrote a SECOND record
+    # with the same id. Every later read then picked whichever came last, and the
+    # file was unparseable. All of that while printing success and exiting 0.
+    if [[ -s "$TASKS_FILE" ]] && ! jq empty "$TASKS_FILE" 2>/dev/null; then
+        echo "ERROR: $TASKS_FILE is not valid JSONL -- refusing to write." >&2
+        echo "       Writing now would append a duplicate and corrupt it further." >&2
+        echo "       Restore the file (it is usually in git) before retrying." >&2
+        return 1
+    fi
+
     if [[ -s "$TASKS_FILE" ]] && jq -e --arg id "$id" 'select(.id == $id)' "$TASKS_FILE" >/dev/null 2>&1; then
-        # Update existing: rewrite file with replacement
+        # Update existing: rewrite file with replacement.
+        # The rewrite's exit status is checked before the mv -- an unchecked jq
+        # failure would have installed a truncated file over the original.
         local tmp="${TASKS_FILE}.tmp"
-        jq -c --arg id "$id" --argjson new "$record" \
-            'if .id == $id then $new else . end' "$TASKS_FILE" > "$tmp"
+        if ! jq -c --arg id "$id" --argjson new "$record" \
+                'if .id == $id then $new else . end' "$TASKS_FILE" > "$tmp"; then
+            rm -f "$tmp"
+            echo "ERROR: failed to rewrite $TASKS_FILE -- original left untouched." >&2
+            return 1
+        fi
         mv "$tmp" "$TASKS_FILE"
     else
         # New record: append
         echo "$record" >> "$TASKS_FILE"
+    fi
+}
+
+# _coco_verify_record <id> <jq boolean filter> <what was expected>
+# Re-reads from disk and confirms the write landed.
+#
+# This exists because the loop could not tell a mutation that happened from one
+# that did not. It called close, printed "2/2 tasks", and proceeded over a task
+# that stayed in_progress. Three separate routes to that were found -- a
+# malformed file taking the append branch, an unchecked rewrite, and a
+# whole-file "last write wins" overwrite from a stale in-memory record -- and
+# only one was ever explained. Verifying the outcome covers all of them without
+# needing to know which, including causes nobody has found yet.
+_coco_verify_record() {
+    local id="$1" filter="$2" expected="$3"
+    local fresh
+    fresh=$(_coco_read_record "$id") || {
+        echo "ERROR: verification failed -- $id is absent from $TASKS_FILE after the write." >&2
+        return 1
+    }
+    if ! echo "$fresh" | jq -e "$filter" >/dev/null 2>&1; then
+        echo "ERROR: verification failed -- $id is not $expected on disk after the write." >&2
+        echo "       on disk: $(echo "$fresh" | jq -c '{status, updated_at, closed_at}')" >&2
+        return 1
     fi
 }
 
@@ -156,7 +198,14 @@ _cmd_epic_create() {
         --arg now "$now" \
         '{id:$id, type:"epic", title:$title, description:$desc, status:"open", created_at:$now, updated_at:$now}')
 
-    _coco_write_record "$record"
+    _coco_write_record "$record" || return 1
+
+    # Verify whatever this call claimed to change. An unverified --status is how
+    # a task ends up stranded: the caller proceeds believing it moved.
+    local _want_status
+    _want_status=$(echo "$record" | jq -r '.status')
+    _coco_verify_record "$id" "$(printf '.status == "%s"' "$_want_status")" "$_want_status" || return 1
+
     echo "$record" | jq .
 }
 
@@ -194,7 +243,15 @@ _cmd_epic_status() {
 }
 
 _cmd_epic_close() {
-    local epic_id="$1"
+    local epic_id="$1"; shift || true
+    local force=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force) force=true; shift ;;
+            *) echo "ERROR: unknown epic-close option: $1" >&2; return 1 ;;
+        esac
+    done
+
     if [[ -z "$epic_id" ]]; then
         echo "ERROR: epic-close requires an epic ID" >&2
         return 1
@@ -203,10 +260,30 @@ _cmd_epic_close() {
     local epic
     epic=$(_coco_read_record "$epic_id") || { echo "ERROR: epic not found: $epic_id" >&2; return 1; }
 
+    # Refuse over unfinished work. An epic closed over an in_progress task makes
+    # that task unreachable: `ready` selects only pending, and the closed epic
+    # hides it from every epic-level query. 17 epics with every task finished
+    # were found sitting open across four projects; the inverse -- a closed epic
+    # over open work -- is the same inconsistency pointing the other way, and is
+    # worse because nothing will ever surface it.
+    if [[ "$force" != "true" && -s "$TASKS_FILE" ]]; then
+        local unfinished
+        unfinished=$(jq -sr --arg e "$epic_id" \
+            '[.[] | select(.type == "task" and .epic_id == $e
+                           and ((.status | IN("completed","closed","cancelled")) | not))]
+             | map(.id) | join(", ")' "$TASKS_FILE" 2>/dev/null)
+        if [[ -n "$unfinished" ]]; then
+            echo "ERROR: epic $epic_id has unfinished tasks: $unfinished" >&2
+            echo "       Close them first, or pass --force to close the epic anyway." >&2
+            return 1
+        fi
+    fi
+
     local now
     now=$(_coco_timestamp)
     epic=$(echo "$epic" | jq -c --arg now "$now" '.status = "closed" | .updated_at = $now | .closed_at = $now')
-    _coco_write_record "$epic"
+    _coco_write_record "$epic" || return 1
+    _coco_verify_record "$epic_id" '.status == "closed"' "closed" || return 1
     echo "Epic $epic_id closed."
 }
 
@@ -296,7 +373,14 @@ _cmd_create() {
             closed_at: null
         }')
 
-    _coco_write_record "$record"
+    _coco_write_record "$record" || return 1
+
+    # Verify whatever this call claimed to change. An unverified --status is how
+    # a task ends up stranded: the caller proceeds believing it moved.
+    local _want_status
+    _want_status=$(echo "$record" | jq -r '.status')
+    _coco_verify_record "$id" "$(printf '.status == "%s"' "$_want_status")" "$_want_status" || return 1
+
     echo "$record" | jq .
 }
 
@@ -353,7 +437,14 @@ _cmd_update() {
         esac
     done
 
-    _coco_write_record "$record"
+    _coco_write_record "$record" || return 1
+
+    # Verify whatever this call claimed to change. An unverified --status is how
+    # a task ends up stranded: the caller proceeds believing it moved.
+    local _want_status
+    _want_status=$(echo "$record" | jq -r '.status')
+    _coco_verify_record "$id" "$(printf '.status == "%s"' "$_want_status")" "$_want_status" || return 1
+
     echo "$record" | jq .
 }
 
@@ -376,7 +467,8 @@ _cmd_close() {
         --arg reason "$reason" \
         '.status = "completed" | .updated_at = $now | .closed_at = $now | .close_reason = $reason')
 
-    _coco_write_record "$record"
+    _coco_write_record "$record" || return 1
+    _coco_verify_record "$id" '.status == "completed"' "completed" || return 1
     echo "Task $id closed."
 }
 
