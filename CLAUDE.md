@@ -46,7 +46,7 @@ Five layers:
 | `templates/test-value-rubric.md` | Test value rubric -- verdicts and evidence used by review and audit |
 | `scripts/setup.sh` | Creates `.coco/` directory and installs git hooks in host project |
 | `scripts/uninstall.sh` | Removes git hooks |
-| `tests/test-tracker.sh` | 53 tests for tracker.sh |
+| `tests/test-tracker.sh` | 64 tests for tracker.sh |
 | `tests/test-hooks.sh` | 9 tests for `coco-lib.sh` project-root resolution |
 | `tests/test-setup-config.sh` | 15 tests guarding wizard/config drift |
 
@@ -93,6 +93,36 @@ coco-tracker sync
 These are the **only valid tracker commands**. Do NOT invent commands like `epic-list` — use `epic-status` (no args) to list epics, or `list --json` to list tasks.
 
 **Output formats**: `list --json` returns a JSON **array** (`[...]`). Use `jq '.[]'` to iterate elements. `show ID` and `ready --json` return a single JSON object. Do NOT pipe tracker output to Python — use jq for all JSON processing.
+
+### State mutations verify themselves
+
+`close`, `update`, and `epic-close` re-read the record after writing and exit
+non-zero if it did not land. Callers must check that exit status.
+
+This exists because the loop could not tell a mutation that happened from one that
+did not. It called `close`, reported the epic complete, and moved on over a task
+that stayed `in_progress`. Three independent routes to that were found -- a
+malformed file taking the append branch, an unchecked `jq` rewrite installing a
+truncated file, and the whole-file "last write wins" losing a write to a stale
+in-memory record -- and the one that actually caused it was never established.
+Verifying the outcome covers all of them, including causes nobody has found.
+
+Two further guards in `_coco_write_record`:
+
+- **The file must parse before any write.** The update-vs-append probe is a jq
+  call, so one malformed line read as "record absent" and appended a duplicate,
+  silently, exiting 0. Writing now refuses with a message pointing at git.
+- **The rewrite's exit status is checked before the `mv`.** An unchecked failure
+  installed a partial file over the original.
+
+`epic-close` **refuses over unfinished tasks** (`--force` overrides, logged). An
+epic closed over an `in_progress` task makes that task unreachable: `ready`
+selects only `pending`, and the closed epic hides it from every epic-level query.
+
+**Corollary for `commands/loop.md`**: never put a tracker call in the same Bash
+invocation as a git or `gh` command. The tracker's state file is tracked in git in
+most projects, so git operations move it underneath you. Order is merge → checkout
+→ pull → mutate → read back, one call per step.
 
 ### Data Format
 
@@ -327,7 +357,7 @@ bash tests/test-hooks.sh
 bash tests/test-setup-config.sh
 ```
 
-`test-tracker.sh` runs 53 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. The `Invalid Metadata` group is the load-bearing one: it asserts that malformed `--metadata` fails with a non-zero exit on both `create` and `update` and leaves existing state untouched, and -- in the other direction -- that a **multiline but valid** command is accepted. Those last two assertions are what stop the deleted PreToolUse rule being reintroduced on the same false premise.
+`test-tracker.sh` runs 64 tests covering CRUD, dependencies, ready algorithm, epics, sessions, and metadata. The `Invalid Metadata` group is the load-bearing one: it asserts that malformed `--metadata` fails with a non-zero exit on both `create` and `update` and leaves existing state untouched, and -- in the other direction -- that a **multiline but valid** command is accepted. Those last two assertions are what stop the deleted PreToolUse rule being reintroduced on the same false premise.
 
 `test-hooks.sh` runs 9 tests over `coco_project_root` in `hooks/scripts/coco-lib.sh`: the upward walk from nested and worktree-like directories, the gate that keeps hooks out of non-coco projects, and the `hint -> $CLAUDE_PROJECT_DIR -> $PWD` fallback chain including a hint directory that no longer exists (`/coco:loop` prunes the worktrees its agents ran in). All three behaviors were mutation-tested: breaking the walk, the gate, or the fallback each fails the suite.
 

@@ -53,7 +53,31 @@ changed default, and apply only what the user selects. Never apply in bulk witho
 asking, and never touch a key the user set to a non-default value that was not
 itself a changed default.
 
-**5. Report** what was added, what was changed, and what was left alone.
+**5. Commit it, or say plainly that it is not done.** Check whether the file is
+tracked:
+
+```bash
+git ls-files --error-unmatch .coco/config.yaml
+```
+
+If it is tracked, **commit the migration in the same turn**:
+
+```bash
+git add .coco/config.yaml
+```
+```bash
+git commit -m "config: reconcile .coco/config.yaml against current defaults"
+```
+
+If committing is refused or not possible, **do not report success**. Say the
+migration is applied to the working tree only and must be committed now, and name
+the risk: a tracked file left uncommitted is reverted by the next `git restore`,
+`stash`, or branch switch. That happened once -- a morning's migration was gone by
+the afternoon, three commits having landed in between without it, and the next
+loop ran on the pre-migration config with none of the behaviour changes in effect.
+
+**6. Report** what was added, what was changed, what was left alone, and whether
+it is committed.
 
 ## Step 0: Idempotency Check
 
