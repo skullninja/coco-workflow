@@ -216,7 +216,8 @@ Attempt the task at most `loop.parallel.max_agent_attempts` times (config, defau
 committable after the last attempt, **return a `failure` result and stop** -- do
 not keep trying, and do not return `success` with nothing committed.
 
-This bound exists because the parent cannot interrupt you. `/coco:loop` dispatches
+This bound exists because the parent cannot interrupt you -- it can see whether you
+are still running, but not stop you. `/coco:loop` dispatches
 you and blocks until you return, so an agent that keeps retrying holds the entire
 parallel batch. Returning a clean failure lets the parent log it and move on;
 spinning silently is the worst outcome available to you.

@@ -454,6 +454,39 @@ defects: restoring `s|enabled: false.*# Enable worktree|` and duplicating
 `auto_fix` each fail the suite. The extractor asserts its own yield first, so an
 extraction bug cannot empty the list and quietly pass.
 
+## Verified, Therefore Parallel (0.6.0)
+
+One idea runs through this release: **every claim the workflow makes -- about
+state, evidence, budget or delivery -- is verified at the point of claiming, and
+the loop stops when it cannot verify.**
+
+It exists because 22 findings from two monitored runs turned out to be one defect
+wearing different clothes. The loop ran `close` and never read it back. It read
+`max_review_iterations` and never counted. Its `import` checklist asserted every
+task had an `issue_key` when none did. Its reviewer reported measurements it had
+not taken. Its own fixes shipped correct, merged, and inert. Each was found by a
+human watching, which is precisely the condition coco exists to remove: a workflow
+that cannot check its own work is not autonomous, it is unsupervised, and the
+difference only shows up when nobody is looking.
+
+The stopping rule falls out of the same sentence. **Stop when continuing cannot
+change the outcome without a human, and never otherwise.** That replaces two
+opposite bugs -- stopping to narrate ("Holding for the review verdict", where
+every clause was true and it was still wrong, because the reviewer returns to the
+loop) and failing to stop when a PR had burned its review budget.
+
+Parallelism is last because it is what the rest earns. Overlapping a review with
+the next task means two things in flight; over state that can silently fail to
+persist, that corrupts twice as fast. `commands/loop.md` makes a clean
+`reconcile` a precondition for pipelining, not a nicety.
+
+**What was measured, and what was not.** The test-budget ceiling is the one item
+with a control: unbudgeted produced 1,726 test lines against 388 of source with a
+core mechanic untested, and a stated ceiling produced 44 against 40 with the
+overage self-reported. Treat that as known. The speed claim is not yet measured
+against its 123-minute baseline -- the plan calls for a real run, and until that
+happens the pipelining section is a hypothesis with good arithmetic behind it.
+
 ## Loop Autonomy
 
 `/coco:loop` and `/coco:phase` are markdown executed by a model, not programs.
@@ -475,12 +508,19 @@ different form, to `agents/task-executor.md`: an agent has **no interactive
 channel**: the parent is blocked on its return value, so a turn that ends without
 one hangs the whole batch.
 
-**The orchestrator cannot interrupt a running agent.** The dispatch call blocks
-until return. The only bound available is inside the agent
-(`loop.parallel.max_agent_attempts`), so agents give up and report rather than
-spinning. A genuinely hung agent still holds the batch -- a known limit, not
-something the loop can recover from. Do not add a "timeout" to `loop.md` that
-markdown cannot enforce.
+**The orchestrator cannot interrupt a running agent, but it is not blind to one.**
+0.5.0 documented this as an unfixable limitation and said markdown could not
+express a timeout. That was wrong: `TaskOutput` takes `block` and `timeout`, and a
+timeout returns `status: running` plus the agent's partial output -- liveness and
+progress in one call, which distinguishes slow from dead. The claim was corrected
+after a 12.5-minute review was misdiagnosed as hung at the 13-minute mark; it
+returned a real correctness defect a minute later.
+
+So: wait inside the turn with a bounded call, report each cycle, and **do not
+impose an abandon-deadline**. Observed review durations ran 7-19 minutes and the
+longest was the most valuable; any cut-off short enough to be useful would have
+discarded it. The agent is separately bounded from the inside by
+`loop.parallel.max_agent_attempts`.
 
 ### Progress must be legible without asking
 

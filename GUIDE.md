@@ -446,10 +446,22 @@ loop:
 `max_agent_attempts` bounds an agent **from the inside**. The orchestrator cannot
 interrupt a running one -- the dispatch call blocks until it returns -- so the
 agent has to give up on its own and return a failure the parent can log. A
-genuinely hung agent will still hold the batch; that is a known limit.
+genuinely hung agent still holds the batch, but the loop can tell: a bounded
+`TaskOutput` call returns `status: running`, which separates slow from dead. 0.5.0
+documented that distinction as impossible, which was wrong.
 
 ### Constraints
 
+- **Reviews overlap the next task.** 40-70% of one measured feature's wall clock
+  was the loop blocked on reviews doing nothing, against 28% doing work. Reviews
+  cannot be made much faster -- the cost is the reviewer's analysis, not test
+  execution -- so the loop starts the next non-overlapping task while a review
+  runs. Preconditions: a clean `coco-tracker reconcile`, non-overlapping
+  `owns_files`, and no dependency on the task under review. Pipelining over
+  unverified state corrupts twice as fast, which is why the verification work
+  came first
+- **Re-reviews are scoped to what changed.** Narrowing a third round to the one
+  file its predecessor touched cut it from ~12 minutes to ~7
 - **Max 3 concurrent agents** (configurable via `max_agents`)
 - **Never parallelize same-file tasks** -- requires non-overlapping `owns_files` metadata
 - **Foundation must be serial** (Sub-Phases 1-2)
